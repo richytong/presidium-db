@@ -687,7 +687,7 @@ class DiskHashTable {
    * iterator() -> values AsyncGenerator<string>
    * ```
    *
-   * Returns an iterator of all items in the disk hash table. Items are sorted by reverse insertion order.
+   * Returns an iterator of all items in the disk hash table. Items are yielded by reverse insertion order.
    *
    * ```javascript
    * await ht.set('key1', 'value1')
