@@ -3,4 +3,4 @@ node_modules
 google-chrome-for-testing
 tmp
 DiskHashTable_test_data
-DiskLinkedHashTable_test_data
+DiskSortedHashTable_test_data

@@ -236,10 +236,10 @@ const test1_3 = new Test('DiskSortedHashTable', async function integration1_3() 
   ht1024.close()
 }).case()
 
-const test1_4 = new Test('DiskHashTable', async function integration1_4() {
+const test1_4 = new Test('DiskSortedHashTable', async function integration1_4() {
   const ht1024 = new DiskSortedHashTable({
-    storageFilepath: `${__dirname}/DiskHashTable_test_data/1024`,
-    headerFilepath: `${__dirname}/DiskHashTable_test_data/1024_header`,
+    storageFilepath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
+    headerFilepath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
   })
   await ht1024.destroy()
@@ -944,6 +944,96 @@ const test13 = new Test('DiskSortedHashTable', async function integration13() {
   ht1024.close()
 }).case()
 
+const test14 = new Test('DiskSortedHashTable', async function integration14() {
+  const ht10 = new DiskSortedHashTable({
+    storageFilepath: `${__dirname}/DiskSortedHashTable_test_data/10`,
+    headerFilepath: `${__dirname}/DiskSortedHashTable_test_data/10_header`,
+    initialLength: 10,
+    resizeRatio: 0.8,
+    resizeFactor: 2,
+  })
+  await ht10.destroy()
+  await ht10.init()
+
+  assert.equal(ht10._count, 0)
+  assert.equal(ht10._length, 10)
+
+  await ht10.set('1', 'value1', 1)
+  await ht10.set('2', 'value2', 2)
+  await ht10.set('3', 'value3', 3)
+
+  assert.equal(ht10._count, 3)
+  assert.equal(ht10._length, 10)
+
+  await ht10.set('4', 'value4', 4)
+  await ht10.set('5', 'value5', 5)
+  await ht10.set('6', 'value6', 6)
+
+  assert.equal(ht10._count, 6)
+  assert.equal(ht10._length, 10)
+
+  await ht10.set('7', 'value7', 7)
+
+  assert.equal(ht10._count, 7)
+  assert.equal(ht10._length, 10)
+
+  await ht10.set('8', 'value8', 8)
+
+  assert.equal(ht10._count, 8)
+  assert.equal(ht10._length, 10)
+
+  await ht10.set('9', 'value9', 9)
+
+  assert.equal(ht10._count, 9)
+  assert.equal(ht10._length, 20)
+
+  await ht10.set('10', 'value10', 10)
+
+  assert.equal(ht10._count, 10)
+  assert.equal(ht10._length, 20)
+
+  await ht10.set('11', 'value11', 11)
+  await ht10.set('12', 'value12', 12)
+  await ht10.set('13', 'value13', 13)
+  await ht10.set('14', 'value14', 14)
+  await ht10.set('15', 'value15', 15)
+  await ht10.set('16', 'value16', 16)
+
+  assert.equal(ht10._count, 16)
+  assert.equal(ht10._length, 20)
+
+  await ht10.set('17', 'value17', 17)
+
+  assert.equal(ht10._count, 17)
+  assert.equal(ht10._length, 40)
+
+  await ht10.set('18', 'value18', 18)
+  await ht10.set('19', 'value19', 19)
+  await ht10.set('20', 'value20', 20)
+  await ht10.set('21', 'value21', 21)
+  await ht10.set('22', 'value22', 22)
+  await ht10.set('23', 'value23', 23)
+  await ht10.set('24', 'value24', 24)
+  await ht10.set('25', 'value25', 25)
+  await ht10.set('26', 'value26', 26)
+  await ht10.set('27', 'value27', 27)
+  await ht10.set('28', 'value28', 28)
+  await ht10.set('29', 'value29', 29)
+  await ht10.set('30', 'value30', 30)
+  await ht10.set('31', 'value31', 31)
+  await ht10.set('32', 'value32', 32)
+
+  assert.equal(ht10._count, 32)
+  assert.equal(ht10._length, 40)
+
+  await ht10.set('33', 'value33', 33)
+
+  assert.equal(ht10._count, 33)
+  assert.equal(ht10._length, 80)
+
+  ht10.close()
+}).case()
+
 const test = Test.all([
   test1,
   test1_1,
@@ -962,6 +1052,7 @@ const test = Test.all([
   test11,
   test12,
   test13,
+  test14,
 ])
 
 if (process.argv[1] == __filename) {

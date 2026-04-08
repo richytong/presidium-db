@@ -19,6 +19,8 @@ const REMOVED = 2
  *   initialLength: number,
  *   storageFilepath: string,
  *   headerFilepath: string,
+ *   resizeRatio: number,
+ *   resizeFactor: number,
  * }) -> DiskSortedHashTable
  * ```
  */
@@ -32,6 +34,7 @@ class DiskSortedHashTable {
     this.storageFd = null
     this.headerFd = null
     this.resizeRatio = options.resizeRatio ?? 0
+    this.resizeFactor = options.resizeFactor ?? 4
   }
 
   // _initializeHeader() -> headerReadBuffer Promise<Buffer>
@@ -237,7 +240,7 @@ class DiskSortedHashTable {
     })
   }
 
-  // _parseItem(readBuffer Buffer, index number) -> { index: number, readBuffer: Buffer, sortValue: string|number, value: string }
+  // _parseItem(readBuffer Buffer, index number) -> { index: number, readBuffer: Buffer, sortValue: string|number, key: string, value: string }
   _parseItem(readBuffer, index) {
     const item = {}
     item.index = index
@@ -252,6 +255,10 @@ class DiskSortedHashTable {
     item.reverseIndex = reverseIndex
 
     const keyByteLength = readBuffer.readUInt32BE(1)
+    const keyBuffer = readBuffer.subarray(21, keyByteLength + 21)
+    const key = keyBuffer.toString(ENCODING)
+    item.key = key
+
     const sortValueByteLength = readBuffer.readUInt32BE(5)
     const sortValueBuffer = readBuffer.subarray(
       21 + keyByteLength,
@@ -534,19 +541,36 @@ class DiskSortedHashTable {
     })
   }
 
-  /**
-   * @name set
-   *
-   * @docs
-   * ```coffeescript [specscript]
-   * set(
-   *   key string,
-   *   value string,
-   *   sortValue string|number
-   * ) -> Promise<>
-   * ```
-   */
-  async set(key, value, sortValue) {
+  // _resize() -> Promise<>
+  async _resize() {
+    const currentHeaderFd = this.headerFd
+    const currentStorageFd = this.storageFd
+
+    const temporaryStorageFilepath = `${this.storageFilepath}-tmp-${crypto.randomUUID()}-${Date.now()}`
+    const temporaryHeaderFilepath = `${this.headerFilepath}-tmp-${crypto.randomUUID()}-${Date.now()}`
+
+    const temporaryHt = new DiskSortedHashTable({
+      initialLength: this._length * this.resizeFactor,
+      storageFilepath: temporaryStorageFilepath,
+      headerFilepath: temporaryHeaderFilepath,
+    })
+    await temporaryHt.init()
+
+    for await (const item of this._forwardItemsIterator()) {
+      await temporaryHt.set(item.key, item.value, item.sortValue)
+    }
+
+    temporaryHt.close()
+    this.close()
+
+    await fs.promises.rename(temporaryStorageFilepath, this.storageFilepath)
+    await fs.promises.rename(temporaryHeaderFilepath, this.headerFilepath)
+
+    await this.init()
+  }
+
+  // _set(key string, value string, sortValue number|string) -> Promise<>
+  async _set(key, value, sortValue) {
     let index = this._hash1(key)
 
     const startIndex = index
@@ -570,6 +594,25 @@ class DiskSortedHashTable {
     } else {
       await this._update(key, value, sortValue, index)
     }
+  }
+
+  /**
+   * @name set
+   *
+   * @docs
+   * ```coffeescript [specscript]
+   * set(
+   *   key string,
+   *   value string,
+   *   sortValue string|number
+   * ) -> Promise<>
+   * ```
+   */
+  async set(key, value, sortValue) {
+    if (this.resizeRatio > 0 && (this._count / this._length) >= this.resizeRatio) {
+      await this._resize()
+    }
+    await this._set(key, value, sortValue)
   }
 
   // get(key string) -> value Promise<string>
@@ -611,6 +654,15 @@ class DiskSortedHashTable {
     }
 
     return undefined
+  }
+
+  // _forwardItemsIterator() -> values AsyncGenerator<string>
+  async * _forwardItemsIterator() {
+    let currentForwardItem = await this._getForwardStartItem()
+    while (currentForwardItem) {
+      yield currentForwardItem
+      currentForwardItem = await this._getItem(currentForwardItem.forwardIndex)
+    }
   }
 
   // forwardIterator() -> values AsyncGenerator<string>
