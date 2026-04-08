@@ -1,5 +1,8 @@
 const Test = require('thunk-test')
 
+require('.')
+require('./index')
+
 const test = Test.all([
   require('./DiskHashTable.test'),
   require('./DiskSortedHashTable.test'),

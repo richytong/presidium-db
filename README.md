@@ -69,6 +69,9 @@ for await (const value of sortedHt.reverseIterator()) {
 }
 ```
 
+## License
+Presidium DB is distributed under the [CFOSS License](https://cloutsworld.com/en-us/legal/license/cfoss).
+
 # Support
   * minimum Node.js version: 16
 

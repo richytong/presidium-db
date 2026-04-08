@@ -1,3 +1,10 @@
+/**
+ * Presidium DB
+ * https://github.com/richytong/presidium-db
+ * (c) Richard Tong
+ * Presidium DB may be freely distributed under the CFOSS license.
+ */
+
 const fs = require('fs')
 const crypto = require('crypto')
 
