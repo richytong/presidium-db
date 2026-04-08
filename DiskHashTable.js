@@ -581,19 +581,6 @@ class DiskHashTable {
     return false
   }
 
-  // _updateLength() -> Promise<>
-  async _updateLength() {
-    const position = 0
-    const buffer = Buffer.alloc(4)
-    buffer.writeUInt32BE(this._length, 0)
-
-    await this.headerFd.write(buffer, {
-      offset: 0,
-      position,
-      length: 4,
-    })
-  }
-
   // _updateCount() -> Promise<>
   async _updateCount() {
     const position = 4
