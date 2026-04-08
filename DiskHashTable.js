@@ -1,4 +1,5 @@
 const fs = require('fs')
+const crypto = require('crypto')
 
 const DATA_SLICE_SIZE = 512 * 1024
 
@@ -20,6 +21,7 @@ const REMOVED = 2
  *   storageFilepath: string,
  *   headerFilepath: string,
  *   resizeRatio: number,
+ *   resizeFactor: number,
  * }) -> ht DiskHashTable
  * ```
  *
@@ -30,7 +32,8 @@ const REMOVED = 2
  *     * `initialLength` - `number` - the initial length of the disk hash table. Defaults to 1024.
  *     * `storageFilepath` - `string` - the path to the file used to store the disk hash table data.
  *     * `headerFilepath` - `string` - the path to the file used to store header information about the disk hash table.
- *     * `resizeRatio` - `number` - the ratio of number of items to table length at which to resize the table. Minimum value 0 (no resize), maximum value 1. Defaults to 0.
+ *     * `resizeRatio` - `number` - the ratio of number of items to table length at which to resize the disk hash table. Minimum value 0 (no resize), maximum value 1. Defaults to 0.
+ *     * `resizeFactor` - `number` - the factor that is multiplied with the disk hash table's current length to determine the new table length on a resize.
  *
  * Return:
  *   * `ht` - [`DiskHashTable`](/docs/DiskHashTable) - a `DiskHashTable` instance.
@@ -41,6 +44,17 @@ const REMOVED = 2
  *   filepath: '/path/to/data-file',
  * })
  * ```
+ *
+ * ## Resizing the disk hash table
+ * When an item is inserted into the disk hash table via [set](/docs/DiskHashTable#set), the current capacity ratio of the table is calculated as the table's count divided by the table's length. If the current capacity ratio exceeds the `resizeRatio` (and the `resizeRatio` is not 0), a resize of the table occurs.
+ *
+ * During a table resize, each item of the table is added into a temporary storage file using the new table length calculated from the equation below:
+ *
+ * ```
+ * newTableLength = oldTableLength * resizeFactor
+ * ```
+ *
+ * Once all of the items have been added into the temporary storage file, the temporary storage file is moved to the location of the old storage file to be used as the new storage file.
  */
 class DiskHashTable {
   constructor(options) {
@@ -52,13 +66,15 @@ class DiskHashTable {
     this.storageFd = null
     this.headerFd = null
     this.resizeRatio = options.resizeRatio ?? 0
+    this.resizeFactor = options.resizeFactor ?? 4
   }
 
   // _initializeHeader() -> headerReadBuffer Promise<Buffer>
   async _initializeHeader() {
-    const headerReadBuffer = Buffer.alloc(8)
+    const headerReadBuffer = Buffer.alloc(12)
     headerReadBuffer.writeUInt32BE(this.initialLength, 0)
     headerReadBuffer.writeUInt32BE(0, 4)
+    headerReadBuffer.writeInt32BE(-1, 8)
 
     await this.headerFd.write(headerReadBuffer, {
       offset: 0,
@@ -115,6 +131,9 @@ class DiskHashTable {
 
     const count = headerReadBuffer.readUInt32BE(4)
     this._count = count
+
+    const headIndex = headerReadBuffer.readInt32BE(8)
+    this._headIndex = headIndex
   }
 
   /**
@@ -165,6 +184,9 @@ class DiskHashTable {
 
     const count = headerReadBuffer.readUInt32BE(4)
     this._count = count
+
+    const headIndex = headerReadBuffer.readInt32BE(8)
+    this._headIndex = headIndex
   }
 
   /**
@@ -242,16 +264,17 @@ class DiskHashTable {
   // header file
   // 32 bits / 4 bytes table length
   // 32 bits / 4 bytes item count
+  // 32 bits / 4 bytes head index
 
   // _readHeader() -> headerReadBuffer Promise<Buffer>
   async _readHeader() {
-    const headerReadBuffer = Buffer.alloc(8)
+    const headerReadBuffer = Buffer.alloc(12)
 
     await this.headerFd.read({
       buffer: headerReadBuffer,
       offset: 0,
       position: 0,
-      length: 8,
+      length: 12,
     })
 
     return headerReadBuffer
@@ -285,8 +308,33 @@ class DiskHashTable {
     }
 
     const keyByteLength = readBuffer.readUInt32BE(1)
-    const keyBuffer = readBuffer.subarray(9, keyByteLength + 9)
+    const keyBuffer = readBuffer.subarray(13, keyByteLength + 13)
     return keyBuffer.toString(ENCODING)
+  }
+
+  // _getItem(index number) -> item { index: number, nextIndex: number, value: string }
+  async _getItem(index) {
+    if (index == -1) {
+      return undefined
+    }
+
+    const readBuffer = await this._read(index)
+    const statusMarker = readBuffer.readUInt8(0)
+    if (statusMarker === OCCUPIED) {
+      const keyByteLength = readBuffer.readUInt32BE(1)
+      const valueByteLength = readBuffer.readUInt32BE(5)
+      const nextIndex = readBuffer.readInt32BE(9)
+      const keyBuffer = readBuffer.subarray(13, keyByteLength + 13)
+      const key = keyBuffer.toString(ENCODING)
+      const valueBuffer = readBuffer.subarray(
+        13 + keyByteLength,
+        13 + keyByteLength + valueByteLength
+      )
+      const value = valueBuffer.toString(ENCODING)
+      return { index, nextIndex, key, value }
+    }
+
+    return undefined
   }
 
   // _setStatusMarker(index number, marker number) -> Promise<>
@@ -302,8 +350,91 @@ class DiskHashTable {
     })
   }
 
-  // _resize() -> Promise<>
-  async _resize() {
+  // _getHeadIndex() -> headIndex Promise<number>
+  async _getHeadIndex() {
+    const headerReadBuffer = await this._readHeader()
+    const headIndex = headerReadBuffer.readInt32BE(8)
+    return headIndex
+  }
+
+  // _setHeadIndex(index number) -> Promise<>
+  async _setHeadIndex(index) {
+    const position = 8
+    const buffer = Buffer.alloc(4)
+    buffer.writeInt32BE(index, 0)
+
+    await this.headerFd.write(buffer, {
+      offset: 0,
+      position,
+      length: 4,
+    })
+  }
+
+  // _getNextIndex(index number) -> nextIndex Promise<number>
+  async _getNextIndex(index) {
+    if (index == -1) {
+      throw new Error('Negative index')
+    }
+
+    const readBuffer = await this._read(index)
+    const nextIndex = readBuffer.readInt32BE(9)
+    return nextIndex
+  }
+
+  // _set(key string, value string, fd fs.FileHandle) -> Promise<>
+  async _set(key, value, fd) {
+    let index = this._hash1(key)
+
+    const startIndex = index
+    const stepSize = this._hash2(key)
+
+    let currentKey = await this._getKey(index)
+    while (currentKey) {
+      if (key == currentKey) {
+        break
+      }
+
+      index = (index + stepSize) % this._length
+      if (index == startIndex) {
+        throw new Error('Disk hash table is full')
+      }
+
+      currentKey = await this._getKey(index)
+    }
+
+    let nextIndex
+    if (currentKey == null) { // insert
+      await this._incrementCount()
+      nextIndex = await this._getHeadIndex()
+      await this._setHeadIndex(index)
+    } else { // update
+      nextIndex = await this._getNextIndex(index)
+    }
+
+    const position = index * DATA_SLICE_SIZE
+    const buffer = Buffer.alloc(DATA_SLICE_SIZE)
+
+    // 8 bits / 1 byte for status marker: 0 empty / 1 occupied / 2 deleted
+    // 32 bits / 4 bytes for key size
+    // 32 bits / 4 bytes for value size
+    // 32 bits / 4 bytes for next index
+    // chunk for key
+    // remainder for value
+    const statusMarker = 1
+    const keyByteLength = Buffer.byteLength(key, ENCODING)
+    const valueByteLength = Buffer.byteLength(value, ENCODING)
+    buffer.writeUInt8(statusMarker, 0)
+    buffer.writeUint32BE(keyByteLength, 1)
+    buffer.writeUint32BE(valueByteLength, 5)
+    buffer.writeInt32BE(nextIndex, 9)
+    buffer.write(key, 13, keyByteLength, ENCODING)
+    buffer.write(value, keyByteLength + 13, valueByteLength, ENCODING)
+
+    await this.storageFd.write(buffer, {
+      offset: 0,
+      position,
+      length: buffer.length,
+    })
   }
 
   /**
@@ -328,55 +459,10 @@ class DiskHashTable {
    * ```
    */
   async set(key, value) {
-    if (this.resizeRatio > 0 && (this._count / this._length) > this.resizeRatio) {
-      this._resize()
+    if (this.resizeRatio > 0 && (this._count / this._length) >= this.resizeRatio) {
+      await this._resize()
     }
-
-    let index = this._hash1(key)
-
-    const startIndex = index
-    const stepSize = this._hash2(key)
-
-    let currentKey = await this._getKey(index)
-    while (currentKey) {
-      if (key == currentKey) {
-        break
-      }
-
-      index = (index + stepSize) % this._length
-      if (index == startIndex) {
-        throw new Error('Disk hash table is full')
-      }
-
-      currentKey = await this._getKey(index)
-    }
-
-    if (currentKey == null) { // insert
-      await this._incrementCount()
-    }
-
-    const position = index * DATA_SLICE_SIZE
-    const buffer = Buffer.alloc(DATA_SLICE_SIZE)
-
-    // 8 bits / 1 byte for status marker: 0 empty / 1 occupied / 2 deleted
-    // 32 bits / 4 bytes for key size
-    // 32 bits / 4 bytes for value size
-    // chunk for key
-    // remainder for value
-    const statusMarker = 1
-    const keyByteLength = Buffer.byteLength(key, ENCODING)
-    const valueByteLength = Buffer.byteLength(value, ENCODING)
-    buffer.writeUInt8(statusMarker, 0)
-    buffer.writeUint32BE(keyByteLength, 1)
-    buffer.writeUint32BE(valueByteLength, 5)
-    buffer.write(key, 9, keyByteLength, ENCODING)
-    buffer.write(value, keyByteLength + 9, valueByteLength, ENCODING)
-
-    await this.storageFd.write(buffer, {
-      offset: 0,
-      position,
-      length: buffer.length,
-    })
+    await this._set(key, value)
   }
 
   /**
@@ -427,10 +513,9 @@ class DiskHashTable {
     if (statusMarker === OCCUPIED) {
       const keyByteLength = readBuffer.readUInt32BE(1)
       const valueByteLength = readBuffer.readUInt32BE(5)
-      const keyBuffer = readBuffer.subarray(9, keyByteLength + 9)
       const valueBuffer = readBuffer.subarray(
-        9 + keyByteLength,
-        9 + keyByteLength + valueByteLength
+        13 + keyByteLength,
+        13 + keyByteLength + valueByteLength
       )
       return valueBuffer.toString(ENCODING)
     }
@@ -493,13 +578,11 @@ class DiskHashTable {
     return false
   }
 
-  // _incrementCount() -> Promise<>
-  async _incrementCount() {
-    this._count += 1
-
-    const position = 4
+  // _updateLength() -> Promise<>
+  async _updateLength() {
+    const position = 0
     const buffer = Buffer.alloc(4)
-    buffer.writeInt32BE(this._count, 0)
+    buffer.writeUInt32BE(this._length, 0)
 
     await this.headerFd.write(buffer, {
       offset: 0,
@@ -508,19 +591,57 @@ class DiskHashTable {
     })
   }
 
-  // _decrementCount() -> Promise<>
-  async _decrementCount() {
-    this._count -= 1
-
+  // _updateCount() -> Promise<>
+  async _updateCount() {
     const position = 4
     const buffer = Buffer.alloc(4)
-    buffer.writeInt32BE(this._count, 0)
+    buffer.writeUInt32BE(this._count, 0)
 
     await this.headerFd.write(buffer, {
       offset: 0,
       position,
       length: 4,
     })
+  }
+
+  // _incrementCount() -> Promise<>
+  async _incrementCount() {
+    this._count += 1
+    await this._updateCount()
+  }
+
+  // _decrementCount() -> Promise<>
+  async _decrementCount() {
+    this._count -= 1
+    await this._updateCount()
+  }
+
+  // _resize() -> Promise<>
+  async _resize() {
+    const currentHeaderFd = this.headerFd
+    const currentStorageFd = this.storageFd
+
+    const temporaryStorageFilepath = `${this.storageFilepath}-tmp-${crypto.randomUUID()}-${Date.now()}`
+    const temporaryHeaderFilepath = `${this.headerFilepath}-tmp-${crypto.randomUUID()}-${Date.now()}`
+
+    const temporaryHt = new DiskHashTable({
+      initialLength: this._length * this.resizeFactor,
+      storageFilepath: temporaryStorageFilepath,
+      headerFilepath: temporaryHeaderFilepath,
+    })
+    await temporaryHt.init()
+
+    for await (const item of this._itemsIterator()) {
+      await temporaryHt.set(item.key, item.value)
+    }
+
+    temporaryHt.close()
+    this.close()
+
+    await fs.promises.rename(temporaryStorageFilepath, this.storageFilepath)
+    await fs.promises.rename(temporaryHeaderFilepath, this.headerFilepath)
+
+    await this.init()
   }
 
   /**
@@ -541,6 +662,40 @@ class DiskHashTable {
    */
   count() {
     return this._count
+  }
+
+  /**
+   * @name _itemsIterator
+   *
+   * @docs
+   * ```coffeescript [specscript]
+   * _itemsIterator() -> items AsyncGenerator<{ index: number, nextIndex: number, key: string, value: string }>
+   * ```
+   */
+  async * _itemsIterator() {
+    const headIndex = await this._getHeadIndex()
+    let item = await this._getItem(headIndex)
+    while (item) {
+      yield item
+      item = await this._getItem(item.nextIndex)
+    }
+  }
+
+  /**
+   * @name iterator
+   *
+   * @docs
+   * ```coffeescript [specscript]
+   * iterator() -> values AsyncGenerator<string>
+   * ```
+   */
+  async * iterator() {
+    const headIndex = await this._getHeadIndex()
+    let item = await this._getItem(headIndex)
+    while (item) {
+      yield item.value
+      item = await this._getItem(item.nextIndex)
+    }
   }
 
 }
