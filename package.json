@@ -37,6 +37,5 @@
     "thunk-test": "^1.3.9"
   },
   "dependencies": {
-    "@ronomon/direct-io": "^3.0.1"
   }
 }
