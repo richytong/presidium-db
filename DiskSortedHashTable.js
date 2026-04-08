@@ -328,6 +328,44 @@ class DiskSortedHashTable {
     })
   }
 
+  // _updateLength() -> Promise<>
+  async _updateLength() {
+    const position = 0
+    const buffer = Buffer.alloc(4)
+    buffer.writeInt32BE(this._length, 0)
+
+    await this.headerFd.write(buffer, {
+      offset: 0,
+      position,
+      length: 4,
+    })
+  }
+
+  // _updateCount() -> Promise<>
+  async _updateCount() {
+    const position = 4
+    const buffer = Buffer.alloc(4)
+    buffer.writeInt32BE(this._count, 0)
+
+    await this.headerFd.write(buffer, {
+      offset: 0,
+      position,
+      length: 4,
+    })
+  }
+
+  // _incrementCount() -> Promise<>
+  async _incrementCount() {
+    this._count += 1
+    await this._updateCount()
+  }
+
+  // _decrementCount() -> Promise<>
+  async _decrementCount() {
+    this._count -= 1
+    await this._updateCount()
+  }
+
   // _insert(key string, value string, sortValue number|string, index number) -> Promise<>
   async _insert(key, value, sortValue, index) {
     const forwardStartItem = await this._getForwardStartItem()
@@ -664,36 +702,6 @@ class DiskSortedHashTable {
     }
 
     return false
-  }
-
-  // _incrementCount() -> Promise<>
-  async _incrementCount() {
-    this._count += 1
-
-    const position = 4
-    const buffer = Buffer.alloc(4)
-    buffer.writeInt32BE(this._count, 0)
-
-    await this.headerFd.write(buffer, {
-      offset: 0,
-      position,
-      length: 4,
-    })
-  }
-
-  // _decrementCount() -> Promise<>
-  async _decrementCount() {
-    this._count -= 1
-
-    const position = 4
-    const buffer = Buffer.alloc(4)
-    buffer.writeInt32BE(this._count, 0)
-
-    await this.headerFd.write(buffer, {
-      offset: 0,
-      position,
-      length: 4,
-    })
   }
 
   /**
