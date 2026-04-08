@@ -43,6 +43,8 @@ const REMOVED = 2
  *   initialLength: 1024,
  *   storagePath: '/path/to/storage-file',
  *   headerPath: '/path/to/header-file',
+ *   resizeRatio: 0.7,
+ *   resizeFactor: 4,
  * })
  * ```
  *
@@ -532,7 +534,7 @@ class DiskHashTable {
    * delete(key string) -> didDelete Promise<boolean>
    * ```
    *
-   * Deletes a key and corresponding value from the disk hash table.
+   * Deletes an item by key from the disk hash table.
    *
    * Arguments:
    *   * `key` - `string` - the key to delete.

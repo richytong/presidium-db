@@ -28,11 +28,11 @@ const REMOVED = 2
  *
  * Arguments:
  *   * `options`
- *     * `initialLength` - `number` - the initial length of the sorted disk hash table. Defaults to 1024.
- *     * `storagePath` - `string` - the path to the file used to store the sorted disk hash table data.
- *     * `headerPath` - `string` - the path to the file used to store header information about the sorted disk hash table.
- *     * `resizeRatio` - `number` - the ratio of number of items to table length at which to resize the sorted disk hash table. Minimum value 0 (no resize), maximum value 1. Defaults to 0.
- *     * `resizeFactor` - `number` - the factor that is multiplied with the sorted disk hash table's current length to determine the new table length on a resize.
+ *     * `initialLength` - `number` - the initial length of the disk sorted hash table. Defaults to 1024.
+ *     * `storagePath` - `string` - the path to the file used to store the disk sorted hash table data.
+ *     * `headerPath` - `string` - the path to the file used to store header information about the disk sorted hash table.
+ *     * `resizeRatio` - `number` - the ratio of number of items to table length at which to resize the disk sorted hash table. Minimum value 0 (no resize), maximum value 1. Defaults to 0.
+ *     * `resizeFactor` - `number` - the factor that is multiplied with the disk sorted hash table's current length to determine the new table length on a resize.
  *
  * Return:
  *   * `sortedHt` - [`DiskSortedHashTable`](/docs/DiskSortedHashTable) - a `DiskSortedHashTable` instance.
@@ -40,12 +40,15 @@ const REMOVED = 2
  * ```javascript
  * const sortedHt = new DiskSortedHashTable({
  *   initialLength: 1024,
- *   filepath: '/path/to/data-file',
+ *   storagePath: '/path/to/storage-file',
+ *   headerPath: '/path/to/header-file',
+ *   resizeRatio: 0.5,
+ *   resizeFactor: 1000,
  * })
  * ```
  *
- * ## Resizing the disk hash table
- * When an item is inserted into the disk hash table via [set](/docs/DiskHashTable#set), the current capacity ratio of the table is calculated as the table's count divided by the table's length. If the current capacity ratio exceeds the `resizeRatio` (and the `resizeRatio` is not 0), a resize of the table occurs.
+ * ## Resizing the disk sorted hash table
+ * When an item is inserted into the disk sorted hash table via [set](/docs/DiskHashTable#set), the current capacity ratio of the table is calculated as the table's count divided by the table's length. If the current capacity ratio exceeds the `resizeRatio` (and the `resizeRatio` is not 0), a resize of the table occurs.
  *
  * During a table resize, each item of the table is added into a temporary storage file using the new table length calculated from the equation below:
  *
@@ -85,7 +88,26 @@ class DiskSortedHashTable {
     return headerReadBuffer
   }
 
-  // init() -> Promise<>
+  /**
+   * @name init
+   *
+   * @docs
+   * ```coffeescript [specscript]
+   * sortedHt.init() -> Promise<>
+   * ```
+   *
+   * Initializes the disk sorted hash table.
+   *
+   * Arguments:
+   *   * (none)
+   *
+   * Return:
+   *   * Empty promise.
+   *
+   * ```javascript
+   * await sortedHt.init()
+   * ```
+   */
   async init() {
     for (const filepath of [this.storagePath, this.headerPath]) {
       const dir = filepath.split('/').slice(0, -1).join('/')
@@ -114,7 +136,26 @@ class DiskSortedHashTable {
     this._count = count
   }
 
-  // clear() -> Promise<>
+  /**
+   * @name clear
+   *
+   * @docs
+   * ```coffeescript [specscript]
+   * clear() -> Promise<>
+   * ```
+   *
+   * Clears all data from the disk sorted hash table.
+   *
+   * Arguments:
+   *   * (none)
+   *
+   * Return:
+   *   * Empty promise.
+   *
+   * ```javascript
+   * await sortedHt.clear()
+   * ```
+   */
   async clear() {
     this.close()
 
@@ -145,13 +186,51 @@ class DiskSortedHashTable {
     this._count = count
   }
 
-  // destroy() -> Promise<>
+  /**
+   * @name destroy
+   *
+   * @docs
+   * ```coffeescript [specscript]
+   * destroy() -> Promise<>
+   * ```
+   *
+   * Removes all system resources used by the disk sorted hash table.
+   *
+   * Arguments:
+   *   * (none)
+   *
+   * Return:
+   *   * Empty promise.
+   *
+   * ```javascript
+   * await sortedHt.destroy()
+   * ```
+   */
   async destroy() {
     await fs.promises.rm(this.storagePath).catch(() => {})
     await fs.promises.rm(this.headerPath).catch(() => {})
   }
 
-  // close() -> ()
+  /**
+   * @name close
+   *
+   * @docs
+   * ```coffeescript [specscript]
+   * close() -> undefined
+   * ```
+   *
+   * Closes the underlying file handles used by the disk sorted hash table.
+   *
+   * Arguments:
+   *   * (none)
+   *
+   * Return:
+   *   * `undefined`
+   *
+   * ```javascript
+   * sortedHt.close()
+   * ```
+   */
   close() {
     this.storageFd.close()
     this.headerFd.close()
@@ -639,6 +718,30 @@ class DiskSortedHashTable {
    * ) -> Promise<>
    * ```
    */
+  /**
+   * @name set
+   *
+   * @docs
+   * ```coffeescript [specscript]
+   * set(key string, value string, sortValue string|number) -> Promise<>
+   * ```
+   *
+   * Sets and stores a value by key and sort-value in the disk sorted hash table.
+   *
+   * Arguments:
+   *   * `key` - `string` - the key to set.
+   *   * `value` - `string` - the value to set corresponding to the key.
+   *   * `sortValue` - `string|number` - the value by which the item is sorted in the disk sorted hash table.
+   *
+   * Return:
+   *   * Empty promise.
+   *
+   * ```javascript
+   * await sortedHt.set('key1', 'value1', 1)
+   * await sortedHt.set('key2', 'value2', 2)
+   * await sortedHt.set('key3', 'value3', 3)
+   * ```
+   */
   async set(key, value, sortValue) {
     if (this.resizeRatio > 0 && (this._count / this._length) >= this.resizeRatio) {
       await this._resize()
@@ -646,7 +749,26 @@ class DiskSortedHashTable {
     await this._set(key, value, sortValue)
   }
 
-  // get(key string) -> value Promise<string>
+  /**
+   * @name get
+   *
+   * @docs
+   * ```coffeescript [specscript]
+   * get(key string) -> value Promise<string>
+   * ```
+   *
+   * Gets a value by key from the disk sorted hash table.
+   *
+   * Arguments:
+   *   * `key` - `string` - the key corresponding to the value.
+   *
+   * Return:
+   *   * `value` - `string` - the value corresponding to the key.
+   *
+   * ```javascript
+   * const value = await sortedHt.get('my-key')
+   * ```
+   */
   async get(key) {
     let index = this._hash1(key)
     const startIndex = index
@@ -722,7 +844,7 @@ class DiskSortedHashTable {
    * delete(key string) -> didDelete Promise<boolean>
    * ```
    *
-   * Deletes a key and corresponding value from the disk linked hash table.
+   * Deletes an item by key from the disk sorted hash table.
    *
    * Arguments:
    *   * `key` - `string` - the key to delete.
@@ -731,7 +853,7 @@ class DiskSortedHashTable {
    *   * `didDelete` - `boolean` - a promise of whether the key and corresponding value was deleted.
    *
    * ```javascript
-   * const didDelete = await ht.delete('my-key')
+   * const didDelete = await sortedHt.delete('my-key')
    * ```
    */
   async delete(key) {
@@ -795,16 +917,16 @@ class DiskSortedHashTable {
    * count() -> number
    * ```
    *
-   * Returns the number of items (key-value pairs) in the disk linked hash table.
+   * Returns the number of items in the disk sorted hash table.
    *
    * Arguments:
    *   * (none)
    *
    * Return:
-   *   * `number` - the number of items in the disk hash table.
+   *   * `number` - the number of items in the disk sorted hash table.
    *
    * ```javascript
-   * const count = ht.count()
+   * const count = sortedHt.count()
    * ```
    */
   count() {
