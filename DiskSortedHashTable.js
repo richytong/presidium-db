@@ -252,7 +252,7 @@ class DiskSortedHashTable {
     item.reverseIndex = reverseIndex
 
     const keyByteLength = readBuffer.readUInt32BE(1)
-    const sortValueByteLength = readBuffer.readInt32BE(5)
+    const sortValueByteLength = readBuffer.readUInt32BE(5)
     const sortValueBuffer = readBuffer.subarray(
       21 + keyByteLength,
       21 + keyByteLength + sortValueByteLength
@@ -332,7 +332,7 @@ class DiskSortedHashTable {
   async _updateLength() {
     const position = 0
     const buffer = Buffer.alloc(4)
-    buffer.writeInt32BE(this._length, 0)
+    buffer.writeUInt32BE(this._length, 0)
 
     await this.headerFd.write(buffer, {
       offset: 0,
@@ -345,7 +345,7 @@ class DiskSortedHashTable {
   async _updateCount() {
     const position = 4
     const buffer = Buffer.alloc(4)
-    buffer.writeInt32BE(this._count, 0)
+    buffer.writeUInt32BE(this._count, 0)
 
     await this.headerFd.write(buffer, {
       offset: 0,
@@ -420,9 +420,9 @@ class DiskSortedHashTable {
     const sortValueByteLength = Buffer.byteLength(sortValueString, ENCODING)
     const valueByteLength = Buffer.byteLength(value, ENCODING)
     buffer.writeUInt8(statusMarker, 0)
-    buffer.writeUint32BE(keyByteLength, 1)
-    buffer.writeUint32BE(sortValueByteLength, 5)
-    buffer.writeUint32BE(valueByteLength, 9)
+    buffer.writeUInt32BE(keyByteLength, 1)
+    buffer.writeUInt32BE(sortValueByteLength, 5)
+    buffer.writeUInt32BE(valueByteLength, 9)
     buffer.writeInt32BE(forwardIndex, 13)
     buffer.writeInt32BE(reverseIndex, 17)
     buffer.write(key, 21, keyByteLength, ENCODING)
@@ -518,9 +518,9 @@ class DiskSortedHashTable {
     const sortValueByteLength = Buffer.byteLength(sortValueString, ENCODING)
     const valueByteLength = Buffer.byteLength(value, ENCODING)
     buffer.writeUInt8(statusMarker, 0)
-    buffer.writeUint32BE(keyByteLength, 1)
-    buffer.writeUint32BE(sortValueByteLength, 5)
-    buffer.writeUint32BE(valueByteLength, 9)
+    buffer.writeUInt32BE(keyByteLength, 1)
+    buffer.writeUInt32BE(sortValueByteLength, 5)
+    buffer.writeUInt32BE(valueByteLength, 9)
     buffer.writeInt32BE(forwardIndex, 13)
     buffer.writeInt32BE(reverseIndex, 17)
     buffer.write(key, 21, keyByteLength, ENCODING)

@@ -245,6 +245,8 @@ const test1_4 = new Test('DiskHashTable', async function integration1_4() {
   await ht1024.destroy()
   await ht1024.init()
 
+  assert.equal(ht1024._length, 1024)
+
   assert.strictEqual(ht1024.count(), 0)
 
   await ht1024.set('maroon', '#800000', 1)
@@ -263,6 +265,7 @@ const test1_4 = new Test('DiskHashTable', async function integration1_4() {
   await ht1024.init()
 
   assert.equal(ht1024.count(), 3)
+  assert.equal(ht1024._length, 1024)
 
   assert.equal(await ht1024.get('black'), '#000000')
   assert.equal(await ht1024.get('yellow'), '#FFFF00')
