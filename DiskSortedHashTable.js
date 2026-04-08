@@ -718,18 +718,6 @@ class DiskSortedHashTable {
    *
    * @docs
    * ```coffeescript [specscript]
-   * set(
-   *   key string,
-   *   value string,
-   *   sortValue string|number
-   * ) -> Promise<>
-   * ```
-   */
-  /**
-   * @name set
-   *
-   * @docs
-   * ```coffeescript [specscript]
    * set(key string, value string, sortValue string|number) -> Promise<>
    * ```
    *
