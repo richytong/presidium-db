@@ -19,8 +19,6 @@ const REMOVED = 2
  *   initialLength: number,
  *   storageFilepath: string,
  *   headerFilepath: string,
- *   blockDevicePath: string,
- *   resizeRatio: number,
  * }) -> DiskSortedHashTable
  * ```
  */
@@ -33,7 +31,6 @@ class DiskSortedHashTable {
     this.headerFilepath = options.headerFilepath
     this.storageFd = null
     this.headerFd = null
-    this.blockDevicePath = options.blockDevicePath
     this.resizeRatio = options.resizeRatio ?? 0
   }
 

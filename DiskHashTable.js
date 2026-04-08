@@ -1,16 +1,4 @@
 const fs = require('fs')
-const directIO = require('@ronomon/direct-io')
-const preallocate = require('./_internal/preallocate')
-const getPhysicalBlockSize = require('./_internal/getPhysicalBlockSize')
-
-const {
-  O_DIRECT,
-  getBlockDevice,
-  getAlignedBuffer,
-} = directIO
-const {
-  O_RDWR,
-} = fs.constants
 
 const DATA_SLICE_SIZE = 512 * 1024
 
@@ -31,7 +19,6 @@ const REMOVED = 2
  *   initialLength: number,
  *   storageFilepath: string,
  *   headerFilepath: string,
- *   blockDevice: string,
  *   resizeRatio: number,
  * }) -> ht DiskHashTable
  * ```
@@ -44,7 +31,6 @@ const REMOVED = 2
  *     * `storageFilepath` - `string` - the path to the file used to store the disk hash table data.
  *     * `headerFilepath` - `string` - the path to the file used to store header information about the disk hash table.
  *     * `resizeRatio` - `number` - the ratio of number of items to table length at which to resize the table. Minimum value 0 (no resize), maximum value 1. Defaults to 0.
- *     * `blockDevice` - `string` - the name of the block device that contains the storage and header files.
  *
  * Return:
  *   * `ht` - [`DiskHashTable`](/docs/DiskHashTable) - a `DiskHashTable` instance.
@@ -65,15 +51,12 @@ class DiskHashTable {
     this.headerFilepath = options.headerFilepath
     this.storageFd = null
     this.headerFd = null
-    this.blockDevice = options.blockDevice
-    this.physicalBlockSize = getPhysicalBlockSize(options.blockDevice)
     this.resizeRatio = options.resizeRatio ?? 0
   }
 
   // _initializeHeader() -> headerReadBuffer Promise<Buffer>
   async _initializeHeader() {
-    // const headerReadBuffer = Buffer.alloc(8)
-    const headerReadBuffer = getAlignedBuffer(this.physicalBlockSize, this.physicalBlockSize)
+    const headerReadBuffer = Buffer.alloc(8)
     headerReadBuffer.writeUInt32BE(this.initialLength, 0)
     headerReadBuffer.writeUInt32BE(0, 4)
 
@@ -119,8 +102,8 @@ class DiskHashTable {
       }
     }
 
-    this.storageFd = await fs.promises.open(this.storageFilepath, O_RDWR | O_DIRECT)
-    this.headerFd = await fs.promises.open(this.headerFilepath, O_RDWR | O_DIRECT)
+    this.storageFd = await fs.promises.open(this.storageFilepath, 'r+')
+    this.headerFd = await fs.promises.open(this.headerFilepath, 'r+')
 
     let headerReadBuffer = await this._readHeader()
     if (headerReadBuffer.every(byte => byte === 0)) {
@@ -277,7 +260,7 @@ class DiskHashTable {
   // _read(index number) -> readBuffer Promise<Buffer>
   async _read(index) {
     const position = index * DATA_SLICE_SIZE
-    const readBuffer = getAlignedBuffer(DATA_SLICE_SIZE, this.physicalBlockSize)
+    const readBuffer = Buffer.alloc(DATA_SLICE_SIZE)
 
     await this.storageFd.read({
       buffer: readBuffer,
@@ -373,7 +356,7 @@ class DiskHashTable {
     }
 
     const position = index * DATA_SLICE_SIZE
-    const buffer = getAlignedBuffer(DATA_SLICE_SIZE, this.physicalBlockSize)
+    const buffer = Buffer.alloc(DATA_SLICE_SIZE)
 
     // 8 bits / 1 byte for status marker: 0 empty / 1 occupied / 2 deleted
     // 32 bits / 4 bytes for key size

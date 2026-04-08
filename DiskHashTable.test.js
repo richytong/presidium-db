@@ -1,17 +1,12 @@
 const Test = require('thunk-test')
 const assert = require('assert')
 const DiskHashTable = require('./DiskHashTable')
-const listDiskDevices = require('./_internal/listDiskDevices')
-
-const devices = listDiskDevices()
-console.log('Block device:', devices[0])
 
 const test1 = new Test('DiskHashTable', async function integration1() {
   const ht1024 = new DiskHashTable({
     storageFilepath: `${__dirname}/DiskHashTable_test_data/1024`,
     headerFilepath: `${__dirname}/DiskHashTable_test_data/1024_header`,
     initialLength: 1024,
-    blockDevice: devices[0],
   })
   await ht1024.destroy()
   await ht1024.init()
