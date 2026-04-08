@@ -825,7 +825,28 @@ class DiskSortedHashTable {
     }
   }
 
-  // forwardIterator() -> values AsyncGenerator<string>
+  /**
+   * @name forwardIterator
+   *
+   * @docs
+   * ```coffeescript [specscript]
+   * forwardIterator() -> values AsyncGenerator<string>
+   * ```
+   *
+   * Returns a iterator of all items in the disk hash table sorted by sort-value. Items are yielded in ascending order.
+   *
+   * ```javascript
+   * await ht.set('key1', 'value1', 1)
+   * await ht.set('key2', 'value2', 2)
+   * await ht.set('key3', 'value3', 3)
+   *
+   * for await (const value of ht.forwardIterator()) {
+   *   console.log(value) // value1
+   *                      // value2
+   *                      // value3
+   * }
+   * ```
+   */
   async * forwardIterator() {
     let currentForwardItem = await this._getForwardStartItem()
     while (currentForwardItem) {
@@ -834,7 +855,28 @@ class DiskSortedHashTable {
     }
   }
 
-  // reverseIterator() -> values AsyncGenerator<string>
+  /**
+   * @name reverseIterator
+   *
+   * @docs
+   * ```coffeescript [specscript]
+   * reverseIterator() -> values AsyncGenerator<string>
+   * ```
+   *
+   * Returns a iterator of all items in the disk hash table sorted by sort-value. Items are yielded in descending order.
+   *
+   * ```javascript
+   * await ht.set('key1', 'value1', 1)
+   * await ht.set('key2', 'value2', 2)
+   * await ht.set('key3', 'value3', 3)
+   *
+   * for await (const value of ht.reverseIterator()) {
+   *   console.log(value) // value3
+   *                      // value2
+   *                      // value1
+   * }
+   * ```
+   */
   async * reverseIterator() {
     let currentReverseItem = await this._getReverseStartItem()
     while (currentReverseItem) {
