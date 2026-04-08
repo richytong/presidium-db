@@ -202,8 +202,8 @@ const test1_4 = new Test('DiskHashTable', async function integration1_4() {
 
 const test1_5 = new Test('DiskHashTable', async function integration1_5() {
   const ht10 = new DiskHashTable({
-    storageFilepath: `${__dirname}/DiskHashTable_test_data/1024`,
-    headerFilepath: `${__dirname}/DiskHashTable_test_data/1024_header`,
+    storageFilepath: `${__dirname}/DiskHashTable_test_data/10`,
+    headerFilepath: `${__dirname}/DiskHashTable_test_data/10_header`,
     initialLength: 10,
     resizeRatio: 0.8,
     resizeFactor: 2,
@@ -263,7 +263,6 @@ const test1_5 = new Test('DiskHashTable', async function integration1_5() {
   assert.equal(ht10._count, 17)
   assert.equal(ht10._length, 40)
 
-  await ht10.set('17', 'value17')
   await ht10.set('18', 'value18')
   await ht10.set('19', 'value19')
   await ht10.set('20', 'value20')
