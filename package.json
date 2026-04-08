@@ -1,0 +1,41 @@
+{
+  "name": "presidium-db",
+  "version": "0.0.0",
+  "description": "Presidium DB library",
+  "author": "Richard Tong",
+  "license": "CFOSS",
+  "repository": {
+    "type": "git",
+    "url": "github:richytong/presidium-db"
+  },
+  "homepage": "https://github.com/richytong/presidium-db",
+  "files": [
+    "_internal",
+    "DiskHashTable.js",
+    "DiskSortedHashTable.js",
+    "LICENSE",
+    "README.md"
+  ],
+  "keywords": [
+    "hash",
+    "hashtable",
+    "map",
+    "database",
+    "nosql",
+    "node",
+    "nodejs",
+    "javascript",
+    "presidium"
+  ],
+  "scripts": {
+    "test": "mocha test.js **/*test.js",
+    "bench": "./bench"
+  },
+  "devDependencies": {
+    "nyc": "^18.0.0",
+    "thunk-test": "^1.3.9"
+  },
+  "dependencies": {
+    "@ronomon/direct-io": "^3.0.1"
+  }
+}
