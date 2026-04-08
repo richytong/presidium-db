@@ -17,20 +17,51 @@ const REMOVED = 2
  * ```coffeescript [specscript]
  * new DiskSortedHashTable(options {
  *   initialLength: number,
- *   storageFilepath: string,
- *   headerFilepath: string,
+ *   storagePath: string,
+ *   headerPath: string,
  *   resizeRatio: number,
  *   resizeFactor: number,
- * }) -> DiskSortedHashTable
+ * }) -> sortedHt DiskSortedHashTable
  * ```
+ *
+ * Presidium DiskSortedHashTable class. Creates a sorted hash table that stores all data on disk.
+ *
+ * Arguments:
+ *   * `options`
+ *     * `initialLength` - `number` - the initial length of the sorted disk hash table. Defaults to 1024.
+ *     * `storagePath` - `string` - the path to the file used to store the sorted disk hash table data.
+ *     * `headerPath` - `string` - the path to the file used to store header information about the sorted disk hash table.
+ *     * `resizeRatio` - `number` - the ratio of number of items to table length at which to resize the sorted disk hash table. Minimum value 0 (no resize), maximum value 1. Defaults to 0.
+ *     * `resizeFactor` - `number` - the factor that is multiplied with the sorted disk hash table's current length to determine the new table length on a resize.
+ *
+ * Return:
+ *   * `sortedHt` - [`DiskSortedHashTable`](/docs/DiskSortedHashTable) - a `DiskSortedHashTable` instance.
+ *
+ * ```javascript
+ * const sortedHt = new DiskSortedHashTable({
+ *   initialLength: 1024,
+ *   filepath: '/path/to/data-file',
+ * })
+ * ```
+ *
+ * ## Resizing the disk hash table
+ * When an item is inserted into the disk hash table via [set](/docs/DiskHashTable#set), the current capacity ratio of the table is calculated as the table's count divided by the table's length. If the current capacity ratio exceeds the `resizeRatio` (and the `resizeRatio` is not 0), a resize of the table occurs.
+ *
+ * During a table resize, each item of the table is added into a temporary storage file using the new table length calculated from the equation below:
+ *
+ * ```
+ * newTableLength = oldTableLength * resizeFactor
+ * ```
+ *
+ * Once all of the items have been added into the temporary storage file, the temporary storage file is moved to the location of the old storage file to be used as the new storage file.
  */
 class DiskSortedHashTable {
   constructor(options) {
     this.initialLength = options.initialLength ?? 1024
     this._length = null
     this._count = null
-    this.storageFilepath = options.storageFilepath
-    this.headerFilepath = options.headerFilepath
+    this.storagePath = options.storagePath
+    this.headerPath = options.headerPath
     this.storageFd = null
     this.headerFd = null
     this.resizeRatio = options.resizeRatio ?? 0
@@ -56,7 +87,7 @@ class DiskSortedHashTable {
 
   // init() -> Promise<>
   async init() {
-    for (const filepath of [this.storageFilepath, this.headerFilepath]) {
+    for (const filepath of [this.storagePath, this.headerPath]) {
       const dir = filepath.split('/').slice(0, -1).join('/')
       await fs.promises.mkdir(dir, { recursive: true })
 
@@ -68,8 +99,8 @@ class DiskSortedHashTable {
       }
     }
 
-    this.storageFd = await fs.promises.open(this.storageFilepath, 'r+')
-    this.headerFd = await fs.promises.open(this.headerFilepath, 'r+')
+    this.storageFd = await fs.promises.open(this.storagePath, 'r+')
+    this.headerFd = await fs.promises.open(this.headerPath, 'r+')
 
     let headerReadBuffer = await this._readHeader()
     if (headerReadBuffer.every(byte => byte === 0)) {
@@ -87,10 +118,10 @@ class DiskSortedHashTable {
   async clear() {
     this.close()
 
-    await fs.promises.rm(this.storageFilepath).catch(() => {})
-    await fs.promises.rm(this.headerFilepath).catch(() => {})
+    await fs.promises.rm(this.storagePath).catch(() => {})
+    await fs.promises.rm(this.headerPath).catch(() => {})
 
-    for (const filepath of [this.storageFilepath, this.headerFilepath]) {
+    for (const filepath of [this.storagePath, this.headerPath]) {
       const dir = filepath.split('/').slice(0, -1).join('/')
       await fs.promises.mkdir(dir, { recursive: true })
 
@@ -102,8 +133,8 @@ class DiskSortedHashTable {
       }
     }
 
-    this.storageFd = await fs.promises.open(this.storageFilepath, 'r+')
-    this.headerFd = await fs.promises.open(this.headerFilepath, 'r+')
+    this.storageFd = await fs.promises.open(this.storagePath, 'r+')
+    this.headerFd = await fs.promises.open(this.headerPath, 'r+')
 
     const headerReadBuffer = await this._initializeHeader()
 
@@ -116,8 +147,8 @@ class DiskSortedHashTable {
 
   // destroy() -> Promise<>
   async destroy() {
-    await fs.promises.rm(this.storageFilepath).catch(() => {})
-    await fs.promises.rm(this.headerFilepath).catch(() => {})
+    await fs.promises.rm(this.storagePath).catch(() => {})
+    await fs.promises.rm(this.headerPath).catch(() => {})
   }
 
   // close() -> ()
@@ -546,13 +577,13 @@ class DiskSortedHashTable {
     const currentHeaderFd = this.headerFd
     const currentStorageFd = this.storageFd
 
-    const temporaryStorageFilepath = `${this.storageFilepath}-tmp-${crypto.randomUUID()}-${Date.now()}`
-    const temporaryHeaderFilepath = `${this.headerFilepath}-tmp-${crypto.randomUUID()}-${Date.now()}`
+    const temporaryStoragePath = `${this.storagePath}-tmp-${crypto.randomUUID()}-${Date.now()}`
+    const temporaryHeaderPath = `${this.headerPath}-tmp-${crypto.randomUUID()}-${Date.now()}`
 
     const temporaryHt = new DiskSortedHashTable({
       initialLength: this._length * this.resizeFactor,
-      storageFilepath: temporaryStorageFilepath,
-      headerFilepath: temporaryHeaderFilepath,
+      storagePath: temporaryStoragePath,
+      headerPath: temporaryHeaderPath,
     })
     await temporaryHt.init()
 
@@ -563,8 +594,8 @@ class DiskSortedHashTable {
     temporaryHt.close()
     this.close()
 
-    await fs.promises.rename(temporaryStorageFilepath, this.storageFilepath)
-    await fs.promises.rename(temporaryHeaderFilepath, this.headerFilepath)
+    await fs.promises.rename(temporaryStoragePath, this.storagePath)
+    await fs.promises.rename(temporaryHeaderPath, this.headerPath)
 
     await this.init()
   }

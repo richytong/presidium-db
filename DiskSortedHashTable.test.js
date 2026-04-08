@@ -4,8 +4,8 @@ const DiskSortedHashTable = require('./DiskSortedHashTable')
 
 const test1 = new Test('DiskSortedHashTable', async function integration1() {
   const ht1024 = new DiskSortedHashTable({
-    storageFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024`,
-    headerFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024_header`,
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
   })
   await ht1024.destroy()
@@ -114,8 +114,8 @@ const test1 = new Test('DiskSortedHashTable', async function integration1() {
   }
 
   const ht1 = new DiskSortedHashTable({
-    storageFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1`,
-    headerFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1_header`,
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/1`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/1_header`,
     initialLength: 1,
   })
   await ht1.init()
@@ -139,8 +139,8 @@ const test1 = new Test('DiskSortedHashTable', async function integration1() {
 
 const test1_1 = new Test('DiskSortedHashTable', async function integration1_1() {
   const ht2 = new DiskSortedHashTable({
-    storageFilepath: `${__dirname}/DiskLinkedHashTable_test_data/2`,
-    headerFilepath: `${__dirname}/DiskLinkedHashTable_test_data/2_header`,
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/2`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/2_header`,
     initialLength: 2,
   })
   await ht2.destroy()
@@ -164,8 +164,8 @@ const test1_1 = new Test('DiskSortedHashTable', async function integration1_1() 
 
 const test1_2 = new Test('DiskSortedHashTable', async function integration1_2() {
   const ht3 = new DiskSortedHashTable({
-    storageFilepath: `${__dirname}/DiskLinkedHashTable_test_data/3`,
-    headerFilepath: `${__dirname}/DiskLinkedHashTable_test_data/3_header`,
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/3`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/3_header`,
     initialLength: 3,
   })
   await ht3.destroy()
@@ -183,8 +183,8 @@ const test1_2 = new Test('DiskSortedHashTable', async function integration1_2() 
 
 const test1_3 = new Test('DiskSortedHashTable', async function integration1_3() {
   const ht1024 = new DiskSortedHashTable({
-    storageFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024`,
-    headerFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024_header`,
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
   })
   await ht1024.destroy()
@@ -238,8 +238,8 @@ const test1_3 = new Test('DiskSortedHashTable', async function integration1_3() 
 
 const test1_4 = new Test('DiskSortedHashTable', async function integration1_4() {
   const ht1024 = new DiskSortedHashTable({
-    storageFilepath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
-    headerFilepath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
   })
   await ht1024.destroy()
@@ -286,8 +286,8 @@ const test1_4 = new Test('DiskSortedHashTable', async function integration1_4() 
 
 const test2 = new Test('DiskSortedHashTable', async function integration2() {
   const ht1024 = new DiskSortedHashTable({
-    storageFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024`,
-    headerFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024_header`,
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
   })
   await ht1024.destroy()
@@ -324,8 +324,8 @@ const test2 = new Test('DiskSortedHashTable', async function integration2() {
 
 const test3 = new Test('DiskSortedHashTable', async function integration3() {
   const ht1024 = new DiskSortedHashTable({
-    storageFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024`,
-    headerFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024_header`,
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
   })
   await ht1024.destroy()
@@ -362,8 +362,8 @@ const test3 = new Test('DiskSortedHashTable', async function integration3() {
 
 const test4 = new Test('DiskSortedHashTable', async function integration4() {
   const ht1024 = new DiskSortedHashTable({
-    storageFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024`,
-    headerFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024_header`,
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
   })
   await ht1024.destroy()
@@ -403,8 +403,8 @@ const test4 = new Test('DiskSortedHashTable', async function integration4() {
 
 const test5 = new Test('DiskSortedHashTable', async function integration5() {
   const ht1024 = new DiskSortedHashTable({
-    storageFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024`,
-    headerFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024_header`,
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
   })
   await ht1024.destroy()
@@ -477,8 +477,8 @@ const test5 = new Test('DiskSortedHashTable', async function integration5() {
 
 const test6 = new Test('DiskSortedHashTable', async function integration6() {
   const ht1024 = new DiskSortedHashTable({
-    storageFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024`,
-    headerFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024_header`,
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
   })
   await ht1024.destroy()
@@ -548,8 +548,8 @@ const test6 = new Test('DiskSortedHashTable', async function integration6() {
 
 const test7 = new Test('DiskSortedHashTable', async function integration7() {
   const ht1024 = new DiskSortedHashTable({
-    storageFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024`,
-    headerFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024_header`,
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
   })
   await ht1024.destroy()
@@ -614,8 +614,8 @@ const test7 = new Test('DiskSortedHashTable', async function integration7() {
 
 const test8 = new Test('DiskSortedHashTable', async function integration8() {
   const ht1024 = new DiskSortedHashTable({
-    storageFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024`,
-    headerFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024_header`,
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
   })
   await ht1024.destroy()
@@ -680,8 +680,8 @@ const test8 = new Test('DiskSortedHashTable', async function integration8() {
 
 const test9 = new Test('DiskSortedHashTable', async function integration9() {
   const ht1024 = new DiskSortedHashTable({
-    storageFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024`,
-    headerFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024_header`,
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
   })
   await ht1024.destroy()
@@ -759,8 +759,8 @@ const test9 = new Test('DiskSortedHashTable', async function integration9() {
 
 const test10 = new Test('DiskSortedHashTable', async function integration10() {
   const ht1024 = new DiskSortedHashTable({
-    storageFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024`,
-    headerFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024_header`,
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
   })
   await ht1024.destroy()
@@ -787,8 +787,8 @@ const test10 = new Test('DiskSortedHashTable', async function integration10() {
 
 const test11 = new Test('DiskSortedHashTable', async function integration11() {
   const ht1024 = new DiskSortedHashTable({
-    storageFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024`,
-    headerFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024_header`,
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
   })
   await ht1024.destroy()
@@ -847,8 +847,8 @@ const test11 = new Test('DiskSortedHashTable', async function integration11() {
 
 const test12 = new Test('DiskSortedHashTable', async function integration12() {
   const ht1024 = new DiskSortedHashTable({
-    storageFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024`,
-    headerFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024_header`,
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
   })
   await ht1024.destroy()
@@ -907,8 +907,8 @@ const test12 = new Test('DiskSortedHashTable', async function integration12() {
 
 const test13 = new Test('DiskSortedHashTable', async function integration13() {
   const ht1024 = new DiskSortedHashTable({
-    storageFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024`,
-    headerFilepath: `${__dirname}/DiskLinkedHashTable_test_data/1024_header`,
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
   })
   await ht1024.destroy()
@@ -946,8 +946,8 @@ const test13 = new Test('DiskSortedHashTable', async function integration13() {
 
 const test14 = new Test('DiskSortedHashTable', async function integration14() {
   const ht10 = new DiskSortedHashTable({
-    storageFilepath: `${__dirname}/DiskSortedHashTable_test_data/10`,
-    headerFilepath: `${__dirname}/DiskSortedHashTable_test_data/10_header`,
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/10`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/10_header`,
     initialLength: 10,
     resizeRatio: 0.8,
     resizeFactor: 2,
