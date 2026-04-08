@@ -18,8 +18,8 @@ const REMOVED = 2
  * ```coffeescript [specscript]
  * new DiskHashTable(options {
  *   initialLength: number,
- *   storageFilepath: string,
- *   headerFilepath: string,
+ *   storagePath: string,
+ *   headerPath: string,
  *   resizeRatio: number,
  *   resizeFactor: number,
  * }) -> ht DiskHashTable
@@ -30,8 +30,8 @@ const REMOVED = 2
  * Arguments:
  *   * `options`
  *     * `initialLength` - `number` - the initial length of the disk hash table. Defaults to 1024.
- *     * `storageFilepath` - `string` - the path to the file used to store the disk hash table data.
- *     * `headerFilepath` - `string` - the path to the file used to store header information about the disk hash table.
+ *     * `storagePath` - `string` - the path to the file used to store the disk hash table data.
+ *     * `headerPath` - `string` - the path to the file used to store header information about the disk hash table.
  *     * `resizeRatio` - `number` - the ratio of number of items to table length at which to resize the disk hash table. Minimum value 0 (no resize), maximum value 1. Defaults to 0.
  *     * `resizeFactor` - `number` - the factor that is multiplied with the disk hash table's current length to determine the new table length on a resize.
  *
@@ -41,7 +41,8 @@ const REMOVED = 2
  * ```javascript
  * const ht = new DiskHashTable({
  *   initialLength: 1024,
- *   filepath: '/path/to/data-file',
+ *   storagePath: '/path/to/storage-file',
+ *   headerPath: '/path/to/header-file',
  * })
  * ```
  *
@@ -61,8 +62,8 @@ class DiskHashTable {
     this.initialLength = options.initialLength ?? 1024
     this._length = null
     this._count = null
-    this.storageFilepath = options.storageFilepath
-    this.headerFilepath = options.headerFilepath
+    this.storagePath = options.storagePath
+    this.headerPath = options.headerPath
     this.storageFd = null
     this.headerFd = null
     this.resizeRatio = options.resizeRatio ?? 0
@@ -106,7 +107,7 @@ class DiskHashTable {
    * ```
    */
   async init() {
-    for (const filepath of [this.storageFilepath, this.headerFilepath]) {
+    for (const filepath of [this.storagePath, this.headerPath]) {
       const dir = filepath.split('/').slice(0, -1).join('/')
       await fs.promises.mkdir(dir, { recursive: true })
 
@@ -118,8 +119,8 @@ class DiskHashTable {
       }
     }
 
-    this.storageFd = await fs.promises.open(this.storageFilepath, 'r+')
-    this.headerFd = await fs.promises.open(this.headerFilepath, 'r+')
+    this.storageFd = await fs.promises.open(this.storagePath, 'r+')
+    this.headerFd = await fs.promises.open(this.headerPath, 'r+')
 
     let headerReadBuffer = await this._readHeader()
     if (headerReadBuffer.every(byte => byte === 0)) {
@@ -159,10 +160,10 @@ class DiskHashTable {
   async clear() {
     this.close()
 
-    await fs.promises.rm(this.storageFilepath).catch(() => {})
-    await fs.promises.rm(this.headerFilepath).catch(() => {})
+    await fs.promises.rm(this.storagePath).catch(() => {})
+    await fs.promises.rm(this.headerPath).catch(() => {})
 
-    for (const filepath of [this.storageFilepath, this.headerFilepath]) {
+    for (const filepath of [this.storagePath, this.headerPath]) {
       const dir = filepath.split('/').slice(0, -1).join('/')
       await fs.promises.mkdir(dir, { recursive: true })
 
@@ -174,8 +175,8 @@ class DiskHashTable {
       }
     }
 
-    this.storageFd = await fs.promises.open(this.storageFilepath, 'r+')
-    this.headerFd = await fs.promises.open(this.headerFilepath, 'r+')
+    this.storageFd = await fs.promises.open(this.storagePath, 'r+')
+    this.headerFd = await fs.promises.open(this.headerPath, 'r+')
 
     const headerReadBuffer = await this._initializeHeader()
 
@@ -210,8 +211,8 @@ class DiskHashTable {
    * ```
    */
   async destroy() {
-    await fs.promises.rm(this.storageFilepath).catch(() => {})
-    await fs.promises.rm(this.headerFilepath).catch(() => {})
+    await fs.promises.rm(this.storagePath).catch(() => {})
+    await fs.promises.rm(this.headerPath).catch(() => {})
   }
 
   /**
@@ -621,13 +622,13 @@ class DiskHashTable {
     const currentHeaderFd = this.headerFd
     const currentStorageFd = this.storageFd
 
-    const temporaryStorageFilepath = `${this.storageFilepath}-tmp-${crypto.randomUUID()}-${Date.now()}`
-    const temporaryHeaderFilepath = `${this.headerFilepath}-tmp-${crypto.randomUUID()}-${Date.now()}`
+    const temporaryStoragePath = `${this.storagePath}-tmp-${crypto.randomUUID()}-${Date.now()}`
+    const temporaryHeaderPath = `${this.headerPath}-tmp-${crypto.randomUUID()}-${Date.now()}`
 
     const temporaryHt = new DiskHashTable({
       initialLength: this._length * this.resizeFactor,
-      storageFilepath: temporaryStorageFilepath,
-      headerFilepath: temporaryHeaderFilepath,
+      storagePath: temporaryStoragePath,
+      headerPath: temporaryHeaderPath,
     })
     await temporaryHt.init()
 
@@ -638,8 +639,8 @@ class DiskHashTable {
     temporaryHt.close()
     this.close()
 
-    await fs.promises.rename(temporaryStorageFilepath, this.storageFilepath)
-    await fs.promises.rename(temporaryHeaderFilepath, this.headerFilepath)
+    await fs.promises.rename(temporaryStoragePath, this.storagePath)
+    await fs.promises.rename(temporaryHeaderPath, this.headerPath)
 
     await this.init()
   }
@@ -652,26 +653,23 @@ class DiskHashTable {
    * count() -> number
    * ```
    *
-   * Returns the number of items (key-value pairs) in the disk hash table.
+   * Returns the number of items in the disk hash table.
    *
    * Arguments:
    *   * (none)
    *
    * Return:
    *   * `number` - the number of items in the disk hash table.
+   *
+   * ```javascript
+   * const count = ht.count()
+   * ```
    */
   count() {
     return this._count
   }
 
-  /**
-   * @name _itemsIterator
-   *
-   * @docs
-   * ```coffeescript [specscript]
-   * _itemsIterator() -> items AsyncGenerator<{ index: number, nextIndex: number, key: string, value: string }>
-   * ```
-   */
+  // _itemsIterator() -> items AsyncGenerator<{ index: number, nextIndex: number, key: string, value: string }>
   async * _itemsIterator() {
     const headIndex = await this._getHeadIndex()
     let item = await this._getItem(headIndex)
@@ -687,6 +685,20 @@ class DiskHashTable {
    * @docs
    * ```coffeescript [specscript]
    * iterator() -> values AsyncGenerator<string>
+   * ```
+   *
+   * Returns an iterator of all items in the disk hash table. Items are sorted by reverse insertion order.
+   *
+   * ```javascript
+   * await ht.set('key1', 'value1')
+   * await ht.set('key2', 'value2')
+   * await ht.set('key3', 'value3')
+   *
+   * for await (const value of ht.iterator()) {
+   *   console.log(value) // value3
+   *                      // value2
+   *                      // value1
+   * }
    * ```
    */
   async * iterator() {

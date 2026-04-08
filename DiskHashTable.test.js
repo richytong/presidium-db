@@ -4,8 +4,8 @@ const DiskHashTable = require('./DiskHashTable')
 
 const test1 = new Test('DiskHashTable', async function integration1() {
   const ht1024 = new DiskHashTable({
-    storageFilepath: `${__dirname}/DiskHashTable_test_data/1024`,
-    headerFilepath: `${__dirname}/DiskHashTable_test_data/1024_header`,
+    storagePath: `${__dirname}/DiskHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskHashTable_test_data/1024_header`,
     initialLength: 1024,
   })
   await ht1024.destroy()
@@ -44,8 +44,8 @@ const test1 = new Test('DiskHashTable', async function integration1() {
   assert.equal(ht1024.count(), 1)
 
   const ht1 = new DiskHashTable({
-    storageFilepath: `${__dirname}/DiskHashTable_test_data/1`,
-    headerFilepath: `${__dirname}/DiskHashTable_test_data/1_header`,
+    storagePath: `${__dirname}/DiskHashTable_test_data/1`,
+    headerPath: `${__dirname}/DiskHashTable_test_data/1_header`,
     initialLength: 1,
   })
   await ht1.destroy()
@@ -72,8 +72,8 @@ const test1 = new Test('DiskHashTable', async function integration1() {
 
 const test1_1 = new Test('DiskHashTable', async function integration1_1() {
   const ht2 = new DiskHashTable({
-    storageFilepath: `${__dirname}/DiskHashTable_test_data/2`,
-    headerFilepath: `${__dirname}/DiskHashTable_test_data/2_header`,
+    storagePath: `${__dirname}/DiskHashTable_test_data/2`,
+    headerPath: `${__dirname}/DiskHashTable_test_data/2_header`,
     initialLength: 2,
   })
   await ht2.destroy()
@@ -97,8 +97,8 @@ const test1_1 = new Test('DiskHashTable', async function integration1_1() {
 
 const test1_2 = new Test('DiskHashTable', async function integration1_2() {
   const ht3 = new DiskHashTable({
-    storageFilepath: `${__dirname}/DiskHashTable_test_data/3`,
-    headerFilepath: `${__dirname}/DiskHashTable_test_data/3_header`,
+    storagePath: `${__dirname}/DiskHashTable_test_data/3`,
+    headerPath: `${__dirname}/DiskHashTable_test_data/3_header`,
     initialLength: 3,
   })
   await ht3.destroy()
@@ -116,8 +116,8 @@ const test1_2 = new Test('DiskHashTable', async function integration1_2() {
 
 const test1_3 = new Test('DiskHashTable', async function integration1_3() {
   const ht1024 = new DiskHashTable({
-    storageFilepath: `${__dirname}/DiskHashTable_test_data/1024`,
-    headerFilepath: `${__dirname}/DiskHashTable_test_data/1024_header`,
+    storagePath: `${__dirname}/DiskHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskHashTable_test_data/1024_header`,
     initialLength: 1024,
   })
   await ht1024.destroy()
@@ -161,8 +161,8 @@ const test1_3 = new Test('DiskHashTable', async function integration1_3() {
 
 const test1_4 = new Test('DiskHashTable', async function integration1_4() {
   const ht1024 = new DiskHashTable({
-    storageFilepath: `${__dirname}/DiskHashTable_test_data/1024`,
-    headerFilepath: `${__dirname}/DiskHashTable_test_data/1024_header`,
+    storagePath: `${__dirname}/DiskHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskHashTable_test_data/1024_header`,
     initialLength: 1024,
   })
   await ht1024.destroy()
@@ -202,8 +202,8 @@ const test1_4 = new Test('DiskHashTable', async function integration1_4() {
 
 const test1_5 = new Test('DiskHashTable', async function integration1_5() {
   const ht10 = new DiskHashTable({
-    storageFilepath: `${__dirname}/DiskHashTable_test_data/10`,
-    headerFilepath: `${__dirname}/DiskHashTable_test_data/10_header`,
+    storagePath: `${__dirname}/DiskHashTable_test_data/10`,
+    headerPath: `${__dirname}/DiskHashTable_test_data/10_header`,
     initialLength: 10,
     resizeRatio: 0.8,
     resizeFactor: 2,
