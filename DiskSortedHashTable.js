@@ -835,6 +835,12 @@ class DiskSortedHashTable {
    *
    * Returns a iterator of all items in the disk hash table sorted by sort-value. Items are yielded in ascending order.
    *
+   * Arguments:
+   *   * (none)
+   *
+   * Return:
+   *   * `values` - `AsyncGenerator<string>` - an async iterator of the values of all items in the disk hash table sorted by sort-value in ascending order.
+   *
    * ```javascript
    * await ht.set('key1', 'value1', 1)
    * await ht.set('key2', 'value2', 2)
@@ -864,6 +870,12 @@ class DiskSortedHashTable {
    * ```
    *
    * Returns a iterator of all items in the disk hash table sorted by sort-value. Items are yielded in descending order.
+   *
+   * Arguments:
+   *   * (none)
+   *
+   * Return:
+   *   * `values` - `AsyncGenerator<string>` - an async iterator of the values of all items in the disk hash table sorted by sort-value in descending order.
    *
    * ```javascript
    * await ht.set('key1', 'value1', 1)
