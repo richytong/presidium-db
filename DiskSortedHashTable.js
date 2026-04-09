@@ -347,6 +347,24 @@ class DiskSortedHashTable {
     return keyBuffer.toString(ENCODING)
   }
 
+  // _getBTreeRootRightmostItem() -> btreeRootRightmostItem Promise<{
+  //   btreeLeftChildRightmostItemIndex: number,
+  //   btreeRightChildRightmostItemIndex: number,
+  //   btreePreviousSiblingItemIndex: number,
+  //   sortValue: string|number,
+  // }>
+  async _getBTreeRootRightmostItem() {
+  }
+
+  // _getBTreeItem(index number) -> btreeItem Promise<{
+  //   btreeLeftChildRightmostItemIndex: number,
+  //   btreeRightChildRightmostItemIndex: number,
+  //   btreePreviousSiblingItemIndex: number,
+  //   sortValue: string|number,
+  // }>
+  async _getBTreeItem(index) {
+  }
+
   // _setStatusMarker(index number, marker number) -> Promise<>
   async _setStatusMarker(index, marker) {
     const position = index * DATA_SLICE_SIZE
@@ -360,7 +378,13 @@ class DiskSortedHashTable {
     })
   }
 
-  // _parseItem(readBuffer Buffer, index number) -> { index: number, readBuffer: Buffer, sortValue: string|number, key: string, value: string }
+  // _parseItem(readBuffer Buffer, index number) -> {
+  //   index: number,
+  //   readBuffer: Buffer,
+  //   sortValue: string|number,
+  //   key: string,
+  //   value: string,
+  // }
   _parseItem(readBuffer, index) {
     const item = {}
     item.index = index
@@ -499,9 +523,11 @@ class DiskSortedHashTable {
     // btree, degree
     // get currentForwardItem and previousForwardItem
 
-    const leftChildBTreeNodeRightmostKeyIndex = -1
-    const rightChildBTreeNodeRightmostKeyIndex = -1
-    const previousSiblingBTreeKeyIndex = -1
+    const btreeLeftChildRightmostItemIndex = -1
+    const btreeRightChildRightmostItemIndex = -1
+    const btreePreviousSiblingItemIndex = -1
+
+    // let currentBTreeItem = await this._getBTreeRootRightmostItem()
 
     const forwardStartItem = await this._getForwardStartItem()
     let previousForwardItem = null
@@ -565,9 +591,9 @@ class DiskSortedHashTable {
     buffer.writeUInt32BE(valueByteLength, 9)
     buffer.writeInt32BE(forwardIndex, 13)
     buffer.writeInt32BE(reverseIndex, 17)
-    buffer.writeInt32BE(leftChildBTreeNodeRightmostKeyIndex, 21)
-    buffer.writeInt32BE(rightChildBTreeNodeRightmostKeyIndex, 25)
-    buffer.writeInt32BE(previousSiblingBTreeKeyIndex, 29)
+    buffer.writeInt32BE(btreeLeftChildRightmostItemIndex, 21)
+    buffer.writeInt32BE(btreeRightChildRightmostItemIndex, 25)
+    buffer.writeInt32BE(btreePreviousSiblingItemIndex, 29)
     buffer.write(key, 33, keyByteLength, ENCODING)
     buffer.write(sortValueString, 33 + keyByteLength, sortValueByteLength, ENCODING)
     buffer.write(value, 33 + keyByteLength + sortValueByteLength, valueByteLength, ENCODING)
@@ -583,9 +609,9 @@ class DiskSortedHashTable {
   async _update(key, value, sortValue, index) {
     const item = await this._getItem(index)
 
-    const leftChildBTreeNodeRightmostKeyIndex = -1
-    const rightChildBTreeNodeRightmostKeyIndex = -1
-    const previousSiblingBTreeKeyIndex = -1
+    const btreeLeftChildRightmostItemIndex = -1
+    const btreeRightChildRightmostItemIndex = -1
+    const btreePreviousSiblingItemIndex = -1
 
     let forwardIndex = item.forwardIndex
     let reverseIndex = item.reverseIndex
@@ -661,9 +687,9 @@ class DiskSortedHashTable {
     buffer.writeUInt32BE(valueByteLength, 9)
     buffer.writeInt32BE(forwardIndex, 13)
     buffer.writeInt32BE(reverseIndex, 17)
-    buffer.writeInt32BE(leftChildBTreeNodeRightmostKeyIndex, 21)
-    buffer.writeInt32BE(rightChildBTreeNodeRightmostKeyIndex, 25)
-    buffer.writeInt32BE(previousSiblingBTreeKeyIndex, 29)
+    buffer.writeInt32BE(btreeLeftChildRightmostItemIndex, 21)
+    buffer.writeInt32BE(btreeRightChildRightmostItemIndex, 25)
+    buffer.writeInt32BE(btreePreviousSiblingItemIndex, 29)
     buffer.write(key, 33, keyByteLength, ENCODING)
     buffer.write(sortValueString, 33 + keyByteLength, sortValueByteLength, ENCODING)
     buffer.write(value, 33 + keyByteLength + sortValueByteLength, valueByteLength, ENCODING)
