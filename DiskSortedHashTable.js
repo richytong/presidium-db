@@ -269,10 +269,10 @@ class DiskSortedHashTable {
   }
 
   // header file
-  // 32 bits / 4 bytes table length
-  // 32 bits / 4 bytes item count
-  // 32 bits / 4 bytes first item index
-  // 32 bits / 4 bytes last item index
+  // 4 bytes for table length
+  // 4 bytes for item count
+  // 4 bytes for first item index
+  // 4 bytes for last item index
 
   // _readHeader() -> headerReadBuffer Promise<Buffer>
   async _readHeader() {
@@ -343,7 +343,7 @@ class DiskSortedHashTable {
     }
 
     const keyByteLength = readBuffer.readUInt32BE(1)
-    const keyBuffer = readBuffer.subarray(21, keyByteLength + 21)
+    const keyBuffer = readBuffer.subarray(33, keyByteLength + 33)
     return keyBuffer.toString(ENCODING)
   }
 
@@ -375,22 +375,22 @@ class DiskSortedHashTable {
     item.reverseIndex = reverseIndex
 
     const keyByteLength = readBuffer.readUInt32BE(1)
-    const keyBuffer = readBuffer.subarray(21, keyByteLength + 21)
+    const keyBuffer = readBuffer.subarray(33, keyByteLength + 33)
     const key = keyBuffer.toString(ENCODING)
     item.key = key
 
     const sortValueByteLength = readBuffer.readUInt32BE(5)
     const sortValueBuffer = readBuffer.subarray(
-      21 + keyByteLength,
-      21 + keyByteLength + sortValueByteLength
+      33 + keyByteLength,
+      33 + keyByteLength + sortValueByteLength
     )
     const sortValue = sortValueBuffer.toString(ENCODING)
     item.sortValue = sortValue
 
     const valueByteLength = readBuffer.readUInt32BE(9)
     const valueBuffer = readBuffer.subarray(
-      21 + keyByteLength + sortValueByteLength,
-      21 + keyByteLength + sortValueByteLength + valueByteLength
+      33 + keyByteLength + sortValueByteLength,
+      33 + keyByteLength + sortValueByteLength + valueByteLength
     )
     const value = valueBuffer.toString(ENCODING)
     item.value = value
@@ -495,6 +495,14 @@ class DiskSortedHashTable {
 
   // _insert(key string, value string, sortValue number|string, index number) -> Promise<>
   async _insert(key, value, sortValue, index) {
+
+    // btree, degree
+    // get currentForwardItem and previousForwardItem
+
+    const leftChildBTreeNodeRightmostKeyIndex = -1
+    const rightChildBTreeNodeRightmostKeyIndex = -1
+    const previousSiblingBTreeKeyIndex = -1
+
     const forwardStartItem = await this._getForwardStartItem()
     let previousForwardItem = null
     let currentForwardItem = forwardStartItem
@@ -533,12 +541,17 @@ class DiskSortedHashTable {
     const buffer = Buffer.alloc(DATA_SLICE_SIZE)
     const sortValueString = typeof sortValue == 'string' ? sortValue : sortValue.toString()
 
-    // 8 bits / 1 byte for status marker: 0 empty / 1 occupied / 2 deleted
-    // 32 bits / 4 bytes for key size
-    // 32 bits / 4 bytes for sort value size
-    // 32 bits / 4 bytes for value size
-    // 32 bits / 4 bytes for forward index
-    // 32 bits / 4 bytes for reverse index
+
+    // storage file slice
+    // 1 byte for status marker: 0 empty / 1 occupied / 2 deleted
+    // 4 bytes for key size
+    // 4 bytes for sort value size
+    // 4 bytes for value size
+    // 4 bytes for forward index
+    // 4 bytes for reverse index
+    // 4 bytes for left child btree node rightmost key index
+    // 4 bytes for right child btree node rightmost key index
+    // 4 bytes for previous sibling key index
     // chunk for key
     // chunk for sort value
     // remainder for value
@@ -552,9 +565,12 @@ class DiskSortedHashTable {
     buffer.writeUInt32BE(valueByteLength, 9)
     buffer.writeInt32BE(forwardIndex, 13)
     buffer.writeInt32BE(reverseIndex, 17)
-    buffer.write(key, 21, keyByteLength, ENCODING)
-    buffer.write(sortValueString, 21 + keyByteLength, sortValueByteLength, ENCODING)
-    buffer.write(value, 21 + keyByteLength + sortValueByteLength, valueByteLength, ENCODING)
+    buffer.writeInt32BE(leftChildBTreeNodeRightmostKeyIndex, 21)
+    buffer.writeInt32BE(rightChildBTreeNodeRightmostKeyIndex, 25)
+    buffer.writeInt32BE(previousSiblingBTreeKeyIndex, 29)
+    buffer.write(key, 33, keyByteLength, ENCODING)
+    buffer.write(sortValueString, 33 + keyByteLength, sortValueByteLength, ENCODING)
+    buffer.write(value, 33 + keyByteLength + sortValueByteLength, valueByteLength, ENCODING)
 
     await this.storageFd.write(buffer, {
       offset: 0,
@@ -566,6 +582,10 @@ class DiskSortedHashTable {
   // _update(key string, value string, sortValue number|string, index number) -> Promise<>
   async _update(key, value, sortValue, index) {
     const item = await this._getItem(index)
+
+    const leftChildBTreeNodeRightmostKeyIndex = -1
+    const rightChildBTreeNodeRightmostKeyIndex = -1
+    const previousSiblingBTreeKeyIndex = -1
 
     let forwardIndex = item.forwardIndex
     let reverseIndex = item.reverseIndex
@@ -631,15 +651,6 @@ class DiskSortedHashTable {
     const buffer = Buffer.alloc(DATA_SLICE_SIZE)
     const sortValueString = typeof sortValue == 'string' ? sortValue : sortValue.toString()
 
-    // 8 bits / 1 byte for status marker: 0 empty / 1 occupied / 2 deleted
-    // 32 bits / 4 bytes for key size
-    // 32 bits / 4 bytes for sort value size
-    // 32 bits / 4 bytes for value size
-    // 32 bits / 4 bytes for forward index
-    // 32 bits / 4 bytes for reverse index
-    // chunk for key
-    // chunk for sort value
-    // remainder for value
     const statusMarker = 1
     const keyByteLength = Buffer.byteLength(key, ENCODING)
     const sortValueByteLength = Buffer.byteLength(sortValueString, ENCODING)
@@ -650,9 +661,12 @@ class DiskSortedHashTable {
     buffer.writeUInt32BE(valueByteLength, 9)
     buffer.writeInt32BE(forwardIndex, 13)
     buffer.writeInt32BE(reverseIndex, 17)
-    buffer.write(key, 21, keyByteLength, ENCODING)
-    buffer.write(sortValueString, 21 + keyByteLength, sortValueByteLength, ENCODING)
-    buffer.write(value, 21 + keyByteLength + sortValueByteLength, valueByteLength, ENCODING)
+    buffer.writeInt32BE(leftChildBTreeNodeRightmostKeyIndex, 21)
+    buffer.writeInt32BE(rightChildBTreeNodeRightmostKeyIndex, 25)
+    buffer.writeInt32BE(previousSiblingBTreeKeyIndex, 29)
+    buffer.write(key, 33, keyByteLength, ENCODING)
+    buffer.write(sortValueString, 33 + keyByteLength, sortValueByteLength, ENCODING)
+    buffer.write(value, 33 + keyByteLength + sortValueByteLength, valueByteLength, ENCODING)
 
     await this.storageFd.write(buffer, {
       offset: 0,
@@ -798,8 +812,8 @@ class DiskSortedHashTable {
       const sortValueByteLength = readBuffer.readUInt32BE(5)
       const valueByteLength = readBuffer.readUInt32BE(9)
       const valueBuffer = readBuffer.subarray(
-        21 + keyByteLength + sortValueByteLength,
-        21 + keyByteLength + sortValueByteLength + valueByteLength
+        33 + keyByteLength + sortValueByteLength,
+        33 + keyByteLength + sortValueByteLength + valueByteLength
       )
       return valueBuffer.toString(ENCODING)
     }

@@ -118,6 +118,7 @@ const test1 = new Test('DiskSortedHashTable', async function integration1() {
     headerPath: `${__dirname}/DiskSortedHashTable_test_data/1_header`,
     initialLength: 1,
   })
+  await ht1.destroy()
   await ht1.init()
 
   await ht1.set('maroon', '#800000', 1)

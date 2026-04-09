@@ -96,7 +96,7 @@ class BTree {
   }
 }
 
-const btree = new BTree(3)
+const btree = new BTree(2)
 btree.insert(2)
 btree.insert(8)
 btree.insert(9)
@@ -106,11 +106,18 @@ btree.insert(14)
 btree.insert(15)
 btree.insert(16)
 btree.insert(20)
-btree.insert(12)
-btree.insert(10)
-btree.insert(21)
-btree.insert(22)
-btree.insert(23)
+// btree.insert(12)
+// btree.insert(10)
+// btree.insert(21)
+// btree.insert(22)
+// btree.insert(23)
+// btree.insert(24)
+// btree.insert(25)
+// btree.insert(26)
+// btree.insert(27)
+// btree.insert(28)
+// btree.insert(29)
+// btree.insert(30)
 
 console.log(JSON.stringify(btree, null, 2))
 
