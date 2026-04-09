@@ -83,11 +83,12 @@ class DiskSortedHashTable {
 
   // _initializeHeader() -> headerReadBuffer Promise<Buffer>
   async _initializeHeader() {
-    const headerReadBuffer = Buffer.alloc(16)
+    const headerReadBuffer = Buffer.alloc(20)
     headerReadBuffer.writeUInt32BE(this.initialLength, 0)
     headerReadBuffer.writeUInt32BE(0, 4)
     headerReadBuffer.writeInt32BE(-1, 8)
     headerReadBuffer.writeInt32BE(-1, 12)
+    headerReadBuffer.writeInt32BE(-1, 16)
 
     await this.headerFd.write(headerReadBuffer, {
       offset: 0,
@@ -276,13 +277,13 @@ class DiskSortedHashTable {
 
   // _readHeader() -> headerReadBuffer Promise<Buffer>
   async _readHeader() {
-    const headerReadBuffer = Buffer.alloc(16)
+    const headerReadBuffer = Buffer.alloc(20)
 
     await this.headerFd.read({
       buffer: headerReadBuffer,
       offset: 0,
       position: 0,
-      length: 16,
+      length: 20,
     })
 
     return headerReadBuffer
@@ -319,6 +320,19 @@ class DiskSortedHashTable {
   // _writeLastIndex(index number) -> Promise<>
   async _writeLastIndex(index) {
     const position = 12
+    const buffer = Buffer.alloc(4)
+    buffer.writeInt32BE(index, 0)
+
+    await this.headerFd.write(buffer, {
+      offset: 0,
+      position,
+      length: buffer.length,
+    })
+  }
+
+  // _writeBTreeRootRightmostItemIndex(index number) -> Promise<>
+  async _writeBTreeRootRightmostItemIndex(index) {
+    const position = 16
     const buffer = Buffer.alloc(4)
     buffer.writeInt32BE(index, 0)
 
