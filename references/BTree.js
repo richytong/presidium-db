@@ -68,6 +68,7 @@ class BTree {
       // i is index of child to descend into
 
       if (node.children[i].keys.length === 2 * this.t - 1) { // child to descend into is full, split child
+        console.log('split child', node.children[i].keys, { i })
         // node is not full, node changes key at i to middle key of child to descend into
         this.splitChild(node, i, node.children[i]);
         if (node.keys[i] < k) i++;
@@ -97,27 +98,25 @@ class BTree {
 }
 
 const btree = new BTree(2)
+btree.insert(1)
 btree.insert(2)
+btree.insert(3)
+btree.insert(4)
+btree.insert(5)
+btree.insert(6)
+btree.insert(7)
 btree.insert(8)
 btree.insert(9)
+btree.insert(10)
 btree.insert(11)
+btree.insert(12)
 btree.insert(13)
+console.log(JSON.stringify(btree, null, 2))
+console.log('insert 14')
 btree.insert(14)
-btree.insert(15)
-btree.insert(16)
-btree.insert(20)
-// btree.insert(12)
-// btree.insert(10)
-// btree.insert(21)
-// btree.insert(22)
-// btree.insert(23)
-// btree.insert(24)
-// btree.insert(25)
-// btree.insert(26)
-// btree.insert(27)
-// btree.insert(28)
-// btree.insert(29)
-// btree.insert(30)
+// btree.insert(15)
+// btree.insert(16)
+// btree.insert(17)
 
 console.log(JSON.stringify(btree, null, 2))
 

@@ -7,6 +7,7 @@ const test1 = new Test('DiskSortedHashTable', async function integration1() {
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
     headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
+    sortValueType: 'number',
   })
   await ht1024.destroy()
   await ht1024.init()
@@ -117,6 +118,7 @@ const test1 = new Test('DiskSortedHashTable', async function integration1() {
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1`,
     headerPath: `${__dirname}/DiskSortedHashTable_test_data/1_header`,
     initialLength: 1,
+    sortValueType: 'number',
   })
   await ht1.destroy()
   await ht1.init()
@@ -143,6 +145,7 @@ const test1_1 = new Test('DiskSortedHashTable', async function integration1_1() 
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/2`,
     headerPath: `${__dirname}/DiskSortedHashTable_test_data/2_header`,
     initialLength: 2,
+    sortValueType: 'number',
   })
   await ht2.destroy()
   await ht2.init()
@@ -168,6 +171,7 @@ const test1_2 = new Test('DiskSortedHashTable', async function integration1_2() 
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/3`,
     headerPath: `${__dirname}/DiskSortedHashTable_test_data/3_header`,
     initialLength: 3,
+    sortValueType: 'number',
   })
   await ht3.destroy()
   await ht3.init()
@@ -187,6 +191,7 @@ const test1_3 = new Test('DiskSortedHashTable', async function integration1_3() 
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
     headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
+    sortValueType: 'string',
   })
   await ht1024.destroy()
   await ht1024.init()
@@ -242,6 +247,7 @@ const test1_4 = new Test('DiskSortedHashTable', async function integration1_4() 
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
     headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
+    sortValueType: 'number',
   })
   await ht1024.destroy()
   await ht1024.init()
@@ -290,6 +296,7 @@ const test2 = new Test('DiskSortedHashTable', async function integration2() {
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
     headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
+    sortValueType: 'number',
   })
   await ht1024.destroy()
   await ht1024.init()
@@ -328,6 +335,7 @@ const test3 = new Test('DiskSortedHashTable', async function integration3() {
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
     headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
+    sortValueType: 'number',
   })
   await ht1024.destroy()
   await ht1024.init()
@@ -366,6 +374,7 @@ const test4 = new Test('DiskSortedHashTable', async function integration4() {
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
     headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
+    sortValueType: 'number',
   })
   await ht1024.destroy()
   await ht1024.init()
@@ -407,6 +416,7 @@ const test5 = new Test('DiskSortedHashTable', async function integration5() {
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
     headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
+    sortValueType: 'number',
   })
   await ht1024.destroy()
   await ht1024.init()
@@ -425,8 +435,8 @@ const test5 = new Test('DiskSortedHashTable', async function integration5() {
     assert.equal(forwardValues.length, 5)
     assert.equal(forwardValues[0], '#800000')
     assert.equal(forwardValues[1], '#FFFF00')
-    assert.equal(forwardValues[2], '#FFF(2)')
-    assert.equal(forwardValues[3], '#FFF')
+    assert.equal(forwardValues[2], '#FFF')
+    assert.equal(forwardValues[3], '#FFF(2)')
     assert.equal(forwardValues[4], '#000')
   }
 
@@ -437,8 +447,8 @@ const test5 = new Test('DiskSortedHashTable', async function integration5() {
     }
     assert.equal(reverseValues.length, 5)
     assert.equal(reverseValues[0], '#000')
-    assert.equal(reverseValues[1], '#FFF')
-    assert.equal(reverseValues[2], '#FFF(2)')
+    assert.equal(reverseValues[1], '#FFF(2)')
+    assert.equal(reverseValues[2], '#FFF')
     assert.equal(reverseValues[3], '#FFFF00')
     assert.equal(reverseValues[4], '#800000')
   }
@@ -453,9 +463,9 @@ const test5 = new Test('DiskSortedHashTable', async function integration5() {
     assert.equal(forwardValues.length, 6)
     assert.equal(forwardValues[0], '#800000')
     assert.equal(forwardValues[1], '#FFFF00')
-    assert.equal(forwardValues[2], '#FFF(3)')
-    assert.equal(forwardValues[3], '#FFF(2)')
-    assert.equal(forwardValues[4], '#FFF')
+    assert.equal(forwardValues[2], '#FFF')
+    assert.equal(forwardValues[3], '#FFF(3)')
+    assert.equal(forwardValues[4], '#FFF(2)')
     assert.equal(forwardValues[5], '#000')
   }
 
@@ -466,9 +476,9 @@ const test5 = new Test('DiskSortedHashTable', async function integration5() {
     }
     assert.equal(reverseValues.length, 6)
     assert.equal(reverseValues[0], '#000')
-    assert.equal(reverseValues[1], '#FFF')
-    assert.equal(reverseValues[2], '#FFF(2)')
-    assert.equal(reverseValues[3], '#FFF(3)')
+    assert.equal(reverseValues[1], '#FFF(2)')
+    assert.equal(reverseValues[2], '#FFF(3)')
+    assert.equal(reverseValues[3], '#FFF')
     assert.equal(reverseValues[4], '#FFFF00')
     assert.equal(reverseValues[5], '#800000')
   }
@@ -481,6 +491,7 @@ const test6 = new Test('DiskSortedHashTable', async function integration6() {
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
     headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
+    sortValueType: 'number',
   })
   await ht1024.destroy()
   await ht1024.init()
@@ -552,6 +563,7 @@ const test7 = new Test('DiskSortedHashTable', async function integration7() {
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
     headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
+    sortValueType: 'number',
   })
   await ht1024.destroy()
   await ht1024.init()
@@ -618,6 +630,7 @@ const test8 = new Test('DiskSortedHashTable', async function integration8() {
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
     headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
+    sortValueType: 'number',
   })
   await ht1024.destroy()
   await ht1024.init()
@@ -684,6 +697,7 @@ const test9 = new Test('DiskSortedHashTable', async function integration9() {
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
     headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
+    sortValueType: 'number',
   })
   await ht1024.destroy()
   await ht1024.init()
@@ -763,6 +777,7 @@ const test10 = new Test('DiskSortedHashTable', async function integration10() {
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
     headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
+    sortValueType: 'number',
   })
   await ht1024.destroy()
   await ht1024.init()
@@ -791,6 +806,7 @@ const test11 = new Test('DiskSortedHashTable', async function integration11() {
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
     headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
+    sortValueType: 'number',
   })
   await ht1024.destroy()
   await ht1024.init()
@@ -851,6 +867,7 @@ const test12 = new Test('DiskSortedHashTable', async function integration12() {
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
     headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
+    sortValueType: 'number',
   })
   await ht1024.destroy()
   await ht1024.init()
@@ -911,6 +928,7 @@ const test13 = new Test('DiskSortedHashTable', async function integration13() {
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
     headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
     initialLength: 1024,
+    sortValueType: 'number',
   })
   await ht1024.destroy()
   await ht1024.init()
@@ -945,26 +963,556 @@ const test13 = new Test('DiskSortedHashTable', async function integration13() {
   ht1024.close()
 }).case()
 
+const test14_0 = new Test('DiskSortedHashTable', async function integration14_0() {
+  const ht100 = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/10`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/10_header`,
+    initialLength: 100,
+    sortValueType: 'number',
+    resizeRatio: 0,
+  })
+  await ht100.destroy()
+  await ht100.init()
+
+  async function logForwardValues() {
+    const values = []
+    for await (const value of ht100.forwardIterator()) {
+      values.push(value)
+    }
+    console.log(values)
+  }
+
+  await ht100.set('1', 'value1', 1)
+
+  {
+    const values = []
+    for await (const value of ht100.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht100.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+    ])
+  }
+
+  await ht100.set('2', 'value2', 2)
+  await ht100.set('3', 'value3', 3)
+
+  {
+    const values = []
+    for await (const value of ht100.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value2',
+      'value3',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht100.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value3',
+      'value2',
+      'value1',
+    ])
+  }
+
+  await ht100.set('4', 'value4', 4)
+  await ht100.set('5', 'value5', 5)
+  await ht100.set('6', 'value6', 6)
+
+  {
+    const values = []
+    for await (const value of ht100.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value2',
+      'value3',
+      'value4',
+      'value5',
+      'value6',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht100.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value6',
+      'value5',
+      'value4',
+      'value3',
+      'value2',
+      'value1',
+    ])
+  }
+
+  await ht100.set('7', 'value7', 7)
+  await ht100.set('8', 'value8', 8)
+
+  {
+    const values = []
+    for await (const value of ht100.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value2',
+      'value3',
+      'value4',
+      'value5',
+      'value6',
+      'value7',
+      'value8',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht100.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value8',
+      'value7',
+      'value6',
+      'value5',
+      'value4',
+      'value3',
+      'value2',
+      'value1',
+    ])
+  }
+
+  await ht100.set('9', 'value9', 9)
+
+  {
+    const values = []
+    for await (const value of ht100.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value2',
+      'value3',
+      'value4',
+      'value5',
+      'value6',
+      'value7',
+      'value8',
+      'value9',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht100.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value9',
+      'value8',
+      'value7',
+      'value6',
+      'value5',
+      'value4',
+      'value3',
+      'value2',
+      'value1',
+    ])
+  }
+
+  await ht100.set('10', 'value10', 10)
+  await ht100.set('11', 'value11', 11)
+  await ht100.set('12', 'value12', 12)
+  await ht100.set('13', 'value13', 13)
+  await ht100.set('14', 'value14', 14)
+  await ht100.set('15', 'value15', 15)
+  await ht100.set('16', 'value16', 16)
+
+  {
+    const values = []
+    for await (const value of ht100.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value2',
+      'value3',
+      'value4',
+      'value5',
+      'value6',
+      'value7',
+      'value8',
+      'value9',
+      'value10',
+      'value11',
+      'value12',
+      'value13',
+      'value14',
+      'value15',
+      'value16',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht100.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value16',
+      'value15',
+      'value14',
+      'value13',
+      'value12',
+      'value11',
+      'value10',
+      'value9',
+      'value8',
+      'value7',
+      'value6',
+      'value5',
+      'value4',
+      'value3',
+      'value2',
+      'value1',
+    ])
+  }
+
+  await ht100.set('17', 'value17', 17)
+
+  {
+    const values = []
+    for await (const value of ht100.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value2',
+      'value3',
+      'value4',
+      'value5',
+      'value6',
+      'value7',
+      'value8',
+      'value9',
+      'value10',
+      'value11',
+      'value12',
+      'value13',
+      'value14',
+      'value15',
+      'value16',
+      'value17',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht100.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value17',
+      'value16',
+      'value15',
+      'value14',
+      'value13',
+      'value12',
+      'value11',
+      'value10',
+      'value9',
+      'value8',
+      'value7',
+      'value6',
+      'value5',
+      'value4',
+      'value3',
+      'value2',
+      'value1',
+    ])
+  }
+
+  await ht100.set('18', 'value18', 18)
+  await ht100.set('19', 'value19', 19)
+  await ht100.set('20', 'value20', 20)
+  await ht100.set('21', 'value21', 21)
+  await ht100.set('22', 'value22', 22)
+  await ht100.set('23', 'value23', 23)
+  await ht100.set('24', 'value24', 24)
+  await ht100.set('25', 'value25', 25)
+  await ht100.set('26', 'value26', 26)
+  await ht100.set('27', 'value27', 27)
+  await ht100.set('28', 'value28', 28)
+  await ht100.set('29', 'value29', 29)
+  await ht100.set('30', 'value30', 30)
+  await ht100.set('31', 'value31', 31)
+  await ht100.set('32', 'value32', 32)
+
+  {
+    const values = []
+    for await (const value of ht100.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value2',
+      'value3',
+      'value4',
+      'value5',
+      'value6',
+      'value7',
+      'value8',
+      'value9',
+      'value10',
+      'value11',
+      'value12',
+      'value13',
+      'value14',
+      'value15',
+      'value16',
+      'value17',
+      'value18',
+      'value19',
+      'value20',
+      'value21',
+      'value22',
+      'value23',
+      'value24',
+      'value25',
+      'value26',
+      'value27',
+      'value28',
+      'value29',
+      'value30',
+      'value31',
+      'value32',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht100.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value32',
+      'value31',
+      'value30',
+      'value29',
+      'value28',
+      'value27',
+      'value26',
+      'value25',
+      'value24',
+      'value23',
+      'value22',
+      'value21',
+      'value20',
+      'value19',
+      'value18',
+      'value17',
+      'value16',
+      'value15',
+      'value14',
+      'value13',
+      'value12',
+      'value11',
+      'value10',
+      'value9',
+      'value8',
+      'value7',
+      'value6',
+      'value5',
+      'value4',
+      'value3',
+      'value2',
+      'value1',
+    ])
+  }
+
+  await ht100.set('33', 'value33', 33)
+
+  {
+    const values = []
+    for await (const value of ht100.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value2',
+      'value3',
+      'value4',
+      'value5',
+      'value6',
+      'value7',
+      'value8',
+      'value9',
+      'value10',
+      'value11',
+      'value12',
+      'value13',
+      'value14',
+      'value15',
+      'value16',
+      'value17',
+      'value18',
+      'value19',
+      'value20',
+      'value21',
+      'value22',
+      'value23',
+      'value24',
+      'value25',
+      'value26',
+      'value27',
+      'value28',
+      'value29',
+      'value30',
+      'value31',
+      'value32',
+      'value33',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht100.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value33',
+      'value32',
+      'value31',
+      'value30',
+      'value29',
+      'value28',
+      'value27',
+      'value26',
+      'value25',
+      'value24',
+      'value23',
+      'value22',
+      'value21',
+      'value20',
+      'value19',
+      'value18',
+      'value17',
+      'value16',
+      'value15',
+      'value14',
+      'value13',
+      'value12',
+      'value11',
+      'value10',
+      'value9',
+      'value8',
+      'value7',
+      'value6',
+      'value5',
+      'value4',
+      'value3',
+      'value2',
+      'value1',
+    ])
+  }
+
+  ht100.close()
+}).case()
+
 const test14 = new Test('DiskSortedHashTable', async function integration14() {
   const ht10 = new DiskSortedHashTable({
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/10`,
     headerPath: `${__dirname}/DiskSortedHashTable_test_data/10_header`,
     initialLength: 10,
+    sortValueType: 'number',
     resizeRatio: 0.8,
     resizeFactor: 2,
   })
   await ht10.destroy()
   await ht10.init()
 
+  async function logForwardValues() {
+    const values = []
+    for await (const item of ht10._forwardItemsIterator()) {
+      values.push(item.value)
+    }
+    console.log(values)
+  }
+
   assert.equal(ht10._count, 0)
   assert.equal(ht10._length, 10)
 
   await ht10.set('1', 'value1', 1)
+
+  {
+    const values = []
+    for await (const value of ht10.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht10.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+    ])
+  }
+
   await ht10.set('2', 'value2', 2)
   await ht10.set('3', 'value3', 3)
 
   assert.equal(ht10._count, 3)
   assert.equal(ht10._length, 10)
+
+  {
+    const values = []
+    for await (const value of ht10.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value2',
+      'value3',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht10.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value3',
+      'value2',
+      'value1',
+    ])
+  }
 
   await ht10.set('4', 'value4', 4)
   await ht10.set('5', 'value5', 5)
@@ -972,6 +1520,36 @@ const test14 = new Test('DiskSortedHashTable', async function integration14() {
 
   assert.equal(ht10._count, 6)
   assert.equal(ht10._length, 10)
+
+  {
+    const values = []
+    for await (const value of ht10.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value2',
+      'value3',
+      'value4',
+      'value5',
+      'value6',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht10.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value6',
+      'value5',
+      'value4',
+      'value3',
+      'value2',
+      'value1',
+    ])
+  }
 
   await ht10.set('7', 'value7', 7)
 
@@ -983,10 +1561,80 @@ const test14 = new Test('DiskSortedHashTable', async function integration14() {
   assert.equal(ht10._count, 8)
   assert.equal(ht10._length, 10)
 
+  {
+    const values = []
+    for await (const value of ht10.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value2',
+      'value3',
+      'value4',
+      'value5',
+      'value6',
+      'value7',
+      'value8',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht10.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value8',
+      'value7',
+      'value6',
+      'value5',
+      'value4',
+      'value3',
+      'value2',
+      'value1',
+    ])
+  }
+
   await ht10.set('9', 'value9', 9)
 
   assert.equal(ht10._count, 9)
   assert.equal(ht10._length, 20)
+
+  {
+    const values = []
+    for await (const value of ht10.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value2',
+      'value3',
+      'value4',
+      'value5',
+      'value6',
+      'value7',
+      'value8',
+      'value9',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht10.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value9',
+      'value8',
+      'value7',
+      'value6',
+      'value5',
+      'value4',
+      'value3',
+      'value2',
+      'value1',
+    ])
+  }
 
   await ht10.set('10', 'value10', 10)
 
@@ -1003,10 +1651,112 @@ const test14 = new Test('DiskSortedHashTable', async function integration14() {
   assert.equal(ht10._count, 16)
   assert.equal(ht10._length, 20)
 
+  {
+    const values = []
+    for await (const value of ht10.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value2',
+      'value3',
+      'value4',
+      'value5',
+      'value6',
+      'value7',
+      'value8',
+      'value9',
+      'value10',
+      'value11',
+      'value12',
+      'value13',
+      'value14',
+      'value15',
+      'value16',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht10.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value16',
+      'value15',
+      'value14',
+      'value13',
+      'value12',
+      'value11',
+      'value10',
+      'value9',
+      'value8',
+      'value7',
+      'value6',
+      'value5',
+      'value4',
+      'value3',
+      'value2',
+      'value1',
+    ])
+  }
+
   await ht10.set('17', 'value17', 17)
 
   assert.equal(ht10._count, 17)
   assert.equal(ht10._length, 40)
+
+  {
+    const values = []
+    for await (const value of ht10.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value2',
+      'value3',
+      'value4',
+      'value5',
+      'value6',
+      'value7',
+      'value8',
+      'value9',
+      'value10',
+      'value11',
+      'value12',
+      'value13',
+      'value14',
+      'value15',
+      'value16',
+      'value17',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht10.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value17',
+      'value16',
+      'value15',
+      'value14',
+      'value13',
+      'value12',
+      'value11',
+      'value10',
+      'value9',
+      'value8',
+      'value7',
+      'value6',
+      'value5',
+      'value4',
+      'value3',
+      'value2',
+      'value1',
+    ])
+  }
 
   await ht10.set('18', 'value18', 18)
   await ht10.set('19', 'value19', 19)
@@ -1027,12 +1777,870 @@ const test14 = new Test('DiskSortedHashTable', async function integration14() {
   assert.equal(ht10._count, 32)
   assert.equal(ht10._length, 40)
 
+  {
+    const values = []
+    for await (const value of ht10.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value2',
+      'value3',
+      'value4',
+      'value5',
+      'value6',
+      'value7',
+      'value8',
+      'value9',
+      'value10',
+      'value11',
+      'value12',
+      'value13',
+      'value14',
+      'value15',
+      'value16',
+      'value17',
+      'value18',
+      'value19',
+      'value20',
+      'value21',
+      'value22',
+      'value23',
+      'value24',
+      'value25',
+      'value26',
+      'value27',
+      'value28',
+      'value29',
+      'value30',
+      'value31',
+      'value32',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht10.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value32',
+      'value31',
+      'value30',
+      'value29',
+      'value28',
+      'value27',
+      'value26',
+      'value25',
+      'value24',
+      'value23',
+      'value22',
+      'value21',
+      'value20',
+      'value19',
+      'value18',
+      'value17',
+      'value16',
+      'value15',
+      'value14',
+      'value13',
+      'value12',
+      'value11',
+      'value10',
+      'value9',
+      'value8',
+      'value7',
+      'value6',
+      'value5',
+      'value4',
+      'value3',
+      'value2',
+      'value1',
+    ])
+  }
+
   await ht10.set('33', 'value33', 33)
 
   assert.equal(ht10._count, 33)
   assert.equal(ht10._length, 80)
 
+  {
+    const values = []
+    for await (const value of ht10.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value2',
+      'value3',
+      'value4',
+      'value5',
+      'value6',
+      'value7',
+      'value8',
+      'value9',
+      'value10',
+      'value11',
+      'value12',
+      'value13',
+      'value14',
+      'value15',
+      'value16',
+      'value17',
+      'value18',
+      'value19',
+      'value20',
+      'value21',
+      'value22',
+      'value23',
+      'value24',
+      'value25',
+      'value26',
+      'value27',
+      'value28',
+      'value29',
+      'value30',
+      'value31',
+      'value32',
+      'value33',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht10.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value33',
+      'value32',
+      'value31',
+      'value30',
+      'value29',
+      'value28',
+      'value27',
+      'value26',
+      'value25',
+      'value24',
+      'value23',
+      'value22',
+      'value21',
+      'value20',
+      'value19',
+      'value18',
+      'value17',
+      'value16',
+      'value15',
+      'value14',
+      'value13',
+      'value12',
+      'value11',
+      'value10',
+      'value9',
+      'value8',
+      'value7',
+      'value6',
+      'value5',
+      'value4',
+      'value3',
+      'value2',
+      'value1',
+    ])
+  }
+
   ht10.close()
+}).case()
+
+const test15 = new Test('DiskSortedHashTable', async function integration15() {
+  const ht10 = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/10`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/10_header`,
+    initialLength: 10,
+    sortValueType: 'number',
+    resizeRatio: 0.8,
+    resizeFactor: 2,
+  })
+  await ht10.destroy()
+  await ht10.init()
+
+  assert.equal(ht10._count, 0)
+  assert.equal(ht10._length, 10)
+
+  await ht10.set('33', 'value33', 33)
+
+  {
+    const values = []
+    for await (const value of ht10.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value33',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht10.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value33',
+    ])
+  }
+
+  await ht10.set('32', 'value32', 32)
+  await ht10.set('31', 'value31', 31)
+
+  assert.equal(ht10._count, 3)
+  assert.equal(ht10._length, 10)
+
+  {
+    const values = []
+    for await (const value of ht10.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value31',
+      'value32',
+      'value33',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht10.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value33',
+      'value32',
+      'value31',
+    ])
+  }
+
+  await ht10.set('30', 'value30', 30)
+  await ht10.set('29', 'value29', 29)
+  await ht10.set('28', 'value28', 28)
+
+  assert.equal(ht10._count, 6)
+  assert.equal(ht10._length, 10)
+
+  {
+    const values = []
+    for await (const value of ht10.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value28',
+      'value29',
+      'value30',
+      'value31',
+      'value32',
+      'value33',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht10.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value33',
+      'value32',
+      'value31',
+      'value30',
+      'value29',
+      'value28',
+    ])
+  }
+
+  await ht10.set('27', 'value27', 27)
+
+  assert.equal(ht10._count, 7)
+  assert.equal(ht10._length, 10)
+
+  await ht10.set('26', 'value26', 26)
+
+  assert.equal(ht10._count, 8)
+  assert.equal(ht10._length, 10)
+
+  await ht10.set('25', 'value25', 25)
+
+  assert.equal(ht10._count, 9)
+  assert.equal(ht10._length, 20)
+
+  await ht10.set('24', 'value24', 24)
+
+  assert.equal(ht10._count, 10)
+  assert.equal(ht10._length, 20)
+
+  {
+    const values = []
+    for await (const value of ht10.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value24',
+      'value25',
+      'value26',
+      'value27',
+      'value28',
+      'value29',
+      'value30',
+      'value31',
+      'value32',
+      'value33',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht10.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value33',
+      'value32',
+      'value31',
+      'value30',
+      'value29',
+      'value28',
+      'value27',
+      'value26',
+      'value25',
+      'value24',
+    ])
+  }
+
+  await ht10.set('23', 'value23', 23)
+  await ht10.set('22', 'value22', 22)
+  await ht10.set('21', 'value21', 21)
+  await ht10.set('20', 'value20', 20)
+  await ht10.set('19', 'value19', 19)
+  await ht10.set('18', 'value18', 18)
+
+  assert.equal(ht10._count, 16)
+  assert.equal(ht10._length, 20)
+
+  {
+    const values = []
+    for await (const value of ht10.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value18',
+      'value19',
+      'value20',
+      'value21',
+      'value22',
+      'value23',
+      'value24',
+      'value25',
+      'value26',
+      'value27',
+      'value28',
+      'value29',
+      'value30',
+      'value31',
+      'value32',
+      'value33',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht10.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value33',
+      'value32',
+      'value31',
+      'value30',
+      'value29',
+      'value28',
+      'value27',
+      'value26',
+      'value25',
+      'value24',
+      'value23',
+      'value22',
+      'value21',
+      'value20',
+      'value19',
+      'value18',
+    ])
+  }
+
+  await ht10.set('17', 'value17', 17)
+
+  assert.equal(ht10._count, 17)
+  assert.equal(ht10._length, 40)
+
+  await ht10.set('16', 'value16', 16)
+  await ht10.set('15', 'value15', 15)
+  await ht10.set('14', 'value14', 14)
+  await ht10.set('13', 'value13', 13)
+  await ht10.set('12', 'value12', 12)
+  await ht10.set('11', 'value11', 11)
+  await ht10.set('10', 'value10', 10)
+  await ht10.set('9', 'value9', 9)
+  await ht10.set('8', 'value8', 8)
+  await ht10.set('7', 'value7', 7)
+  await ht10.set('6', 'value6', 6)
+  await ht10.set('5', 'value5', 5)
+  await ht10.set('4', 'value4', 4)
+  await ht10.set('3', 'value3', 3)
+  await ht10.set('2', 'value2', 2)
+
+  assert.equal(ht10._count, 32)
+  assert.equal(ht10._length, 40)
+
+  {
+    const values = []
+    for await (const value of ht10.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value2',
+      'value3',
+      'value4',
+      'value5',
+      'value6',
+      'value7',
+      'value8',
+      'value9',
+      'value10',
+      'value11',
+      'value12',
+      'value13',
+      'value14',
+      'value15',
+      'value16',
+      'value17',
+      'value18',
+      'value19',
+      'value20',
+      'value21',
+      'value22',
+      'value23',
+      'value24',
+      'value25',
+      'value26',
+      'value27',
+      'value28',
+      'value29',
+      'value30',
+      'value31',
+      'value32',
+      'value33',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht10.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value33',
+      'value32',
+      'value31',
+      'value30',
+      'value29',
+      'value28',
+      'value27',
+      'value26',
+      'value25',
+      'value24',
+      'value23',
+      'value22',
+      'value21',
+      'value20',
+      'value19',
+      'value18',
+      'value17',
+      'value16',
+      'value15',
+      'value14',
+      'value13',
+      'value12',
+      'value11',
+      'value10',
+      'value9',
+      'value8',
+      'value7',
+      'value6',
+      'value5',
+      'value4',
+      'value3',
+      'value2',
+    ])
+  }
+
+  await ht10.set('1', 'value1', 1)
+
+  assert.equal(ht10._count, 33)
+  assert.equal(ht10._length, 80)
+
+  {
+    const values = []
+    for await (const value of ht10.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value2',
+      'value3',
+      'value4',
+      'value5',
+      'value6',
+      'value7',
+      'value8',
+      'value9',
+      'value10',
+      'value11',
+      'value12',
+      'value13',
+      'value14',
+      'value15',
+      'value16',
+      'value17',
+      'value18',
+      'value19',
+      'value20',
+      'value21',
+      'value22',
+      'value23',
+      'value24',
+      'value25',
+      'value26',
+      'value27',
+      'value28',
+      'value29',
+      'value30',
+      'value31',
+      'value32',
+      'value33',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht10.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value2',
+      'value3',
+      'value4',
+      'value5',
+      'value6',
+      'value7',
+      'value8',
+      'value9',
+      'value10',
+      'value11',
+      'value12',
+      'value13',
+      'value14',
+      'value15',
+      'value16',
+      'value17',
+      'value18',
+      'value19',
+      'value20',
+      'value21',
+      'value22',
+      'value23',
+      'value24',
+      'value25',
+      'value26',
+      'value27',
+      'value28',
+      'value29',
+      'value30',
+      'value31',
+      'value32',
+      'value33',
+    ])
+  }
+
+  ht10.close()
+}).case()
+
+const test16 = new Test('DiskSortedHashTable', async function integration16() {
+  const ht100 = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/100`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/100_header`,
+    initialLength: 100,
+    sortValueType: 'number',
+    resizeRatio: 0,
+  })
+  await ht100.destroy()
+  await ht100.init()
+
+  await ht100.set('33', 'value33', 33)
+  await ht100.set('1', 'value1', 1)
+  await ht100.set('32', 'value32', 32)
+
+  {
+    const values = []
+    for await (const value of ht100.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value32',
+      'value33',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht100.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value33',
+      'value32',
+      'value1',
+    ])
+  }
+
+  await ht100.set('2', 'value2', 2)
+  await ht100.set('31', 'value31', 31)
+  await ht100.set('3', 'value3', 3)
+  await ht100.set('30', 'value30', 30)
+  await ht100.set('4', 'value4', 4)
+  await ht100.set('29', 'value29', 29)
+  await ht100.set('5', 'value5', 5)
+
+  {
+    const values = []
+    for await (const value of ht100.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value2',
+      'value3',
+      'value4',
+      'value5',
+      'value29',
+      'value30',
+      'value31',
+      'value32',
+      'value33',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht100.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value33',
+      'value32',
+      'value31',
+      'value30',
+      'value29',
+      'value5',
+      'value4',
+      'value3',
+      'value2',
+      'value1',
+    ])
+  }
+
+  await ht100.set('28', 'value28', 28)
+  await ht100.set('6', 'value6', 6)
+  await ht100.set('27', 'value27', 27)
+
+  {
+    const values = []
+    for await (const value of ht100.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value2',
+      'value3',
+      'value4',
+      'value5',
+      'value6',
+      'value27',
+      'value28',
+      'value29',
+      'value30',
+      'value31',
+      'value32',
+      'value33',
+    ])
+  }
+
+  await ht100.set('7', 'value7', 7)
+  await ht100.set('26', 'value26', 26)
+  await ht100.set('8', 'value8', 8)
+
+  {
+    const values = []
+    for await (const value of ht100.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value2',
+      'value3',
+      'value4',
+      'value5',
+      'value6',
+      'value7',
+      'value8',
+      'value26',
+      'value27',
+      'value28',
+      'value29',
+      'value30',
+      'value31',
+      'value32',
+      'value33',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht100.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value33',
+      'value32',
+      'value31',
+      'value30',
+      'value29',
+      'value28',
+      'value27',
+      'value26',
+      'value8',
+      'value7',
+      'value6',
+      'value5',
+      'value4',
+      'value3',
+      'value2',
+      'value1',
+    ])
+  }
+
+  await ht100.set('25', 'value25', 25)
+  await ht100.set('9', 'value9', 9)
+  await ht100.set('24', 'value24', 24)
+  await ht100.set('10', 'value10', 10)
+  await ht100.set('23', 'value23', 23)
+  await ht100.set('11', 'value11', 11)
+  await ht100.set('22', 'value22', 22)
+  await ht100.set('12', 'value12', 12)
+  await ht100.set('21', 'value21', 21)
+  await ht100.set('13', 'value13', 13)
+  await ht100.set('20', 'value20', 20)
+  await ht100.set('14', 'value14', 14)
+  await ht100.set('19', 'value19', 19)
+  await ht100.set('15', 'value15', 15)
+  await ht100.set('18', 'value18', 18)
+  await ht100.set('16', 'value16', 16)
+  await ht100.set('17', 'value17', 17)
+
+  assert.equal(ht100._count, 33)
+
+  {
+    const values = []
+    for await (const value of ht100.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value2',
+      'value3',
+      'value4',
+      'value5',
+      'value6',
+      'value7',
+      'value8',
+      'value9',
+      'value10',
+      'value11',
+      'value12',
+      'value13',
+      'value14',
+      'value15',
+      'value16',
+      'value17',
+      'value18',
+      'value19',
+      'value20',
+      'value21',
+      'value22',
+      'value23',
+      'value24',
+      'value25',
+      'value26',
+      'value27',
+      'value28',
+      'value29',
+      'value30',
+      'value31',
+      'value32',
+      'value33',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht100.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value33',
+      'value32',
+      'value31',
+      'value30',
+      'value29',
+      'value28',
+      'value27',
+      'value26',
+      'value25',
+      'value24',
+      'value23',
+      'value22',
+      'value21',
+      'value20',
+      'value19',
+      'value18',
+      'value17',
+      'value16',
+      'value15',
+      'value14',
+      'value13',
+      'value12',
+      'value11',
+      'value10',
+      'value9',
+      'value8',
+      'value7',
+      'value6',
+      'value5',
+      'value4',
+      'value3',
+      'value2',
+      'value1',
+    ])
+  }
+
+  ht100.close()
 }).case()
 
 const test = Test.all([
@@ -1053,7 +2661,10 @@ const test = Test.all([
   test11,
   test12,
   test13,
+  test14_0,
   test14,
+  test15,
+  test16,
 ])
 
 if (process.argv[1] == __filename) {
