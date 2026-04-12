@@ -2643,6 +2643,170 @@ const test16 = new Test('DiskSortedHashTable', async function integration16() {
   ht100.close()
 }).case()
 
+const test17 = new Test('DiskSortedHashTable', async function integration17() {
+  const ht = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
+    initialLength: 1024,
+    sortValueType: 'number',
+    resizeRatio: 0,
+  })
+  await ht.destroy()
+  await ht.init()
+
+  const values = []
+  let n = 1
+  while (n < 1024) {
+    await ht.set(`${n}`, `value${n}`, n)
+    values.push(`value${n}`)
+    n += 1
+  }
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator()) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values)
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator()) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, values.reverse())
+  }
+
+  await ht.close()
+}).case()
+
+const test17_1 = new Test('DiskSortedHashTable', async function integration17_1() {
+  const ht = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
+    initialLength: 1024,
+    sortValueType: 'number',
+    resizeRatio: 0,
+  })
+  await ht.destroy()
+  await ht.init()
+
+  const values = []
+  let n = 1023
+  while (n >= 0) {
+    await ht.set(`${n}`, `value${n}`, n)
+    values.push(`value${n}`)
+    n -= 1
+  }
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator()) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values.reverse())
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator()) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, values.reverse())
+  }
+
+  await ht.close()
+}).case()
+
+const test17_2 = new Test('DiskSortedHashTable', async function integration17_2() {
+  const ht = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
+    initialLength: 1024,
+    sortValueType: 'number',
+    resizeRatio: 0,
+  })
+  await ht.destroy()
+  await ht.init()
+
+  const values = []
+  let n1 = 512
+  let n2 = 511
+  while (n1 < 1024) {
+    await ht.set(`${n1}`, `value${n1}`, n1)
+    await ht.set(`${n2}`, `value${n2}`, n2)
+    values.push(`value${n1}`)
+    values.push(`value${n2}`)
+    n1 += 1
+    n2 -= 1
+  }
+
+  values.sort((a, b) => Number(a.replace('value', '') - Number(b.replace('value', ''))))
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator()) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values)
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator()) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, values.reverse())
+  }
+
+  await ht.close()
+}).case()
+
+const test17_3 = new Test('DiskSortedHashTable', async function integration17_3() {
+  const ht = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
+    initialLength: 1024,
+    sortValueType: 'number',
+    resizeRatio: 0,
+  })
+  await ht.destroy()
+  await ht.init()
+
+  const values = []
+  let n1 = 1023
+  let n2 = 0
+  while (n1 >= 512) {
+    await ht.set(`${n1}`, `value${n1}`, n1)
+    await ht.set(`${n2}`, `value${n2}`, n2)
+    values.push(`value${n1}`)
+    values.push(`value${n2}`)
+    n1 -= 1
+    n2 += 1
+  }
+
+  values.sort((a, b) => Number(a.replace('value', '') - Number(b.replace('value', ''))))
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator()) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values)
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator()) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, values.reverse())
+  }
+
+  await ht.close()
+}).case()
+
 const test = Test.all([
   test1,
   test1_1,
@@ -2665,6 +2829,10 @@ const test = Test.all([
   test14,
   test15,
   test16,
+  test17,
+  test17_1,
+  test17_2,
+  test17_3,
 ])
 
 if (process.argv[1] == __filename) {
