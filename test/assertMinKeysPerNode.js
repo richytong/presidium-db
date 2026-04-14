@@ -7,8 +7,9 @@ async function assertMinKeysPerNode(ht, minKeysPerNode) {
         if (node.root) {
           // ok
         } else {
-          console.error(node)
-          throw new Error(`b-tree node under minimum number of keys per node (${node.items.length} / ${minKeysPerNode})`)
+          const error = new Error(`b-tree node under minimum number of keys per node (${node.items.length} / ${minKeysPerNode})`)
+          error.node = node
+          throw error
         }
       }
     }

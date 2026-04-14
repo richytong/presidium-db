@@ -8,6 +8,8 @@ const assertMinHeight = require('./test/assertMinHeight')
 const assertMaxHeight = require('./test/assertMaxHeight')
 const assertMinKeysPerNode = require('./test/assertMinKeysPerNode')
 const assertMaxKeysPerNode = require('./test/assertMaxKeysPerNode')
+const calculateMaxBTreeHeight = require('./_internal/calculateMaxBTreeHeight')
+const calculateMinBTreeHeight = require('./_internal/calculateMinBTreeHeight')
 
 const test1 = new Test('DiskSortedHashTable', async function integration1() {
   const ht1024 = new DiskSortedHashTable({
@@ -2819,20 +2821,20 @@ const test17_0 = new Test('DiskSortedHashTable', async function integration17_0(
     assert.deepEqual(leafNodes[1].items.map(item => item.sortValue), [3, 4])
 
     await assertBalanced(ht)
-    await assertMinHeight(ht, 1)
-    await assertMaxHeight(ht, 2)
+    await assertMinHeight(ht, 0)
+    await assertMaxHeight(ht, 1)
     await assertMinKeysPerNode(ht, 1)
     await assertMaxKeysPerNode(ht, 2)
 
-    await assertMinHeight(ht, 2)
+    await assertMinHeight(ht, 1)
     await assert.rejects(
-      assertMinHeight(ht, 3),
-      new Error('b-tree under min height (2 / 3)')
+      assertMinHeight(ht, 2),
+      new Error('b-tree under min height (1 / 2)')
     )
 
     await assert.rejects(
-      assertMaxHeight(ht, 1),
-      new Error('b-tree over max height (2 / 1)')
+      assertMaxHeight(ht, 0),
+      new Error('b-tree over max height (1 / 0)')
     )
 
     await assert.rejects(
@@ -2922,7 +2924,7 @@ const test17_0 = new Test('DiskSortedHashTable', async function integration17_0(
   )
 
   await assertBalanced(ht)
-  await assertMinHeight(ht, 3)
+  await assertMinHeight(ht, 2)
 
   const indexOf2 = 50
 
@@ -2985,8 +2987,8 @@ const test17_0 = new Test('DiskSortedHashTable', async function integration17_0(
   )
 
   await assert.rejects(
-    assertMinHeight(ht, 3),
-    new Error('b-tree under min height (2 / 3)')
+    assertMinHeight(ht, 2),
+    new Error('b-tree under min height (1 / 2)')
   )
 
   ht.close()
@@ -2994,6 +2996,7 @@ const test17_0 = new Test('DiskSortedHashTable', async function integration17_0(
 
 const test17 = new Test('DiskSortedHashTable', async function integration17() {
   const sortedNumbers = [...require('./test/randomNumbers1023_1.json')].sort((a, b) => a - b)
+  assert.equal(sortedNumbers.length, 1023)
 
   const ht = new DiskSortedHashTable({
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
@@ -3015,8 +3018,8 @@ const test17 = new Test('DiskSortedHashTable', async function integration17() {
   }
 
   await assertBalanced(ht)
-  await assertMinHeight(ht, 5)
-  await assertMaxHeight(ht, 10)
+  await assertMinHeight(ht, calculateMinBTreeHeight(1023, 2))
+  await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 2))
   await assertMinKeysPerNode(ht, 1)
   await assertMaxKeysPerNode(ht, 3)
 
@@ -3048,6 +3051,7 @@ const test17 = new Test('DiskSortedHashTable', async function integration17() {
 
 const test17_1 = new Test('DiskSortedHashTable', async function integration17_1() {
   const sortedNumbers = [...require('./test/randomNumbers1023_1.json')].sort((a, b) => a - b)
+  assert.equal(sortedNumbers.length, 1023)
 
   const ht = new DiskSortedHashTable({
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
@@ -3069,8 +3073,8 @@ const test17_1 = new Test('DiskSortedHashTable', async function integration17_1(
   }
 
   await assertBalanced(ht)
-  await assertMinHeight(ht, 5)
-  await assertMaxHeight(ht, 10)
+  await assertMinHeight(ht, calculateMinBTreeHeight(1023, 2))
+  await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 2))
   await assertMinKeysPerNode(ht, 1)
   await assertMaxKeysPerNode(ht, 3)
 
@@ -3103,6 +3107,7 @@ const test17_1 = new Test('DiskSortedHashTable', async function integration17_1(
 
 const test17_2 = new Test('DiskSortedHashTable', async function integration17_2() {
   const sortedNumbers = [...require('./test/randomNumbers1023_1.json')].sort((a, b) => a - b)
+  assert.equal(sortedNumbers.length, 1023)
 
   const ht = new DiskSortedHashTable({
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
@@ -3135,8 +3140,8 @@ const test17_2 = new Test('DiskSortedHashTable', async function integration17_2(
   }
 
   await assertBalanced(ht)
-  await assertMinHeight(ht, 5)
-  await assertMaxHeight(ht, 10)
+  await assertMinHeight(ht, calculateMinBTreeHeight(1023, 2))
+  await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 2))
   await assertMinKeysPerNode(ht, 1)
   await assertMaxKeysPerNode(ht, 3)
 
@@ -3169,6 +3174,7 @@ const test17_2 = new Test('DiskSortedHashTable', async function integration17_2(
 
 const test17_3 = new Test('DiskSortedHashTable', async function integration17_3() {
   const sortedNumbers = [...require('./test/randomNumbers1023_1.json')].sort((a, b) => a - b)
+  assert.equal(sortedNumbers.length, 1023)
 
   const ht = new DiskSortedHashTable({
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
@@ -3201,8 +3207,8 @@ const test17_3 = new Test('DiskSortedHashTable', async function integration17_3(
   }
 
   await assertBalanced(ht)
-  await assertMinHeight(ht, 5)
-  await assertMaxHeight(ht, 10)
+  await assertMinHeight(ht, calculateMinBTreeHeight(1023, 2))
+  await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 2))
   await assertMinKeysPerNode(ht, 1)
   await assertMaxKeysPerNode(ht, 3)
 
@@ -3235,6 +3241,7 @@ const test17_3 = new Test('DiskSortedHashTable', async function integration17_3(
 
 const test17_4 = new Test('DiskSortedHashTable', async function integration17_4() {
   const sortedNumbers = [...require('./test/randomNumbers1023_1.json')].sort((a, b) => a - b)
+  assert.equal(sortedNumbers.length, 1023)
 
   const ht = new DiskSortedHashTable({
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
@@ -3257,8 +3264,8 @@ const test17_4 = new Test('DiskSortedHashTable', async function integration17_4(
   }
 
   await assertBalanced(ht)
-  await assertMinHeight(ht, 4)
-  await assertMaxHeight(ht, 6)
+  await assertMinHeight(ht, calculateMinBTreeHeight(1023, 3))
+  await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 3))
   await assertMinKeysPerNode(ht, 2)
   await assertMaxKeysPerNode(ht, 5)
 
@@ -3290,6 +3297,7 @@ const test17_4 = new Test('DiskSortedHashTable', async function integration17_4(
 
 const test17_5 = new Test('DiskSortedHashTable', async function integration17_5() {
   const sortedNumbers = [...require('./test/randomNumbers1023_1.json')].sort((a, b) => a - b)
+  assert.equal(sortedNumbers.length, 1023)
 
   const ht = new DiskSortedHashTable({
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
@@ -3312,8 +3320,8 @@ const test17_5 = new Test('DiskSortedHashTable', async function integration17_5(
   }
 
   await assertBalanced(ht)
-  await assertMinHeight(ht, 4)
-  await assertMaxHeight(ht, 6)
+  await assertMinHeight(ht, calculateMinBTreeHeight(1023, 3))
+  await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 3))
   await assertMinKeysPerNode(ht, 2)
   await assertMaxKeysPerNode(ht, 5)
 
@@ -3346,6 +3354,7 @@ const test17_5 = new Test('DiskSortedHashTable', async function integration17_5(
 
 const test17_6 = new Test('DiskSortedHashTable', async function integration17_6() {
   const sortedNumbers = [...require('./test/randomNumbers1023_1.json')].sort((a, b) => a - b)
+  assert.equal(sortedNumbers.length, 1023)
 
   const ht = new DiskSortedHashTable({
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
@@ -3379,8 +3388,8 @@ const test17_6 = new Test('DiskSortedHashTable', async function integration17_6(
   }
 
   await assertBalanced(ht)
-  await assertMinHeight(ht, 4)
-  await assertMaxHeight(ht, 6)
+  await assertMinHeight(ht, calculateMinBTreeHeight(1023, 3))
+  await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 3))
   await assertMinKeysPerNode(ht, 2)
   await assertMaxKeysPerNode(ht, 5)
 
@@ -3413,6 +3422,7 @@ const test17_6 = new Test('DiskSortedHashTable', async function integration17_6(
 
 const test17_7_0 = new Test('DiskSortedHashTable', async function integration17_7_0() {
   const sortedNumbers = [...require('./test/randomNumbers127_1.json')].sort((a, b) => a - b)
+  assert.equal(sortedNumbers.length, 127)
 
   const ht = new DiskSortedHashTable({
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/256`,
@@ -3447,8 +3457,8 @@ const test17_7_0 = new Test('DiskSortedHashTable', async function integration17_
   }
 
   await assertBalanced(ht)
-  await assertMinHeight(ht, 3)
-  await assertMaxHeight(ht, 4)
+  await assertMinHeight(ht, calculateMinBTreeHeight(127, 3))
+  await assertMaxHeight(ht, calculateMaxBTreeHeight(127, 3))
   await assertMinKeysPerNode(ht, 2)
   await assertMaxKeysPerNode(ht, 5)
 
@@ -3481,6 +3491,7 @@ const test17_7_0 = new Test('DiskSortedHashTable', async function integration17_
 
 const test17_7 = new Test('DiskSortedHashTable', async function integration17_7() {
   const sortedNumbers = [...require('./test/randomNumbers1023_1.json')].sort((a, b) => a - b)
+  assert.equal(sortedNumbers.length, 1023)
 
   const ht = new DiskSortedHashTable({
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
@@ -3517,8 +3528,8 @@ const test17_7 = new Test('DiskSortedHashTable', async function integration17_7(
   }
 
   await assertBalanced(ht)
-  await assertMinHeight(ht, 4)
-  await assertMaxHeight(ht, 6)
+  await assertMinHeight(ht, calculateMinBTreeHeight(1023, 3))
+  await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 3))
   await assertMinKeysPerNode(ht, 2)
   await assertMaxKeysPerNode(ht, 5)
 
@@ -3551,6 +3562,7 @@ const test17_7 = new Test('DiskSortedHashTable', async function integration17_7(
 
 const test18 = new Test('DiskSortedHashTable', async function integration18() {
   const numbers = [...require('./test/randomNumbers127_1.json')]
+  assert.equal(numbers.length, 127)
   const sortedNumbers = [...numbers].sort((a, b) => a - b)
   const sortedNumbersReverse = [...sortedNumbers].reverse()
   const sortedValues = sortedNumbers.map(n => `value${n}`)
@@ -3596,8 +3608,8 @@ const test18 = new Test('DiskSortedHashTable', async function integration18() {
     }
 
     await assertBalanced(ht)
-    await assertMinHeight(ht, 3)
-    await assertMaxHeight(ht, 7)
+    await assertMinHeight(ht, calculateMinBTreeHeight(127, 2))
+    await assertMaxHeight(ht, calculateMaxBTreeHeight(127, 2))
     await assertMinKeysPerNode(ht, 1)
     await assertMaxKeysPerNode(ht, 3)
 
@@ -3633,6 +3645,7 @@ const test18 = new Test('DiskSortedHashTable', async function integration18() {
 
 const test19 = new Test('DiskSortedHashTable', async function integration19() {
   const numbers = require('./test/randomNumbers127_1.json')
+  assert.equal(numbers.length, 127)
   const sortedNumbers = [...numbers].sort((a, b) => a - b)
   const sortedNumbersReverse = [...sortedNumbers].reverse()
   const sortedValues = sortedNumbers.map(n => `value${n}`)
@@ -3678,8 +3691,8 @@ const test19 = new Test('DiskSortedHashTable', async function integration19() {
     }
 
     await assertBalanced(ht)
-    await assertMinHeight(ht, 2)
-    await assertMaxHeight(ht, 4)
+    await assertMinHeight(ht, calculateMinBTreeHeight(127, 3))
+    await assertMaxHeight(ht, calculateMaxBTreeHeight(127, 3))
     await assertMinKeysPerNode(ht, 2)
     await assertMaxKeysPerNode(ht, 5)
 
@@ -3715,6 +3728,7 @@ const test19 = new Test('DiskSortedHashTable', async function integration19() {
 
 const test20 = new Test('DiskSortedHashTable', async function integration20() {
   const numbers = [...require('./test/randomNumbers1023_1.json')]
+  assert.equal(numbers.length, 1023)
   const sortedNumbers = [...numbers].sort((a, b) => a - b)
   const sortedNumbersReverse = [...sortedNumbers].reverse()
   const sortedValues = sortedNumbers.map(n => `value${n}`)
@@ -3747,8 +3761,8 @@ const test20 = new Test('DiskSortedHashTable', async function integration20() {
     }
 
     await assertBalanced(ht)
-    await assertMinHeight(ht, 4)
-    await assertMaxHeight(ht, 10)
+    await assertMinHeight(ht, calculateMinBTreeHeight(1023, 2))
+    await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 2))
     await assertMinKeysPerNode(ht, 1)
     await assertMaxKeysPerNode(ht, 3)
 
@@ -3784,6 +3798,7 @@ const test20 = new Test('DiskSortedHashTable', async function integration20() {
 
 const test21 = new Test('DiskSortedHashTable', async function integration21() {
   const numbers = [...require('./test/randomNumbers1023_1.json')]
+  assert.equal(numbers.length, 1023)
   const sortedNumbers = [...numbers].sort((a, b) => a - b)
   const sortedNumbersReverse = [...sortedNumbers].reverse()
   const sortedValues = sortedNumbers.map(n => `value${n}`)
@@ -3816,8 +3831,8 @@ const test21 = new Test('DiskSortedHashTable', async function integration21() {
     }
 
     await assertBalanced(ht)
-    await assertMinHeight(ht, 3)
-    await assertMaxHeight(ht, 6)
+    await assertMinHeight(ht, calculateMinBTreeHeight(1023, 3))
+    await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 3))
     await assertMinKeysPerNode(ht, 2)
     await assertMaxKeysPerNode(ht, 5)
 
@@ -3853,6 +3868,7 @@ const test21 = new Test('DiskSortedHashTable', async function integration21() {
 
 const test22 = new Test('DiskSortedHashTable', async function integration22() {
   const numbers = [...require('./test/randomNumbers1023_1.json')]
+  assert.equal(numbers.length, 1023)
   const sortedNumbers = [...numbers].sort((a, b) => a - b)
   const sortedNumbersReverse = [...sortedNumbers].reverse()
   const sortedValues = sortedNumbers.map(n => `value${n}`)
@@ -3885,8 +3901,8 @@ const test22 = new Test('DiskSortedHashTable', async function integration22() {
     }
 
     await assertBalanced(ht)
-    await assertMinHeight(ht, 3)
-    await assertMaxHeight(ht, 5)
+    await assertMinHeight(ht, calculateMinBTreeHeight(1023, 4))
+    await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 4))
     await assertMinKeysPerNode(ht, 3)
     await assertMaxKeysPerNode(ht, 7)
 
@@ -3936,6 +3952,7 @@ const test23_0 = new Test('DiskSortedHashTable', async function integration23_0(
   // ./test/randomNumbers1023_1.json has a root node with only 3 children,
   // which falls below the minimum child requirement per node of 4
   const numbers = [...require('./test/randomNumbers1023_1.json')]
+  assert.equal(numbers.length, 1023)
 
   console.log(JSON.stringify(numbers))
 
@@ -3964,6 +3981,7 @@ const test23_0 = new Test('DiskSortedHashTable', async function integration23_0(
 
 const test23 = new Test('DiskSortedHashTable', async function integration23() {
   const numbers = [...require('./test/randomNumbers1023_1.json')]
+  assert.equal(numbers.length, 1023)
   const sortedNumbers = [...numbers].sort((a, b) => a - b)
   const sortedNumbersReverse = [...sortedNumbers].reverse()
   const sortedValues = sortedNumbers.map(n => `value${n}`)
@@ -3996,8 +4014,8 @@ const test23 = new Test('DiskSortedHashTable', async function integration23() {
     }
 
     await assertBalanced(ht)
-    await assertMinHeight(ht, 3)
-    await assertMaxHeight(ht, 4)
+    await assertMinHeight(ht, calculateMinBTreeHeight(1023, 5))
+    await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 5))
     await assertMinKeysPerNode(ht, 4)
     await assertMaxKeysPerNode(ht, 9)
 
