@@ -4,6 +4,7 @@ require('.')
 require('./index')
 
 const test = Test.all([
+  require('./test/assertBalanced.test')
   require('./DiskHashTable.test'),
   require('./DiskSortedHashTable.test'),
 ])
