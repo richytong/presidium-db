@@ -336,7 +336,7 @@ class DiskSortedHashTable {
       length: DATA_SLICE_SIZE,
     })
 
-    const btreeLeftSiblingItemIndex = readBuffer.readInt32BE(29)
+    const btreeLeftItemIndex = readBuffer.readInt32BE(29)
 
     return readBuffer
   }
@@ -416,16 +416,16 @@ class DiskSortedHashTable {
     })
   }
 
-  // _writeBTreeLeftSiblingItemIndex(
+  // _writeBTreeLeftItemIndex(
   //   btreeNodeItemIndex number,
-  //   btreeLeftSiblingItemIndex number
+  //   btreeLeftItemIndex number
   // ) -> Promise<>
-  async _writeBTreeLeftSiblingItemIndex(
-    btreeNodeItemIndex, btreeLeftSiblingItemIndex
+  async _writeBTreeLeftItemIndex(
+    btreeNodeItemIndex, btreeLeftItemIndex
   ) {
     const position = (btreeNodeItemIndex * DATA_SLICE_SIZE) + 29
     const buffer = Buffer.alloc(4)
-    buffer.writeInt32BE(btreeLeftSiblingItemIndex, 0)
+    buffer.writeInt32BE(btreeLeftItemIndex, 0)
 
     await this.storageFd.write(buffer, {
       offset: 0,
@@ -457,7 +457,7 @@ class DiskSortedHashTable {
   //   sortValue: string|number,
   //   btreeLeftChildNodeRightmostItemIndex: number,
   //   btreeRightChildNodeRightmostItemIndex: number,
-  //   btreeLeftSiblingItemIndex: number,
+  //   btreeLeftItemIndex: number,
   // }>
   async _getBTreeRootNodeRightmostItem() {
     const headerReadBuffer = await this._readHeader()
@@ -474,7 +474,7 @@ class DiskSortedHashTable {
   //   sortValue: string|number,
   //   btreeLeftChildNodeRightmostItemIndex: number,
   //   btreeRightChildNodeRightmostItemIndex: number,
-  //   btreeLeftSiblingItemIndex: number,
+  //   btreeLeftItemIndex: number,
   // }>
   async _getBTreeItem(index) {
     if (index == -1) {
@@ -484,7 +484,7 @@ class DiskSortedHashTable {
     return this._parseBTreeItem(readBuffer, index)
   }
 
-  // _getBTreeNodeItems(btreeRightmostItem { index: number, btreeLeftSiblingItemIndex: number }) -> Promise<number>
+  // _getBTreeNodeItems(btreeRightmostItem { index: number, btreeLeftItemIndex: number }) -> Promise<number>
   async _getBTreeNodeItems(btreeRightmostItem) {
     if (btreeRightmostItem == null) {
       return []
@@ -492,8 +492,8 @@ class DiskSortedHashTable {
     const btreeNodeItems = [btreeRightmostItem]
     let currentBTreeItem = btreeRightmostItem
 
-    while (currentBTreeItem.btreeLeftSiblingItemIndex > -1) {
-      currentBTreeItem = await this._getBTreeItem(currentBTreeItem.btreeLeftSiblingItemIndex)
+    while (currentBTreeItem.btreeLeftItemIndex > -1) {
+      currentBTreeItem = await this._getBTreeItem(currentBTreeItem.btreeLeftItemIndex)
       btreeNodeItems.unshift(currentBTreeItem)
     }
 
@@ -506,28 +506,28 @@ class DiskSortedHashTable {
   //     sortValue: string|number,
   //     btreeLeftChildNodeRightmostItemIndex: number,
   //     btreeRightChildNodeRightmostItemIndex: number,
-  //     btreeLeftSiblingItemIndex: number,
+  //     btreeLeftItemIndex: number,
   //   }>,
   //   btreeLeftParentNodeItem {
   //     index: number,
   //     sortValue: string|number,
   //     btreeLeftChildNodeRightmostItemIndex: number,
   //     btreeRightChildNodeRightmostItemIndex: number,
-  //     btreeLeftSiblingItemIndex: number,
+  //     btreeLeftItemIndex: number,
   //   },
   //   btreeRightParentNodeItem {
   //     index: number,
   //     sortValue: string|number,
   //     btreeLeftChildNodeRightmostItemIndex: number,
   //     btreeRightChildNodeRightmostItemIndex: number,
-  //     btreeLeftSiblingItemIndex: number,
+  //     btreeLeftItemIndex: number,
   //   },
   //   btreeRootNodeRightmostItem {
   //     index: number,
   //     sortValue: string|number,
   //     btreeLeftChildNodeRightmostItemIndex: number,
   //     btreeRightChildNodeRightmostItemIndex: number,
-  //     btreeLeftSiblingItemIndex: number,
+  //     btreeLeftItemIndex: number,
   //   }
   // ) -> Promise<>
   async _splitBTreeChildNodeRight(
@@ -569,20 +569,20 @@ class DiskSortedHashTable {
     const btreeMiddleItem = btreeChildNodeItems[this.degree - 1]
     const btreeRightChildNodeItems = btreeChildNodeItems.slice(this.degree)
 
-    // middle item left sibling -> left parent node item
-    await this._writeBTreeLeftSiblingItemIndex(
+    // middle item left item -> left parent node item
+    await this._writeBTreeLeftItemIndex(
       btreeMiddleItem.index,
       btreeLeftParentNodeItem.index
     )
-    btreeMiddleItem.btreeLeftSiblingItemIndex = btreeLeftParentNodeItem.index
+    btreeMiddleItem.btreeLeftItemIndex = btreeLeftParentNodeItem.index
 
     if (btreeRightParentNodeItem) {
-      // right parent node item left sibling -> middle item
-      await this._writeBTreeLeftSiblingItemIndex(
+      // right parent node item left item -> middle item
+      await this._writeBTreeLeftItemIndex(
         btreeRightParentNodeItem.index,
         btreeMiddleItem.index
       )
-      btreeRightParentNodeItem.btreeLeftSiblingItemIndex = btreeMiddleItem.index
+      btreeRightParentNodeItem.btreeLeftItemIndex = btreeMiddleItem.index
     }
 
     if (btreeLeftParentNodeItem.index === btreeRootNodeRightmostItem.index) {
@@ -616,9 +616,9 @@ class DiskSortedHashTable {
 
     // right parent node item left child node rightmost item does not need to be updated
 
-    // first item of right child node items left sibling -> -1
-    await this._writeBTreeLeftSiblingItemIndex(btreeRightChildNodeItems[0].index, -1)
-    btreeRightChildNodeItems[0].btreeLeftSiblingItemIndex = -1
+    // first item of right child node items left item -> -1
+    await this._writeBTreeLeftItemIndex(btreeRightChildNodeItems[0].index, -1)
+    btreeRightChildNodeItems[0].btreeLeftItemIndex = -1
 
     return [btreeLeftChildNodeItems, btreeMiddleItem, btreeRightChildNodeItems]
   }
@@ -628,13 +628,13 @@ class DiskSortedHashTable {
   //   sortValue: string|number,
   //   btreeLeftChildNodeRightmostItemIndex: number,
   //   btreeRightChildNodeRightmostItemIndex: number,
-  //   btreeLeftSiblingItemIndex: number,
+  //   btreeLeftItemIndex: number,
   // }>, btreeRightParentNodeItem {
   //   index: number,
   //   sortValue: string|number,
   //   btreeLeftChildNodeRightmostItemIndex: number,
   //   btreeRightChildNodeRightmostItemIndex: number,
-  //   btreeLeftSiblingItemIndex: number,
+  //   btreeLeftItemIndex: number,
   // }) -> Promise<>
   async _splitBTreeChildNodeLeft(
     btreeChildNodeItems, btreeRightParentNodeItem, { sortValue }
@@ -670,14 +670,14 @@ class DiskSortedHashTable {
 
     // node = [item item item]
 
-    await this._writeBTreeLeftSiblingItemIndex(
+    await this._writeBTreeLeftItemIndex(
       btreeRightParentNodeItem.index,
       btreeMiddleItem.index
     )
-    btreeRightParentNodeItem.btreeLeftSiblingItemIndex = btreeMiddleItem.index
+    btreeRightParentNodeItem.btreeLeftItemIndex = btreeMiddleItem.index
 
-    await this._writeBTreeLeftSiblingItemIndex(btreeMiddleItem.index, -1)
-    btreeMiddleItem.btreeLeftSiblingItemIndex = -1
+    await this._writeBTreeLeftItemIndex(btreeMiddleItem.index, -1)
+    btreeMiddleItem.btreeLeftItemIndex = -1
 
     await this._writeBTreeLeftChildNodeRightmostItemIndex(
       btreeMiddleItem.index,
@@ -693,8 +693,8 @@ class DiskSortedHashTable {
     btreeMiddleItem.btreeRightChildNodeRightmostItemIndex =
       btreeRightChildNodeItems[btreeRightChildNodeItems.length - 1].index
 
-    await this._writeBTreeLeftSiblingItemIndex(btreeRightChildNodeItems[0].index, -1)
-    btreeRightChildNodeItems[0].btreeLeftSiblingItemIndex = -1
+    await this._writeBTreeLeftItemIndex(btreeRightChildNodeItems[0].index, -1)
+    btreeRightChildNodeItems[0].btreeLeftItemIndex = -1
 
     return [btreeLeftChildNodeItems, btreeMiddleItem, btreeRightChildNodeItems]
   }
@@ -704,7 +704,7 @@ class DiskSortedHashTable {
   //   sortValue: string|number,
   //   btreeLeftChildNodeRightmostItemIndex: number,
   //   btreeRightChildNodeRightmostItemIndex: number,
-  //   btreeLeftSiblingItemIndex: number,
+  //   btreeLeftItemIndex: number,
   // }>) -> Promise<>
   async _splitBTreeRootNode(btreeRootNodeItems, { sortValue }) {
     const btreeLeftChildNodeItems = btreeRootNodeItems.slice(0, this.degree - 1)
@@ -714,9 +714,9 @@ class DiskSortedHashTable {
     // update root rightmost item
     await this._writeBTreeRootRightmostItemIndex(btreeMiddleItem.index) // new root
 
-    // new root has no left sibling
-    await this._writeBTreeLeftSiblingItemIndex(btreeMiddleItem.index, -1)
-    btreeMiddleItem.btreeLeftSiblingItemIndex = -1
+    // new root has no left item
+    await this._writeBTreeLeftItemIndex(btreeMiddleItem.index, -1)
+    btreeMiddleItem.btreeLeftItemIndex = -1
 
     // update root left child node rightmost item index
     await this._writeBTreeLeftChildNodeRightmostItemIndex(
@@ -734,18 +734,11 @@ class DiskSortedHashTable {
     btreeMiddleItem.btreeRightChildNodeRightmostItemIndex =
       btreeRightChildNodeItems[btreeRightChildNodeItems.length - 1].index
 
-    // remove left sibling of first right child node item
-    await this._writeBTreeLeftSiblingItemIndex(btreeRightChildNodeItems[0].index, -1)
-    btreeRightChildNodeItems[0].btreeLeftSiblingItemIndex = -1
+    // remove left item of first right child node item
+    await this._writeBTreeLeftItemIndex(btreeRightChildNodeItems[0].index, -1)
+    btreeRightChildNodeItems[0].btreeLeftItemIndex = -1
 
     return btreeMiddleItem
-  }
-
-  // _insertBTreeLeafNodeItem(index: number, btreeRightSiblingItemIndex: number) -> Promise<>
-  async _insertBTreeLeafNodeItem(index, btreeRightSiblingItemIndex) {
-    if (btreeRightSiblingItemIndex > -1) {
-      await this._writeBTreeLeftSiblingItemIndex(btreeRightSiblingItemIndex, index)
-    }
   }
 
   // _insertBTreeNodeItem(
@@ -756,21 +749,21 @@ class DiskSortedHashTable {
   //     sortValue: string|number,
   //     btreeLeftChildNodeRightmostItemIndex: number,
   //     btreeRightChildNodeRightmostItemIndex: number,
-  //     btreeLeftSiblingItemIndex: number,
+  //     btreeLeftItemIndex: number,
   //   }>,
   //   btreeRootNodeRightmostItem: {
   //     index: number,
   //     sortValue: string|number,
   //     btreeLeftChildNodeRightmostItemIndex: number,
   //     btreeRightChildNodeRightmostItemIndex: number,
-  //     btreeLeftSiblingItemIndex: number,
+  //     btreeLeftItemIndex: number,
   //   },
-  //   btreeNodeItemsParentNodeItem {
+  //   btreeParentNodeItem {
   //     index: number,
   //     sortValue: string|number,
   //     btreeLeftChildNodeRightmostItemIndex: number,
   //     btreeRightChildNodeRightmostItemIndex: number,
-  //     btreeLeftSiblingItemIndex: number,
+  //     btreeLeftItemIndex: number,
   //   },
   // )
   async _insertBTreeNodeItem(
@@ -778,7 +771,7 @@ class DiskSortedHashTable {
     sortValue,
     btreeNodeItems,
     btreeRootNodeRightmostItem,
-    btreeNodeItemsParentNodeItem,
+    btreeParentNodeItem,
   ) {
 
     const _sv = async index => {
@@ -820,71 +813,71 @@ class DiskSortedHashTable {
       || btreeNodeItems[0].btreeLeftChildNodeRightmostItemIndex == -1
     ) { // leaf node
 
-      let btreeRightSiblingItemIndex
-      let btreeLeftSiblingItemIndex
+      let btreeRightItemIndex
+      let btreeLeftItemIndex
       if (i === 0) {
-        btreeLeftSiblingItemIndex = -1
-        btreeRightSiblingItemIndex = btreeNodeItems[i].index
+        btreeLeftItemIndex = -1
+        btreeRightItemIndex = btreeNodeItems[i].index
       } else if (i === btreeNodeItems.length) {
-        btreeLeftSiblingItemIndex = btreeNodeItems[i - 1].index
-        btreeRightSiblingItemIndex = -1
+        btreeLeftItemIndex = btreeNodeItems[i - 1].index
+        btreeRightItemIndex = -1
       } else {
-        btreeLeftSiblingItemIndex = btreeNodeItems[i - 1].index
-        btreeRightSiblingItemIndex = btreeNodeItems[i].index
+        btreeLeftItemIndex = btreeNodeItems[i - 1].index
+        btreeRightItemIndex = btreeNodeItems[i].index
       }
 
       // insert item into leaf node
 
-      if (btreeRightSiblingItemIndex > -1) {
-        // point right sibling to item
-        await this._writeBTreeLeftSiblingItemIndex(btreeRightSiblingItemIndex, index)
+      if (btreeRightItemIndex > -1) {
+        // point right item to item
+        await this._writeBTreeLeftItemIndex(btreeRightItemIndex, index)
       }
 
-      if (btreeNodeItemsParentNodeItem == null) {
+      if (btreeParentNodeItem == null) {
         // skip
       }
-      else if (btreeNodeItemsParentNodeItem.isLeftChildPointer) { // parent item sortValue was greater than item's sortValue
+      else if (btreeParentNodeItem.isLeftChildPointer) { // parent item sortValue was greater than item's sortValue
 
-        // left sibling was the rightmost item of the parent node item's left child node
+        // left item was the rightmost item of the parent node item's left child node
         if (
-          btreeLeftSiblingItemIndex > -1
-          && btreeLeftSiblingItemIndex === btreeNodeItemsParentNodeItem.btreeLeftChildNodeRightmostItemIndex
+          btreeLeftItemIndex > -1
+          && btreeLeftItemIndex === btreeParentNodeItem.btreeLeftChildNodeRightmostItemIndex
         ) {
           await this._writeBTreeLeftChildNodeRightmostItemIndex(
-            btreeNodeItemsParentNodeItem.index, index
+            btreeParentNodeItem.index, index
           )
         }
 
-        // parent item had a left sibling pointing right to the current rightmost item of the leaf node
+        // parent item had a left item pointing right to the current rightmost item of the leaf node
         if (
-          btreeLeftSiblingItemIndex > -1
-          && btreeLeftSiblingItemIndex === btreeNodeItemsParentNodeItem.btreeLeftSiblingNodeItem?.btreeRightChildNodeRightmostItemIndex
+          btreeLeftItemIndex > -1
+          && btreeLeftItemIndex === btreeParentNodeItem.leftItem?.btreeRightChildNodeRightmostItemIndex
         ) {
           await this._writeBTreeRightChildNodeRightmostItemIndex(
-            btreeNodeItemsParentNodeItem.btreeLeftSiblingNodeItem.index, index
+            btreeParentNodeItem.leftItem.index, index
           )
         }
 
       }
-      else if (btreeNodeItemsParentNodeItem.isRightChildPointer) {
+      else if (btreeParentNodeItem.isRightChildPointer) {
 
-        // left sibling was the rightmost item of the parent node item's right child node
+        // left item was the rightmost item of the parent node item's right child node
         if (
-          btreeLeftSiblingItemIndex > -1
-          && btreeLeftSiblingItemIndex === btreeNodeItemsParentNodeItem.btreeRightChildNodeRightmostItemIndex
+          btreeLeftItemIndex > -1
+          && btreeLeftItemIndex === btreeParentNodeItem.btreeRightChildNodeRightmostItemIndex
         ) {
           await this._writeBTreeRightChildNodeRightmostItemIndex(
-            btreeNodeItemsParentNodeItem.index, index
+            btreeParentNodeItem.index, index
           )
         }
 
-        // parent item had a right sibling pointing left to the current rightmost item of the leaf node
+        // parent item had a right item pointing left to the current rightmost item of the leaf node
         if (
-          btreeLeftSiblingItemIndex > -1
-          && btreeLeftSiblingItemIndex === btreeNodeItemsParentNodeItem.btreeRightSiblingNodeItem?.btreeLeftChildNodeRightmostItemIndex
+          btreeLeftItemIndex > -1
+          && btreeLeftItemIndex === btreeParentNodeItem.rightItem?.btreeLeftChildNodeRightmostItemIndex
         ) {
           await this._writeBTreeLeftChildNodeRightmostItemIndex(
-            btreeNodeItemsParentNodeItem.btreeRightSiblingNodeItem.index, index
+            btreeParentNodeItem.rightItem.index, index
           )
         }
 
@@ -898,35 +891,34 @@ class DiskSortedHashTable {
       let successor = null
 
       if (i === 0) { // sortValue is less than all items' sortValues in btreeNodeItems
-        let btreeParentNodeItem = btreeNodeItemsParentNodeItem
-        while (btreeParentNodeItem) {
-          if (btreeParentNodeItem.isRightChildPointer) {
-            predecessor = btreeParentNodeItem
+        let parentItem = btreeParentNodeItem
+        while (parentItem) {
+          if (parentItem.isRightChildPointer) {
+            predecessor = parentItem
             break
           }
-          // btreeParentNodeItem = btreeParentNodeItem.btreeParentNodeItem
-          btreeParentNodeItem = btreeParentNodeItem.btreeLeftSiblingNodeItem
-            ?? btreeParentNodeItem.btreeParentNodeItem
+          parentItem = parentItem.leftItem
+            ?? parentItem.btreeParentNodeItem
         }
       } else {
         predecessor = btreeNodeItems[i - 1]
       }
 
       if (i === btreeNodeItems.length) { // sortValue is greater than all items' sortValues in btreeNodeItems
-        let btreeParentNodeItem = btreeNodeItemsParentNodeItem
-        while (btreeParentNodeItem) {
-          if (btreeParentNodeItem.isLeftChildPointer) {
-            successor = btreeParentNodeItem
+        let parentItem = btreeParentNodeItem
+        while (parentItem) {
+          if (parentItem.isLeftChildPointer) {
+            successor = parentItem
             break
           }
-          btreeParentNodeItem = btreeParentNodeItem.btreeRightSiblingNodeItem
-            ?? btreeParentNodeItem.btreeParentNodeItem
+          parentItem = parentItem.rightItem
+            ?? parentItem.btreeParentNodeItem
         }
       } else {
         successor = btreeNodeItems[i]
       }
 
-      return { predecessor, successor, btreeLeftSiblingItemIndex }
+      return { predecessor, successor, btreeLeftItemIndex }
     }
 
 
@@ -960,7 +952,7 @@ class DiskSortedHashTable {
         delete btreeChildNodeItemsParentNodeItem.btreeParentNodeItem
 
         btreeChildNodeItemsParentNodeItem = btreeNewParentNodeItem
-        btreeChildNodeItemsParentNodeItem.btreeParentNodeItem = btreeNodeItemsParentNodeItem
+        btreeChildNodeItemsParentNodeItem.btreeParentNodeItem = btreeParentNodeItem
 
         if (convert(sortValue, this.sortValueType) > btreeNewParentNodeItem.sortValue) { // move to right child
           btreeChildNodeItems = btreeRightNodeItems
@@ -975,19 +967,19 @@ class DiskSortedHashTable {
       }
 
 
-      btreeChildNodeItemsParentNodeItem.btreeParentNodeItem = btreeNodeItemsParentNodeItem
+      btreeChildNodeItemsParentNodeItem.btreeParentNodeItem = btreeParentNodeItem
 
-      if (btreeChildNodeItemsRightParentNodeItem?.btreeLeftSiblingItemIndex == btreeChildNodeItemsParentNodeItem.index) {
-        btreeChildNodeItemsParentNodeItem.btreeRightSiblingNodeItem = btreeChildNodeItemsRightParentNodeItem
+      if (btreeChildNodeItemsRightParentNodeItem?.btreeLeftItemIndex == btreeChildNodeItemsParentNodeItem.index) {
+        btreeChildNodeItemsParentNodeItem.rightItem = btreeChildNodeItemsRightParentNodeItem
       }
-      if (btreeChildNodeItemsParentNodeItem.btreeRightSiblingNodeItem) {
-        btreeChildNodeItemsParentNodeItem.btreeRightSiblingNodeItem.isLeftChildPointer = true
+      if (btreeChildNodeItemsParentNodeItem.rightItem) {
+        btreeChildNodeItemsParentNodeItem.rightItem.isLeftChildPointer = true
       }
-      if (btreeChildNodeItemsParentNodeItem.btreeLeftSiblingItemIndex == btreeChildNodeItemsLeftParentNodeItem?.index) {
-        btreeChildNodeItemsParentNodeItem.btreeLeftSiblingNodeItem = btreeChildNodeItemsLeftParentNodeItem
+      if (btreeChildNodeItemsParentNodeItem.btreeLeftItemIndex == btreeChildNodeItemsLeftParentNodeItem?.index) {
+        btreeChildNodeItemsParentNodeItem.leftItem = btreeChildNodeItemsLeftParentNodeItem
       }
-      if (btreeChildNodeItemsParentNodeItem.btreeLeftSiblingNodeItem) {
-        btreeChildNodeItemsParentNodeItem.btreeLeftSiblingNodeItem.isRightChildPointer = true
+      if (btreeChildNodeItemsParentNodeItem.leftItem) {
+        btreeChildNodeItemsParentNodeItem.leftItem.isRightChildPointer = true
       }
 
       return this._insertBTreeNodeItem(
@@ -1033,33 +1025,33 @@ class DiskSortedHashTable {
       )
 
       if (i === btreeNodeItems.length) { // update parent nodes with new child rightmost item
-        if (btreeNodeItemsParentNodeItem == null) {
+        if (btreeParentNodeItem == null) {
           // skip
         }
-        else if (btreeNodeItemsParentNodeItem.isLeftChildPointer) {
+        else if (btreeParentNodeItem.isLeftChildPointer) {
           // update parent left child node rightmost item
           await this._writeBTreeLeftChildNodeRightmostItemIndex(
-            btreeNodeItemsParentNodeItem.index, btreeNewParentNodeItem.index
+            btreeParentNodeItem.index, btreeNewParentNodeItem.index
           )
 
-          if (btreeNodeItemsParentNodeItem.btreeLeftSiblingNodeItem) {
-            // update parent left sibling right child node rightmost item
+          if (btreeParentNodeItem.leftItem) {
+            // update parent left item right child node rightmost item
             await this._writeBTreeRightChildNodeRightmostItemIndex(
-              btreeNodeItemsParentNodeItem.btreeLeftSiblingNodeItem.index,
+              btreeParentNodeItem.leftItem.index,
               btreeNewParentNodeItem.index
             )
           }
         }
-        else if (btreeNodeItemsParentNodeItem.isRightChildPointer) {
+        else if (btreeParentNodeItem.isRightChildPointer) {
           // update parent right child node rightmost item
           await this._writeBTreeRightChildNodeRightmostItemIndex(
-            btreeNodeItemsParentNodeItem.index, btreeNewParentNodeItem.index
+            btreeParentNodeItem.index, btreeNewParentNodeItem.index
           )
 
-          if (btreeNodeItemsParentNodeItem.btreeRightSiblingNodeItem) {
-            // update parent right sibling right child node rightmost item
+          if (btreeParentNodeItem.rightItem) {
+            // update parent right item right child node rightmost item
             await this._writeBTreeLeftChildNodeRightmostItemIndex(
-              btreeNodeItemsParentNodeItem.btreeRightSiblingNodeItem.index,
+              btreeParentNodeItem.rightItem.index,
               btreeNewParentNodeItem.index
             )
           }
@@ -1074,24 +1066,24 @@ class DiskSortedHashTable {
         btreeLeftNodeItems[btreeLeftNodeItems.length - 1].index
       )
 
-      if (btreeNewParentNodeItem.btreeLeftSiblingItemIndex == btreeNodeItemsParentNodeItem?.btreeRightChildNodeRightmostItemIndex) {
+      if (btreeNewParentNodeItem.btreeLeftItemIndex == btreeParentNodeItem?.btreeRightChildNodeRightmostItemIndex) {
         await this._writeBTreeRightChildNodeRightmostItemIndex(
-          btreeNodeItemsParentNodeItem.index, btreeNewParentNodeItem.index
+          btreeParentNodeItem.index, btreeNewParentNodeItem.index
         )
-        btreeNodeItemsParentNodeItem.btreeRightChildNodeRightmostItemIndex = btreeNewParentNodeItem.index
+        btreeParentNodeItem.btreeRightChildNodeRightmostItemIndex = btreeNewParentNodeItem.index
       }
-      else if (btreeNewParentNodeItem.btreeLeftSiblingItemIndex == btreeNodeItemsParentNodeItem?.btreeLeftChildNodeRightmostItemIndex) {
+      else if (btreeNewParentNodeItem.btreeLeftItemIndex == btreeParentNodeItem?.btreeLeftChildNodeRightmostItemIndex) {
         await this._writeBTreeLeftChildNodeRightmostItemIndex(
-          btreeNodeItemsParentNodeItem.index, btreeNewParentNodeItem.index
+          btreeParentNodeItem.index, btreeNewParentNodeItem.index
         )
-        btreeNodeItemsParentNodeItem.btreeLeftChildNodeRightmostItemIndex = btreeNewParentNodeItem.index
+        btreeParentNodeItem.btreeLeftChildNodeRightmostItemIndex = btreeNewParentNodeItem.index
       }
 
       delete btreeChildNodeItemsParentNodeItem.isRightChildPointer
       delete btreeChildNodeItemsParentNodeItem.btreeParentNodeItem
 
       btreeChildNodeItemsParentNodeItem = btreeNewParentNodeItem
-      btreeChildNodeItemsParentNodeItem.btreeParentNodeItem = btreeNodeItemsParentNodeItem
+      btreeChildNodeItemsParentNodeItem.btreeParentNodeItem = btreeParentNodeItem
 
       // (old right) (new parent) (old left)                                   (new parent) (old left)
       // (old right) (new left)  (old left)                                    (new left)  (old left)
@@ -1109,19 +1101,19 @@ class DiskSortedHashTable {
 
     }
 
-    btreeChildNodeItemsParentNodeItem.btreeParentNodeItem = btreeNodeItemsParentNodeItem
+    btreeChildNodeItemsParentNodeItem.btreeParentNodeItem = btreeParentNodeItem
 
-    if (btreeChildNodeItemsRightParentNodeItem?.btreeLeftSiblingItemIndex == btreeChildNodeItemsParentNodeItem.index) {
-      btreeChildNodeItemsParentNodeItem.btreeRightSiblingNodeItem = btreeChildNodeItemsRightParentNodeItem
+    if (btreeChildNodeItemsRightParentNodeItem?.btreeLeftItemIndex == btreeChildNodeItemsParentNodeItem.index) {
+      btreeChildNodeItemsParentNodeItem.rightItem = btreeChildNodeItemsRightParentNodeItem
     }
-    if (btreeChildNodeItemsParentNodeItem.btreeRightSiblingNodeItem) {
-      btreeChildNodeItemsParentNodeItem.btreeRightSiblingNodeItem.isLeftChildPointer = true
+    if (btreeChildNodeItemsParentNodeItem.rightItem) {
+      btreeChildNodeItemsParentNodeItem.rightItem.isLeftChildPointer = true
     }
-    if (btreeChildNodeItemsParentNodeItem.btreeLeftSiblingItemIndex == btreeChildNodeItemsLeftParentNodeItem?.index) {
-      btreeChildNodeItemsParentNodeItem.btreeLeftSiblingNodeItem = btreeChildNodeItemsLeftParentNodeItem
+    if (btreeChildNodeItemsParentNodeItem.btreeLeftItemIndex == btreeChildNodeItemsLeftParentNodeItem?.index) {
+      btreeChildNodeItemsParentNodeItem.leftItem = btreeChildNodeItemsLeftParentNodeItem
     }
-    if (btreeChildNodeItemsParentNodeItem.btreeLeftSiblingNodeItem) {
-      btreeChildNodeItemsParentNodeItem.btreeLeftSiblingNodeItem.isRightChildPointer = true
+    if (btreeChildNodeItemsParentNodeItem.leftItem) {
+      btreeChildNodeItemsParentNodeItem.leftItem.isRightChildPointer = true
     }
 
     return this._insertBTreeNodeItem(
@@ -1139,25 +1131,60 @@ class DiskSortedHashTable {
   //     sortValue: string|number,
   //     btreeLeftChildNodeRightmostItemIndex: number,
   //     btreeRightChildNodeRightmostItemIndex: number,
-  //     btreeLeftSiblingItemIndex: number,
+  //     btreeLeftItemIndex: number,
   //   },
   //   btreeNodeItems Array<{
   //     index: number,
   //     sortValue: string|number,
   //     btreeLeftChildNodeRightmostItemIndex: number,
   //     btreeRightChildNodeRightmostItemIndex: number,
-  //     btreeLeftSiblingItemIndex: number,
+  //     btreeLeftItemIndex: number,
   //   },
-  //   btreeNodeItemsParentNodeItem {
+  //   btreeRootNodeRightmostItem: {
   //     index: number,
   //     sortValue: string|number,
   //     btreeLeftChildNodeRightmostItemIndex: number,
   //     btreeRightChildNodeRightmostItemIndex: number,
-  //     btreeLeftSiblingItemIndex: number,
-  //   }
+  //     btreeLeftItemIndex: number,
+  //   },
+  //   btreeParentNodeItem {
+  //     index: number,
+  //     sortValue: string|number,
+  //     btreeLeftChildNodeRightmostItemIndex: number,
+  //     btreeRightChildNodeRightmostItemIndex: number,
+  //     btreeLeftItemIndex: number,
+  //   },
+  //   btreeParentNodeItems Array<{
+  //     index: number,
+  //     sortValue: string|number,
+  //     btreeLeftChildNodeRightmostItemIndex: number,
+  //     btreeRightChildNodeRightmostItemIndex: number,
+  //     btreeLeftItemIndex: number,
+  //   }>,
+  //   btreeParentLeftSiblingNodeItems Array<{
+  //     index: number,
+  //     sortValue: string|number,
+  //     btreeLeftChildNodeRightmostItemIndex: number,
+  //     btreeRightChildNodeRightmostItemIndex: number,
+  //     btreeLeftItemIndex: number,
+  //   }>,
+  //   btreeParentRightSiblingNodeItems Array<{
+  //     index: number,
+  //     sortValue: string|number,
+  //     btreeLeftChildNodeRightmostItemIndex: number,
+  //     btreeRightChildNodeRightmostItemIndex: number,
+  //     btreeLeftItemIndex: number,
+  //   }>
   // ) -> Promise<>
-    /*
-  async function _deleteBTreeNodeItem(btreeItem, btreeNodeItems, btreeNodeItemsParentNodeItem) {
+  async _deleteBTreeNodeItem(
+    btreeItem,
+    btreeNodeItems,
+    btreeRootNodeRightmostItem,
+    btreeParentNodeItem,
+    btreeParentNodeItems,
+    btreeParentLeftSiblingNodeItems,
+    btreeParentRightSiblingNodeItems
+  ) {
 
     let foundBtreeItem = false
     let i = btreeNodeItems.length - 1
@@ -1170,255 +1197,851 @@ class DiskSortedHashTable {
       i -= 1
     }
 
-    i += 1 // if i === 0, sortValue is less than all items' sortValues in btreeNodeItems, move to btreeNodeItems[0].leftChild
-           // else if i === btreeNodeItems.length, sortValue is greater than all items' sortValues in btreeNodeItems, move to btreeNodeItems[btreeNodeItems.length - 1].rightChild
-           // else (i > 0 and i < btreeNodeItems.length), sortValue is less than btreeNodeItems[i].sortValue, move to btreeNodeItems[i].rightChild
+    if (foundBTreeItem) {
+      // skip
+    } else {
 
-    if (
-      btreeNodeItems[0].btreeRightChildNodeRightmostItemIndex == -1
-      || btreeNodeItems[0].btreeLeftChildNodeRightmostItemIndex == -1
-    ) { // leaf node
-
-
-      let predecessor = null
-      let successor = null
-
-      if (i === 0) { // sortValue is less than all items' sortValues in btreeNodeItems
-        let btreeParentNodeItem = btreeNodeItemsParentNodeItem
-        while (btreeParentNodeItem) {
-          if (btreeParentNodeItem.isRightChildPointer) {
-            predecessor = btreeParentNodeItem
-            break
-          }
-          // btreeParentNodeItem = btreeParentNodeItem.btreeParentNodeItem
-          btreeParentNodeItem = btreeParentNodeItem.btreeLeftSiblingNodeItem
-            ?? btreeParentNodeItem.btreeParentNodeItem
-        }
-      } else {
-        predecessor = btreeNodeItems[i - 1]
-      }
-
-      if (i === btreeNodeItems.length) { // sortValue is greater than all items' sortValues in btreeNodeItems
-        let btreeParentNodeItem = btreeNodeItemsParentNodeItem
-        while (btreeParentNodeItem) {
-          if (btreeParentNodeItem.isLeftChildPointer) {
-            successor = btreeParentNodeItem
-            break
-          }
-          btreeParentNodeItem = btreeParentNodeItem.btreeRightSiblingNodeItem
-            ?? btreeParentNodeItem.btreeParentNodeItem
-        }
-      } else {
-        successor = btreeNodeItems[i]
-      }
-
-      return { predecessor, successor, btreeLeftSiblingItemIndex }
+      i += 1 // if i === 0, sortValue is less than all items' sortValues in btreeNodeItems, move to btreeNodeItems[0].leftChild
+             // else if i === btreeNodeItems.length, sortValue is greater than all items' sortValues in btreeNodeItems, move to btreeNodeItems[btreeNodeItems.length - 1].rightChild
+             // else (i > 0 and i < btreeNodeItems.length), sortValue is less than btreeNodeItems[i].sortValue, move to btreeNodeItems[i].rightChild
     }
+
+    const isLeaf = btreeNodeItems[0].btreeRightChildNodeRightmostItemIndex == -1
+      || btreeNodeItems[0].btreeLeftChildNodeRightmostItemIndex == -1
+
+    if (foundBTreeItem) { // i < btreeNodeItems.length
+      if (isLeaf) {
+        if (btreeNodeItems.length > (this.degree - 1)) { // leaf node has more than minimum number of items per node
+
+          // remove btreeNodeItem
+          await this._writeBTreeLeftItemIndex(btreeNodeItem.index, -1)
+          if (i < (btreeNodeItems.length - 1)) {
+            await this._writeBTreeLeftItemIndex(
+              btreeNodeItems[i + 1].index,
+              btreeNodeItem.btreeLeftItemIndex
+            )
+          }
+
+          if (i === (btreeNodeItems.length - 1)) { // rightmost item
+            // point parent nodes' left/right child node rightmost item to left item
+
+            if (btreeParentNodeItem == null) {
+              // skip
+            } else if (btreeParentNodeItem.isLeftChildPointer) {
+              await this._writeBTreeLeftChildNodeRightmostItemIndex(
+                btreeParentNodeItem.index,
+                btreeItem.btreeLeftItemIndex
+              )
+              if (btreeParentNodeItem.leftItem) {
+                await this._writeBTreeRightChildNodeRightmostItemIndex(
+                  btreeParentNodeItem.leftItem.index,
+                  btreeItem.btreeLeftItemIndex
+                )
+              }
+            } else if (btreeParentNodeItem.isRightChildPointer) {
+              await this._writeBTreeRightChildNodeRightmostItemIndex(
+                btreeParentNodeItem.index,
+                btreeItem.btreeLeftItemIndex
+              )
+              if (btreeParentNodeItem.rightItem) {
+                await this._writeBTreeLeftChildNodeRightmostItemIndex(
+                  btreeParentNodeItem.rightItem.index,
+                  btreeItem.btreeLeftItemIndex
+                )
+              }
+            } else {
+              throw new Error('parent node item isLeftChildPointer or isRightChildPointer unset')
+            }
+
+            if (btreeParentNodeItem == null) { // root node
+              // left item becomes root node rightmost item
+              await this._writeBTreeRootRightmostItemIndex(btreeItem.btreeLeftItemIndex)
+            }
+          }
+
+        }
+        else if (btreeParentNodeItem == null) { // root leaf node has the minimum number of items per node
+
+          // remove btreeNodeItem
+          await this._writeBTreeLeftItemIndex(btreeNodeItem.index, -1)
+          if (i < (btreeNodeItems.length - 1)) {
+            await this._writeBTreeLeftItemIndex(
+              btreeNodeItems[i + 1].index,
+              btreeNodeItem.btreeLeftItemIndex
+            )
+          }
+
+          if (i === (btreeNodeItems.length - 1)) { // rightmost item
+            // left item becomes root node rightmost item
+            await this._writeBTreeRootRightmostItemIndex(btreeItem.btreeLeftItemIndex)
+          }
+        }
+        else { // leaf node has the minimum number of items per node
+
+          let leftParentNodeItem
+          let leftSiblingNodeRightmostItem
+          if (btreeParentNodeItem.isRightChildPointer) {
+            leftParentNodeItem = btreeParentNodeItem
+            leftSiblingNodeRightmostItem = await this._getBTreeItem(
+              btreeParentNodeItem.btreeLeftChildNodeRightmostItemIndex
+            )
+          }
+          else if (btreeParentNodeItem.isLeftChildPointer) {
+            if (btreeParentNodeItem.leftItem) {
+              leftParentNodeItem = btreeParentNodeItem.leftItem
+              leftSiblingNodeRightmostItem = await this._getBTreeItem(
+                btreeParentNodeItem.leftItem.btreeLeftChildNodeRightmostItemIndex
+              )
+            }
+          } else {
+            throw new Error('parent node item isLeftChildPointer or isRightChildPointer unset')
+          }
+
+          let rightParentNodeItem
+          let rightSiblingNodeRightmostItem
+          if (btreeParentNodeItem.isLeftChildPointer) {
+            rightParentNodeItem = btreeParentNodeItem
+            rightSiblingNodeRightmostItem = await this._getBTreeItem(
+              btreeParentNodeItem.btreeRightChildNodeRightmostItemIndex
+            )
+          }
+          else if (btreeParentNodeItem.isRightChildPointer) {
+            if (btreeParentNodeItem.rightItem) {
+              rightParentNodeItem = btreeParentNodeItem.rightItem
+              rightSiblingNodeRightmostItem = await this._getBTreeItem(
+                btreeParentNodeItem.rightItem.btreeRightChildNodeRightmostItemIndex
+              )
+            }
+          } else {
+            throw new Error('parent node item isLeftChildPointer or isRightChildPointer unset')
+          }
+
+          const leftSiblingNodeItems = leftSiblingNodeRightmostItem == null
+            ? []
+            : await this._getBTreeNodeItems(leftSiblingNodeRightmostItem)
+
+          const rightSiblingNodeItems = rightSiblingNodeRightmostItem == null
+            ? []
+            : await this._getBTreeNodeItems(rightSiblingNodeRightmostItem)
+
+
+          if (leftSiblingNodeItems.length > (this.degree - 1)) { // left sibling node has more than minimum number of items
+
+            // remove btreeNodeItem
+            await this._writeBTreeLeftItemIndex(btreeNodeItem.index, -1)
+            if (i < (btreeNodeItems.length - 1)) {
+              await this._writeBTreeLeftItemIndex(
+                btreeNodeItems[i + 1].index,
+                btreeNodeItem.btreeLeftItemIndex
+              )
+            }
+
+            // left parent becomes new leaf node item
+            await this._writeBTreeLeftChildNodeRightmostItemIndex(
+              leftParentNodeItem.index, -1
+            )
+            await this._writeBTreeRightChildNodeRightmostItemIndex(
+              leftParentNodeItem.index, -1
+            )
+
+            // update node items with left parent (always inserted at left)
+            if (btreeNodeItems.length === 1) { // no items left in node after deletion
+              // skip
+            } else {
+              let leftmostBTreeNodeItem
+              for (const item of btreeNodeItems) {
+                if (item.index === btreeItem.index) {
+                  continue
+                }
+                leftmostBTreeNodeItem = item
+                break
+              }
+              await this._writeBTreeLeftItemIndex(
+                leftmostBTreeNodeItem.index, leftParentNodeItem.index
+              )
+            }
+
+            // previous left sibling node rightmost item becomes new internal node item
+            if (btreeNodeItems.length === 1) { // no items left in node after deletion
+              // right child: left parent item (new leaf node item)
+              await this._writeBTreeRightChildNodeRightmostItemIndex(
+                leftSiblingNodeItems[leftSiblingNodeItems.length - 1].index,
+                leftParentNodeItem.index
+              )
+            } else {
+              // right child: current rightmost b-tree node item
+              let rightmostBTreeNodeItem
+              {
+                let j = btreeNodeItems.length - 1
+                while (j > -1) {
+                  const item = btreeNodeItems[j]
+                  if (item.index === btreeItem.index) {
+                    j -= 1
+                    continue
+                  }
+                  rightmostBTreeNodeItem = item
+                  break
+                }
+              }
+              await this._writeBTreeRightChildNodeRightmostItemIndex(
+                leftSiblingNodeItems[leftSiblingNodeItems.length - 1].index,
+                rightmostBTreeNodeItem.index
+              )
+            }
+
+            // left child: previous left sibling node rightmost item's left sibling item
+            await this._writeBTreeLeftChildNodeRightmostItemIndex(
+              leftSiblingNodeItems[leftSiblingNodeItems.length - 1].index,
+              leftSiblingNodeItems[leftSiblingNodeItems.length - 1].btreeLeftItemIndex
+            )
+
+            // new internal node item points to previous left parent node's left item
+            await this._writeBTreeLeftItemIndex(
+              leftSiblingNodeItems[leftSiblingNodeItems.length - 1].index,
+              leftParentNodeItem.btreeLeftItemIndex
+            )
+
+            if (leftParentNodeItem.index === btreeRootNodeRightmostItem.index) { // left parent was root node
+              // point root
+              await this._writeBTreeRootRightmostItemIndex(
+                leftSiblingNodeItems[leftSiblingNodeItems.length - 1].index
+              )
+            }
+
+            if (rightParentNodeItem) {
+              if (btreeNodeItems.length === 1) { // no items left in node after deletion
+                // left parent node item becomes right parent node item left child rightmost item
+                await this._writeBTreeLeftChildNodeRightmostItemIndex(
+                  rightParentNodeItem.index, leftParentNodeItem.index
+                )
+              } else {
+                // rightmost node item becomes right parent node item left child rightmost item
+                let rightmostBTreeNodeItem
+                {
+                  let j = btreeNodeItems.length - 1
+                  while (j > -1) {
+                    const item = btreeNodeItems[j]
+                    if (item.index === btreeItem.index) {
+                      j -= 1
+                      continue
+                    }
+                    rightmostBTreeNodeItem = item
+                    break
+                  }
+                }
+                await this._writeBTreeLeftChildNodeRightmostItemIndex(
+                  rightParentNodeItem.index, rightmostBTreeNodeItem.index
+                )
+              }
+
+              // previous left sibling node's rightmost item (new internal node) becomes left item of right parent node item
+              await this._writeBTreeLeftItemIndex(
+                rightParentNodeItem.index,
+                leftSiblingNodeItems[leftSiblingNodeItems.length - 1].index
+              )
+            }
+
+          }
+          else if (rightSiblingNodeItems.length > (this.degree - 1)) { // right sibling node has more than minimum number of items
+
+            // remove btreeNodeItem
+            await this._writeBTreeLeftItemIndex(btreeNodeItem.index, -1)
+            if (i < (btreeNodeItems.length - 1)) {
+              await this._writeBTreeLeftItemIndex(
+                btreeNodeItems[i + 1].index,
+                btreeNodeItem.btreeLeftItemIndex
+              )
+            }
+
+            // right parent becomes new leaf node item
+            await this._writeBTreeLeftChildNodeRightmostItemIndex(
+              rightParentNodeItem.index, -1
+            )
+            await this._writeBTreeRightChildNodeRightmostItemIndex(
+              rightParentNodeItem.index, -1
+            )
+
+            // point right parent node item to rightmost item of remaining node items
+            if (btreeNodeItems.length === 1) { // no items left in node after deletion
+              // skip
+            } else {
+              let rightmostBTreeNodeItem
+              {
+                let j = btreeNodeItems.length - 1
+                while (j > -1) {
+                  const item = btreeNodeItems[j]
+                  if (item.index === btreeItem.index) {
+                    j -= 1
+                    continue
+                  }
+                  rightmostBTreeNodeItem = item
+                  break
+                }
+              }
+              await this._writeBTreeLeftItemIndex(
+                rightParentNodeItem.index, rightmostBTreeNodeItem.index
+              )
+            }
+
+            // previous right sibling node leftmost item becomes new internal node
+            // left child: right parent item (new leaf node item)
+            await this._writeBTreeLeftChildNodeRightmostItemIndex(
+              rightSiblingNodeItems[0].index, rightParentNodeItem.index
+            )
+            // right child: previous right sibling node leftmost item's right item
+            await this._writeBTreeRightChildNodeRightmostItemIndex(
+              rightSiblingNodeItems[0].index, rightSiblingNodeItems[1].index
+            )
+
+            // new internal node points to previous right parent node's left item
+            await this._writeBTreeLeftItemIndex(
+              rightSiblingNodeItems[0].index, rightParentNodeItem.btreeLeftItemIndex
+            )
+            // right sibling node leftmost item's right item becomes leftmost item
+            await this._writeBTreeLeftItemIndex(
+              rightSiblingNodeItems[1].index, -1
+            )
+
+            if (rightParentNodeItem.index === btreeRootNodeRightmostItem.index) { // right parent was root node
+              // point root
+              await this._writeBTreeRootRightmostItemIndex(
+                rightSiblingNodeItems[0].index
+              )
+            }
+
+            if (leftParentNodeItem) {
+              // right parent node item becomes left parent node item right child rightmost item
+              await this._writeBTreeRightChildNodeRightmostItemIndex(
+                leftParentNodeItem.index, rightParentNodeItem.index
+              )
+            }
+
+            // point grand parents to new internal node
+            if (btreeParentNodeItem.btreeParentNodeItem == null) {
+              // skip
+            }
+            else if (btreeParentNodeItem.btreeParentNodeItem.isLeftChildPointer) {
+              if (btreeParentNodeItem.btreeParentNodeItem.btreeLeftChildNodeRightmostItemIndex === rightParentNodeItem.index) { // right parent node item was rightmost item
+                await this._writeBTreeLeftChildNodeRightmostItemIndex(
+                  btreeParentNodeItem.btreeParentNodeItem.index,
+                  rightSiblingNodeItems[0].index
+                )
+
+                if (btreeParentNodeItem.btreeParentNodeItem.leftItem) {
+                  await this._writeBTreeRightChildNodeRightmostItemIndex(
+                    btreeParentNodeItem.btreeParentNodeItem.leftItem.index,
+                    rightSiblingNodeItems[0].index
+                  )
+                }
+              }
+            }
+            else if (btreeParentNodeItem.btreeParentNodeItem.isRightChildPointer) {
+              if (btreeParentNodeItem.btreeParentNodeItem.btreeRightChildNodeRightmostItemIndex === rightParentNodeItem.index) { // right parent node item was rightmost item
+                await this._writeBTreeRightChildNodeRightmostItemIndex(
+                  btreeParentNodeItem.btreeParentNodeItem.index,
+                  rightSiblingNodeItems[0].index
+                )
+
+                if (btreeParentNodeItem.btreeParentNodeItem.rightItem) {
+                  await this._writeBTreeLeftChildNodeRightmostItemIndex(
+                    btreeParentNodeItem.btreeParentNodeItem.rightItem.index,
+                    rightSiblingNodeItems[0].index
+                  )
+                }
+              }
+            }
+            else {
+              throw new Error('grand parent node item isLeftChildPointer or isRightChildPointer unset')
+            }
+
+          }
+          else if (leftSiblingNodeItems.length === (this.degree - 1) && rightSiblingNodeItems.length === (this.degree - 1)) { // left and right sibling nodes at minimum
+
+            // remove btreeNodeItem
+            await this._writeBTreeLeftItemIndex(btreeNodeItem.index, -1)
+            if (i < (btreeNodeItems.length - 1)) {
+              await this._writeBTreeLeftItemIndex(
+                btreeNodeItems[i + 1].index,
+                btreeNodeItem.btreeLeftItemIndex
+              )
+            }
+
+            // left parent becomes new leaf node item
+            await this._writeBTreeLeftChildNodeRightmostItemIndex(
+              leftParentNodeItem.index, -1
+            )
+            await this._writeBTreeRightChildNodeRightmostItemIndex(
+              leftParentNodeItem.index, -1
+            )
+
+            // left parent left child node rightmost item becomes left item
+            await this._writeBTreeLeftItemIndex(
+              leftParentNodeItem.index,
+              leftParentNodeItem.btreeLeftChildNodeRightmostItemIndex
+            )
+
+            // point right parent left item
+            await this._writeBTreeLeftItemIndex(
+              rightParentNodeItem.index, leftParentNodeItem.btreeLeftItemIndex
+            )
+
+            // right parent points to left child node
+            if (btreeNodeItems.length === 1) { // no items left in node after deletion
+              // left parent becomes rightmost item
+              await this._writeBTreeLeftChildNodeRightmostItemIndex(
+                rightParentNodeItem.index, leftParentNodeItem.index
+              )
+            } else if (i === (btreeNodeItems.length - 1)) { // rightmost item was deleted
+              // left item becomes rightmost item
+              await this._writeBTreeLeftChildNodeRightmostItemIndex(
+                rightParentNodeItem.index, btreeItem.btreeLeftItemIndex
+              )
+            } else { // non-rightmost item was deleted
+              // right parent left child node rightmost item stays the same
+            }
+
+            // update node items with left parent
+            if (btreeNodeItems.length === 1) { // no items left in node after deletion
+              // skip
+            } else {
+              let leftmostBTreeNodeItem
+              for (const item of btreeNodeItems) {
+                if (item.index === btreeItem.index) {
+                  continue
+                }
+                leftmostBTreeNodeItem = item
+                break
+              }
+              await this._writeBTreeLeftItemIndex(
+                leftmostBTreeNodeItem.index, leftParentNodeItem.index
+              )
+            }
+
+            // TODO handle parent node if under minimum
+
+          }
+          else if (leftSiblingNodeItems.length === 0 && rightSiblingNodeItems.length === (this.degree - 1)) { // no left sibling node, right sibling node at minimum
+
+            // remove btreeNodeItem
+            await this._writeBTreeLeftItemIndex(btreeNodeItem.index, -1)
+            if (i < (btreeNodeItems.length - 1)) {
+              await this._writeBTreeLeftItemIndex(
+                btreeNodeItems[i + 1].index,
+                btreeNodeItem.btreeLeftItemIndex
+              )
+            }
+
+            // right parent becomes leaf
+            await this._writeBTreeLeftChildNodeRightmostItemIndex(
+              rightParentNodeItem.index, -1
+            )
+            await this._writeBTreeRightChildNodeRightmostItemIndex(
+              rightParentNodeItem.index, -1
+            )
+
+            // point right parent left item
+            if (btreeNodeItems.length === 1) { // no items left in node after deletion
+              // skip
+            } else {
+              let rightmostBTreeNodeItem
+              {
+                let j = btreeNodeItems.length - 1
+                while (j > -1) {
+                  const item = btreeNodeItems[j]
+                  if (item.index === btreeItem.index) {
+                    j -= 1
+                    continue
+                  }
+                  rightmostBTreeNodeItem = item
+                  break
+                }
+              }
+              await this._writeBTreeLeftItemIndex(
+                rightParentNodeItem.index, rightmostBTreeNodeItem.index
+              )
+            }
+
+            // merge node with right sibling node
+            await this._writeBTreeLeftItemIndex(
+              rightSiblingNodeItems[0].index, rightParentNodeItem.index
+            )
+
+            if (btreeParentNodeItems.length === (this.degree - 1)) { // parent node at minimum
+
+              if (btreeParentNodeItem.btreeParentNodeItem == null) { // no grandparent
+
+                if (rightParentNodeItem.rightItem) {
+                  // point right item of right parent left item
+                  await this._writeBTreeLeftItemIndex(
+                    rightParentNodeItem.rightItem.index, -1
+                  )
+                }
+
+                if (btreeParentNodeItems.length === 1) { // no parents after right parent becomes leaf
+                  await this._writeBTreeRootRightmostItemIndex(
+                    rightSiblingNodeItems[rightSiblingNodeItems.length - 1].index
+                  )
+                }
+
+              }
+              else if (btreeParentLeftSiblingNodeItems?.length > (this.degree - 1)) { // parent left sibling node over minimum
+
+                let grandparentNodeItem
+                if (btreeParentNodeItem.btreeParentNodeItem.isRightChildPointer) {
+                  grandparentNodeItem = btreeParentNodeItem.btreeParentNodeItem
+                } else if (btreeParentNodeItem.btreeParentNodeItem.isLeftChildPointer) {
+                  grandparentNodeItem = btreeParentNodeItem.btreeParentNodeItem.leftItem
+                } else {
+                  throw new Error('grand parent node item isLeftChildPointer or isRightChildPointer unset')
+                }
+
+                // grandparent item becomes parent item
+
+                // point grandparent left item
+                await this._writeBTreeLeftItemIndex(
+                  grandparentNodeItem.index, -1
+                )
+
+                if (rightParentNodeItem.rightItem) {
+                  // point right item of right parent left item
+                  await this._writeBTreeLeftItemIndex(
+                    rightParentNodeItem.rightItem.index, grandparentNodeItem.index
+                  )
+
+                  // point grandparent right child
+                  await this._writeBTreeRightChildNodeRightmostItemIndex(
+                    grandparentNodeItem.index,
+                    rightParentNodeItem.rightItem.btreeLeftChildNodeRightmostItemIndex
+                  )
+                } else {
+                  // point grandparent right child
+                  await this._writeBTreeRightChildNodeRightmostItemIndex(
+                    grandparentNodeItem.index,
+                    rightSiblingNodeItems[rightSiblingNodeItems.length - 1].index
+                  )
+                }
+
+                // grandparent takes rightmost left grandchild node as left child
+
+                // point grand parent left child
+                await this._writeBTreeLeftChildNodeRightmostItemIndex(
+                  grandparentNodeItem.index,
+                  btreeParentLeftSiblingNodeItems[btreeParentLeftSiblingNodeItems.length - 1].btreeRightChildNodeRightmostItemIndex
+                )
+
+                // parent left sibling node rightmost item becomes grandparent
+
+                if (grandparentNodeItem.index === btreeRootNodeRightmostItem.index) {
+                  // point root
+                  await this._writeBTreeRootRightmostItemIndex(
+                    btreeParentLeftSiblingNodeItems[btreeParentLeftSiblingNodeItems.length - 1].index
+                  )
+                }
+
+                if (grandparentNodeItem.rightItem) {
+                  // point grandparent right item left item
+                  await this._writeBTreeLeftItemIndex(
+                    grandparentNodeItem.rightItem.index,
+                    btreeParentLeftSiblingNodeItems[btreeParentLeftSiblingNodeItems.length - 1].index
+                  )
+                }
+
+                if (grandparentNodeItem.leftItem) {
+                  // point grandparent left item right child
+                  await this._writeBTreeRightChildNodeRightmostItemIndex(
+                    grandparentNodeItem.leftItem.index,
+                    btreeParentLeftSiblingNodeItems[btreeParentLeftSiblingNodeItems.length - 2].index
+                  )
+                }
+
+                // point parent left sibling node rightmost item right child left item
+                await this._writeBTreeLeftItemIndex(
+                  btreeParentLeftSiblingNodeItems[btreeParentLeftSiblingNodeItems.length - 1].index,
+                  grandparentNodeItem.btreeLeftItemIndex
+                )
+
+                if (rightParentNodeItem.rightItem) {
+                  // point parent left sibling node rightmost item right child
+                  await this._writeBTreeRightChildNodeRightmostItemIndex(
+                    btreeParentLeftSiblingNodeItems[btreeParentLeftSiblingNodeItems.length - 1].index,
+                    btreeParentNodeItems[btreeParentNodeItems.length - 1].index
+                  )
+                } else {
+                  // point parent left sibling node rightmost item right child
+                  await this._writeBTreeRightChildNodeRightmostItemIndex(
+                    btreeParentLeftSiblingNodeItems[btreeParentLeftSiblingNodeItems.length - 1].index,
+                    grandparentNodeItem.index
+                  )
+                }
+
+                // point parent left sibling node rightmost item left child
+                await this._writeBTreeLeftChildNodeRightmostItemIndex(
+                  btreeParentLeftSiblingNodeItems[btreeParentLeftSiblingNodeItems.length - 1].index,
+                  btreeParentLeftSiblingNodeItems[btreeParentLeftSiblingNodeItems.length - 2].index
+                )
+
+              }
+              else if (btreeParentRightSiblingNodeItems?.length > (this.degree - 1)) { // parent right sibling node over minimum
+
+                let grandparentNodeItem
+                if (btreeParentNodeItem.btreeParentNodeItem.isLeftChildPointer) {
+                  grandparentNodeItem = btreeParentNodeItem.btreeParentNodeItem
+                } else if (btreeParentNodeItem.btreeParentNodeItem.isRightChildPointer) {
+                  grandparentNodeItem = btreeParentNodeItem.btreeParentNodeItem.rightItem
+                } else {
+                  throw new Error('grand parent node item isLeftChildPointer or isRightChildPointer unset')
+                }
+
+                // grandparent item becomes parent item
+
+                if (btreeParentNodeItems.length === 1) { // no parents after right parent becomes leaf
+                  // point grandparent left item
+                  await this._writeBTreeLeftItemIndex(grandparentNodeItem.index, -1)
+
+                  // point grandparent left child
+                  await this._writeBTreeLeftChildNodeRightmostItemIndex(
+                    grandparentNodeItem.index,
+                    rightSiblingNodeItems[rightSiblingNodeItems.length - 1].index
+                  )
+
+                } else {
+                  // point grandparent left item
+                  const rightmostParentNodeItem = btreeParentNodeItems[btreeParentNodeItems.length - 1]
+                  await this._writeBTreeLeftItemIndex(
+                    grandparentNodeItem.index, rightmostParentNodeItem.index
+                  )
+
+                  // point grandparent left child
+                  await this._writeBTreeLeftChildNodeRightmostItemIndex(
+                    grandparentNodeItem.index,
+                    rightmostParentNodeItem.btreeRightChildNodeRightmostItemIndex
+                  )
+                }
+
+                // grandparent takes leftmost right grandchild node as right child
+                // point grandparent right child
+                await this._writeBTreeRightChildNodeRightmostItemIndex(
+                  grandparentNodeItem.index,
+                  btreeParentRightSiblingNodeItems[0].btreeLeftChildNodeRightmostItemIndex
+                )
+
+                // parent right sibling node leftmost item becomes grandparent
+
+                if (grandparentNodeItem.index === btreeRootNodeRightmostItem.index) {
+                  // point root
+                  await this._writeBTreeRootRightmostItemIndex(
+                    btreeParentRightSiblingNodeItems[0].index
+                  )
+                }
+
+                if (grandparentNodeItem.rightItem) {
+                  // point grand parent right item left item
+                  await this._writeBTreeLeftItemIndex(
+                    grandparentNodeItem.rightItem.index,
+                    btreeParentRightSiblingNodeItems[0].index
+                  )
+                }
+
+                if (grandparentNodeItem.leftItem) {
+                  // point grand parent left item right child
+                  await this._writeBTreeRightChildNodeRightmostItemIndex(
+                    grandparentNodeItem.leftItem.index,
+                    grandparentNodeItem.index
+                  )
+                }
+
+                // point parent right sibling node leftmost item left item
+                await this._writeBTreeLeftItemIndex(
+                  btreeParentRightSiblingNodeItems[0].index,
+                  grandparentNodeItem.btreeLeftItemIndex
+                )
+
+                // point parent right sibling node leftmost item left child
+                await this._writeBTreeLeftChildNodeRightmostItemIndex(
+                  btreeParentRightSiblingNodeItems[0].index,
+                  grandparentNodeItem.index
+                )
+
+                // point parent right sibling node leftmost item right child
+                await this._writeBTreeRightChildNodeRightmostItemIndex(
+                  btreeParentRightSiblingNodeItems[0].index,
+                  btreeParentRightSiblingNodeItems[1].index
+                )
+
+                // parent right sibling node leftmost item right item becomes leftmost item
+                await this._writeBTreeLeftItemIndex(
+                  btreeParentRightSiblingNodeItems[1].index, -1
+                )
+
+              }
+              else if (btreeParentRightSiblingNodeItems?.length === (this.degree - 1)) { // parent right sibling at minimum
+
+                // TODO
+
+              }
+              else if (btreeParentLeftSiblingNodeItems?.length === (this.degree - 1)) { // parent left sibling at minimum
+
+                // TODO
+
+              } else {
+              }
+
+
+            }
+
+          }
+          else if (rightSiblingNodeItems.length === 0 && leftSiblingNodeItems.length === (this.degree - 1)) { // no right sibling node, left sibling node at minimum
+
+            // TODO
+
+          }
+          else {
+            await this._logBTree()
+            throw new Error('bad tree')
+          }
+
+        }
+
+      } else { // internal
+
+        // const predecessor = await this._getBTreeItem(btreeItem.btreeLeftChildNodeRightmostItemIndex)
+        // const successorNodeRightmostItem = await this._getBTreeItem(btreeItem.btreeRightChildNodeRightmostItemIndex)
+        // const successorNodeItems = await this._getBTreeNodeItems(successorNodeRightmostItem)
+        // const successor = successorNodeItems[0]
+
+
+
+      }
+
+      return
+    }
+
+    if (isLeaf) {
+      throw new Error('Did not find btreeItem')
+    }
+
+
+    let leftSiblingNodeRightmostItem
+    if (btreeParentNodeItem == null) {
+      // skip
+    } else if (btreeParentNodeItem.isRightChildPointer) {
+      leftSiblingNodeRightmostItem = await this._getBTreeItem(
+        btreeParentNodeItem.btreeLeftChildNodeRightmostItemIndex
+      )
+    }
+    else if (btreeParentNodeItem.isLeftChildPointer) {
+      if (btreeParentNodeItem.leftItem) {
+        leftSiblingNodeRightmostItem = await this._getBTreeItem(
+          btreeParentNodeItem.leftItem.btreeLeftChildNodeRightmostItemIndex
+        )
+      }
+    } else {
+      throw new Error('parent node item isLeftChildPointer or isRightChildPointer unset')
+    }
+
+    let rightSiblingNodeRightmostItem
+    if (btreeParentNodeItem == null) {
+      // skip
+    } else if (btreeParentNodeItem.isLeftChildPointer) {
+      rightSiblingNodeRightmostItem = await this._getBTreeItem(
+        btreeParentNodeItem.btreeRightChildNodeRightmostItemIndex
+      )
+    }
+    else if (btreeParentNodeItem.isRightChildPointer) {
+      if (btreeParentNodeItem.rightItem) {
+        rightSiblingNodeRightmostItem = await this._getBTreeItem(
+          btreeParentNodeItem.rightItem.btreeRightChildNodeRightmostItemIndex
+        )
+      }
+    } else {
+      throw new Error('parent node item isLeftChildPointer or isRightChildPointer unset')
+    }
+
+    const leftSiblingNodeItems = leftSiblingNodeRightmostItem == null
+      ? undefined
+      : await this._getBTreeNodeItems(leftSiblingNodeRightmostItem)
+
+    const rightSiblingNodeItems = rightSiblingNodeRightmostItem == null
+      ? undefined
+      : await this._getBTreeNodeItems(rightSiblingNodeRightmostItem)
 
 
     if (i === 0) { // move to left child
 
-      let btreeChildNodeItemsParentNodeItem
-      let btreeChildNodeItemsLeftParentNodeItem
-      let btreeChildNodeItemsRightParentNodeItem = btreeNodeItems[i]
-
-      btreeChildNodeItemsParentNodeItem = btreeChildNodeItemsRightParentNodeItem
+      const btreeChildNodeItemsParentNodeItem = btreeNodeItems[0]
       btreeChildNodeItemsParentNodeItem.isLeftChildPointer = true
 
       const btreeChildNodeRightmostItem = await this._getBTreeItem(
         btreeChildNodeItemsParentNodeItem.btreeLeftChildNodeRightmostItemIndex
       )
-      let btreeChildNodeItems = await this._getBTreeNodeItems(btreeChildNodeRightmostItem)
+      const btreeChildNodeItems = await this._getBTreeNodeItems(btreeChildNodeRightmostItem)
 
-      if (btreeChildNodeItems.length == ((2 * this.degree) - 1)) { // current b-tree node at maximum number of items
-        const [btreeLeftNodeItems, btreeNewParentNodeItem, btreeRightNodeItems] = await this._splitBTreeChildNodeLeft(
-          btreeChildNodeItems,
-          btreeChildNodeItemsRightParentNodeItem,
-          { sortValue }
-        )
 
-        await this._writeBTreeLeftChildNodeRightmostItemIndex(
-          btreeChildNodeItemsRightParentNodeItem.index,
-          btreeRightNodeItems[btreeRightNodeItems.length - 1].index
-        )
+      btreeChildNodeItemsParentNodeItem.btreeParentNodeItem = btreeParentNodeItem
 
-        delete btreeChildNodeItemsParentNodeItem.isLeftChildPointer
-        delete btreeChildNodeItemsParentNodeItem.btreeParentNodeItem
-
-        btreeChildNodeItemsParentNodeItem = btreeNewParentNodeItem
-        btreeChildNodeItemsParentNodeItem.btreeParentNodeItem = btreeNodeItemsParentNodeItem
-
-        if (convert(sortValue, this.sortValueType) > btreeNewParentNodeItem.sortValue) { // move to right child
-          btreeChildNodeItems = btreeRightNodeItems
-          btreeChildNodeItemsParentNodeItem.isRightChildPointer = true
-          btreeChildNodeItemsLeftParentNodeItem = btreeChildNodeItemsParentNodeItem
-        } else { // move to left child
-          btreeChildNodeItems = btreeLeftNodeItems
-          btreeChildNodeItemsParentNodeItem.isLeftChildPointer = true
-          btreeChildNodeItemsRightParentNodeItem = btreeChildNodeItemsParentNodeItem
-        }
-
+      for (let j = 0; j < (btreeNodeItems.length - 1); j++) {
+        btreeNodeItems[j].rightItem = btreeNodeItems[j + 1]
+      }
+      for (let j = 1; j < btreeNodeItems.length; j++) {
+        btreeNodeItems[j].leftItem = btreeNodeItems[j - 1]
       }
 
-
-      btreeChildNodeItemsParentNodeItem.btreeParentNodeItem = btreeNodeItemsParentNodeItem
-
-      if (btreeChildNodeItemsRightParentNodeItem?.btreeLeftSiblingItemIndex == btreeChildNodeItemsParentNodeItem.index) {
-        btreeChildNodeItemsParentNodeItem.btreeRightSiblingNodeItem = btreeChildNodeItemsRightParentNodeItem
+      if (btreeChildNodeItemsParentNodeItem.leftItem) {
+        btreeChildNodeItemsParentNodeItem.leftItem.isRightChildPointer = true
       }
-      if (btreeChildNodeItemsParentNodeItem.btreeRightSiblingNodeItem) {
-        btreeChildNodeItemsParentNodeItem.btreeRightSiblingNodeItem.isLeftChildPointer = true
-      }
-      if (btreeChildNodeItemsParentNodeItem.btreeLeftSiblingItemIndex == btreeChildNodeItemsLeftParentNodeItem?.index) {
-        btreeChildNodeItemsParentNodeItem.btreeLeftSiblingNodeItem = btreeChildNodeItemsLeftParentNodeItem
-      }
-      if (btreeChildNodeItemsParentNodeItem.btreeLeftSiblingNodeItem) {
-        btreeChildNodeItemsParentNodeItem.btreeLeftSiblingNodeItem.isRightChildPointer = true
+      if (btreeChildNodeItemsParentNodeItem.rightItem) {
+        btreeChildNodeItemsParentNodeItem.rightItem.isLeftChildPointer = true
       }
 
-      return this._insertBTreeNodeItem(
-        index,
-        sortValue,
+      return this._deleteBTreeNodeItem(
+        btreeItem,
         btreeChildNodeItems,
         btreeRootNodeRightmostItem,
         btreeChildNodeItemsParentNodeItem,
+        btreeNodeItems,
+        leftSiblingNodeItems,
+        rightSiblingNodeItems
       )
     }
 
 
     // move to right child
 
-    let btreeChildNodeItemsParentNodeItem
-    let btreeChildNodeItemsLeftParentNodeItem
-    let btreeChildNodeItemsRightParentNodeItem
-
-    if (i === btreeNodeItems.length) { // sortValue is greater than all items' sortValues in btreeNodeItems
-      btreeChildNodeItemsLeftParentNodeItem = btreeNodeItems[i - 1]
-      btreeChildNodeItemsRightParentNodeItem = undefined
-    }
-    else { // (i > 0) sortValue is less than btreeNodeItems[i].sortValue, insert item in middle
-      btreeChildNodeItemsLeftParentNodeItem = btreeNodeItems[i - 1]
-      btreeChildNodeItemsRightParentNodeItem = btreeNodeItems[i]
-      // i === (btreeNodeItems.length - 1) ? undefined : btreeNodeItems[i + 1]
-    }
-    btreeChildNodeItemsParentNodeItem = btreeChildNodeItemsLeftParentNodeItem
+    const btreeChildNodeItemsParentNodeItem = btreeNodeItems[i - 1]
     btreeChildNodeItemsParentNodeItem.isRightChildPointer = true
 
     const btreeChildNodeRightmostItem = await this._getBTreeItem(
       btreeChildNodeItemsParentNodeItem.btreeRightChildNodeRightmostItemIndex
     )
-    let btreeChildNodeItems = await this._getBTreeNodeItems(btreeChildNodeRightmostItem)
+    const btreeChildNodeItems = await this._getBTreeNodeItems(btreeChildNodeRightmostItem)
 
-    if (btreeChildNodeItems.length == ((2 * this.degree) - 1)) { // current b-tree node at maximum number of items
-      const [btreeLeftNodeItems, btreeNewParentNodeItem, btreeRightNodeItems] = await this._splitBTreeChildNodeRight(
-        btreeChildNodeItems,
-        btreeChildNodeItemsLeftParentNodeItem,
-        btreeChildNodeItemsRightParentNodeItem,
-        btreeRootNodeRightmostItem,
-        { sortValue }
-      )
 
-      if (i === btreeNodeItems.length) { // update parent nodes with new child rightmost item
-        if (btreeNodeItemsParentNodeItem == null) {
-          // skip
-        }
-        else if (btreeNodeItemsParentNodeItem.isLeftChildPointer) {
-          // update parent left child node rightmost item
-          await this._writeBTreeLeftChildNodeRightmostItemIndex(
-            btreeNodeItemsParentNodeItem.index, btreeNewParentNodeItem.index
-          )
+    btreeChildNodeItemsParentNodeItem.btreeParentNodeItem = btreeParentNodeItem
 
-          if (btreeNodeItemsParentNodeItem.btreeLeftSiblingNodeItem) {
-            // update parent left sibling right child node rightmost item
-            await this._writeBTreeRightChildNodeRightmostItemIndex(
-              btreeNodeItemsParentNodeItem.btreeLeftSiblingNodeItem.index,
-              btreeNewParentNodeItem.index
-            )
-          }
-        }
-        else if (btreeNodeItemsParentNodeItem.isRightChildPointer) {
-          // update parent right child node rightmost item
-          await this._writeBTreeRightChildNodeRightmostItemIndex(
-            btreeNodeItemsParentNodeItem.index, btreeNewParentNodeItem.index
-          )
-
-          if (btreeNodeItemsParentNodeItem.btreeRightSiblingNodeItem) {
-            // update parent right sibling right child node rightmost item
-            await this._writeBTreeLeftChildNodeRightmostItemIndex(
-              btreeNodeItemsParentNodeItem.btreeRightSiblingNodeItem.index,
-              btreeNewParentNodeItem.index
-            )
-          }
-        }
-        else {
-          throw new Error('parent node item isLeftChildPointer or isRightChildPointer unset')
-        }
-      }
-
-      await this._writeBTreeRightChildNodeRightmostItemIndex(
-        btreeChildNodeItemsLeftParentNodeItem.index,
-        btreeLeftNodeItems[btreeLeftNodeItems.length - 1].index
-      )
-
-      if (btreeNewParentNodeItem.btreeLeftSiblingItemIndex == btreeNodeItemsParentNodeItem?.btreeRightChildNodeRightmostItemIndex) {
-        await this._writeBTreeRightChildNodeRightmostItemIndex(
-          btreeNodeItemsParentNodeItem.index, btreeNewParentNodeItem.index
-        )
-        btreeNodeItemsParentNodeItem.btreeRightChildNodeRightmostItemIndex = btreeNewParentNodeItem.index
-      }
-      else if (btreeNewParentNodeItem.btreeLeftSiblingItemIndex == btreeNodeItemsParentNodeItem?.btreeLeftChildNodeRightmostItemIndex) {
-        await this._writeBTreeLeftChildNodeRightmostItemIndex(
-          btreeNodeItemsParentNodeItem.index, btreeNewParentNodeItem.index
-        )
-        btreeNodeItemsParentNodeItem.btreeLeftChildNodeRightmostItemIndex = btreeNewParentNodeItem.index
-      }
-
-      delete btreeChildNodeItemsParentNodeItem.isRightChildPointer
-      delete btreeChildNodeItemsParentNodeItem.btreeParentNodeItem
-
-      btreeChildNodeItemsParentNodeItem = btreeNewParentNodeItem
-      btreeChildNodeItemsParentNodeItem.btreeParentNodeItem = btreeNodeItemsParentNodeItem
-
-      // (old right) (new parent) (old left)                                   (new parent) (old left)
-      // (old right) (new left)  (old left)                                    (new left)  (old left)
-      // (old right) (new right) (old left)                                    (new right) (old left)
-
-      if (convert(sortValue, this.sortValueType) > btreeNewParentNodeItem.sortValue) { // move to right child
-        btreeChildNodeItems = btreeRightNodeItems
-        btreeChildNodeItemsParentNodeItem.isRightChildPointer = true
-        btreeChildNodeItemsLeftParentNodeItem = btreeChildNodeItemsParentNodeItem
-      } else { // move to left child
-        btreeChildNodeItems = btreeLeftNodeItems
-        btreeChildNodeItemsParentNodeItem.isLeftChildPointer = true
-        btreeChildNodeItemsRightParentNodeItem = btreeChildNodeItemsParentNodeItem
-      }
-
+    for (let j = 0; j < (btreeNodeItems.length - 1); j++) {
+      btreeNodeItems[j].rightItem = btreeNodeItems[j + 1]
+    }
+    for (let j = 1; j < btreeNodeItems.length; j++) {
+      btreeNodeItems[j].leftItem = btreeNodeItems[j - 1]
     }
 
-    btreeChildNodeItemsParentNodeItem.btreeParentNodeItem = btreeNodeItemsParentNodeItem
-
-    if (btreeChildNodeItemsRightParentNodeItem?.btreeLeftSiblingItemIndex == btreeChildNodeItemsParentNodeItem.index) {
-      btreeChildNodeItemsParentNodeItem.btreeRightSiblingNodeItem = btreeChildNodeItemsRightParentNodeItem
+    if (btreeChildNodeItemsParentNodeItem.leftItem) {
+      btreeChildNodeItemsParentNodeItem.leftItem.isRightChildPointer = true
     }
-    if (btreeChildNodeItemsParentNodeItem.btreeRightSiblingNodeItem) {
-      btreeChildNodeItemsParentNodeItem.btreeRightSiblingNodeItem.isLeftChildPointer = true
-    }
-    if (btreeChildNodeItemsParentNodeItem.btreeLeftSiblingItemIndex == btreeChildNodeItemsLeftParentNodeItem?.index) {
-      btreeChildNodeItemsParentNodeItem.btreeLeftSiblingNodeItem = btreeChildNodeItemsLeftParentNodeItem
-    }
-    if (btreeChildNodeItemsParentNodeItem.btreeLeftSiblingNodeItem) {
-      btreeChildNodeItemsParentNodeItem.btreeLeftSiblingNodeItem.isRightChildPointer = true
+    if (btreeChildNodeItemsParentNodeItem.rightItem) {
+      btreeChildNodeItemsParentNodeItem.rightItem.isLeftChildPointer = true
     }
 
-    return this._insertBTreeNodeItem(
-      index,
-      sortValue,
+    return this._deleteBTreeNodeItem(
+      btreeItem,
       btreeChildNodeItems,
       btreeRootNodeRightmostItem,
-      btreeChildNodeItemsParentNodeItem
+      btreeChildNodeItemsParentNodeItem,
+      btreeNodeItems,
+      leftSiblingNodeItems,
+      rightSiblingNodeItems
     )
   }
-    */
 
   // _setStatusMarker(index number, marker number) -> Promise<>
   async _setStatusMarker(index, marker) {
@@ -1439,7 +2062,7 @@ class DiskSortedHashTable {
   //   sortValue: string|number,
   //   btreeLeftChildNodeRightmostItemIndex: number,
   //   btreeRightChildNodeRightmostItemIndex: number,
-  //   btreeLeftSiblingItemIndex: number,
+  //   btreeLeftItemIndex: number,
   // }
   _parseBTreeItem(readBuffer, index) {
     const item = {}
@@ -1455,11 +2078,11 @@ class DiskSortedHashTable {
 
     const btreeLeftChildNodeRightmostItemIndex = readBuffer.readInt32BE(21)
     const btreeRightChildNodeRightmostItemIndex = readBuffer.readInt32BE(25)
-    const btreeLeftSiblingItemIndex = readBuffer.readInt32BE(29)
+    const btreeLeftItemIndex = readBuffer.readInt32BE(29)
 
     item.btreeLeftChildNodeRightmostItemIndex = btreeLeftChildNodeRightmostItemIndex
     item.btreeRightChildNodeRightmostItemIndex = btreeRightChildNodeRightmostItemIndex
-    item.btreeLeftSiblingItemIndex = btreeLeftSiblingItemIndex
+    item.btreeLeftItemIndex = btreeLeftItemIndex
 
     const keyByteLength = readBuffer.readUInt32BE(1)
     const keyBuffer = readBuffer.subarray(33, keyByteLength + 33)
@@ -1754,7 +2377,7 @@ class DiskSortedHashTable {
   //   sortValue: string|number,
   //   btreeLeftChildNodeRightmostItemIndex: number,
   //   btreeRightChildNodeRightmostItemIndex: number,
-  //   btreeLeftSiblingItemIndex: number,
+  //   btreeLeftItemIndex: number,
   // }>>
   async _traverseInOrder() {
     const btreeRootNode = await this._constructBTree({ unique: true })
@@ -1803,7 +2426,7 @@ class DiskSortedHashTable {
 
     const btreeLeftChildNodeRightmostItemIndex = -1
     const btreeRightChildNodeRightmostItemIndex = -1
-    let btreeLeftSiblingItemIndex = -1
+    let btreeLeftItemIndex = -1
 
     let leftItem = null
     let rightItem = null
@@ -1824,8 +2447,8 @@ class DiskSortedHashTable {
 
       leftItem = insertResult.predecessor
       rightItem = insertResult.successor
-      btreeLeftSiblingItemIndex = insertResult.btreeLeftSiblingItemIndex
-      if (btreeLeftSiblingItemIndex === btreeRootNodeItem.index) {
+      btreeLeftItemIndex = insertResult.btreeLeftItemIndex
+      if (btreeLeftItemIndex === btreeRootNodeItem.index) {
         await this._writeBTreeRootRightmostItemIndex(index)
       }
 
@@ -1839,8 +2462,8 @@ class DiskSortedHashTable {
 
       leftItem = insertResult.predecessor
       rightItem = insertResult.successor
-      btreeLeftSiblingItemIndex = insertResult.btreeLeftSiblingItemIndex
-      if (btreeLeftSiblingItemIndex === btreeRootNodeRightmostItem.index) {
+      btreeLeftItemIndex = insertResult.btreeLeftItemIndex
+      if (btreeLeftItemIndex === btreeRootNodeRightmostItem.index) {
         await this._writeBTreeRootRightmostItemIndex(index)
       }
     }
@@ -1880,9 +2503,9 @@ class DiskSortedHashTable {
     // 4 bytes for value size
     // 4 bytes for forward index
     // 4 bytes for reverse index
-    // 4 bytes for left child btree node rightmost key index
-    // 4 bytes for right child btree node rightmost key index
-    // 4 bytes for previous sibling key index
+    // 4 bytes for btree left child node rightmost item index
+    // 4 bytes for btree right child node rightmost item index
+    // 4 bytes for btree left item index
     // chunk for key
     // chunk for sort value
     // remainder for value
@@ -1898,7 +2521,7 @@ class DiskSortedHashTable {
     buffer.writeInt32BE(reverseIndex, 17)
     buffer.writeInt32BE(btreeLeftChildNodeRightmostItemIndex, 21)
     buffer.writeInt32BE(btreeRightChildNodeRightmostItemIndex, 25)
-    buffer.writeInt32BE(btreeLeftSiblingItemIndex, 29)
+    buffer.writeInt32BE(btreeLeftItemIndex, 29)
     buffer.write(key, 33, keyByteLength, ENCODING)
     buffer.write(sortValueString, 33 + keyByteLength, sortValueByteLength, ENCODING)
     buffer.write(value, 33 + keyByteLength + sortValueByteLength, valueByteLength, ENCODING)
@@ -1917,7 +2540,7 @@ class DiskSortedHashTable {
 
     const btreeLeftChildNodeRightmostItemIndex = -1
     const btreeRightChildNodeRightmostItemIndex = -1
-    const btreeLeftSiblingItemIndex = -1
+    const btreeLeftItemIndex = -1
 
     let forwardIndex = item.forwardIndex
     let reverseIndex = item.reverseIndex
@@ -1995,7 +2618,7 @@ class DiskSortedHashTable {
     buffer.writeInt32BE(reverseIndex, 17)
     buffer.writeInt32BE(btreeLeftChildNodeRightmostItemIndex, 21)
     buffer.writeInt32BE(btreeRightChildNodeRightmostItemIndex, 25)
-    buffer.writeInt32BE(btreeLeftSiblingItemIndex, 29)
+    buffer.writeInt32BE(btreeLeftItemIndex, 29)
     buffer.write(key, 33, keyByteLength, ENCODING)
     buffer.write(sortValueString, 33 + keyByteLength, sortValueByteLength, ENCODING)
     buffer.write(value, 33 + keyByteLength + sortValueByteLength, valueByteLength, ENCODING)
@@ -2283,44 +2906,11 @@ class DiskSortedHashTable {
       return false
     }
 
-
-      /*
-  // _set(key string, value string, sortValue number|string) -> Promise<>
-  async _set(key, value, sortValue) {
-    let index = this._hash1(key)
-
-    const startIndex = index
-    const stepSize = this._hash2(key)
-
-    let currentKey = await this._getKey(index)
-    while (currentKey) {
-      if (key == currentKey) {
-        break
-      }
-      index = (index + stepSize) % this._length
-      if (index == startIndex) {
-        if (this._count < this._length) {
-          throw new Error('Unreachable index')
-        }
-        throw new Error('Hash table is full')
-      }
-      currentKey = await this._getKey(index)
-    }
-
-    if (currentKey == null) {
-      await this._insert(key, value, sortValue, index)
-      await this._incrementCount()
-    } else {
-      await this._update(key, value, sortValue, index)
-    }
-  }
-  */
-
     // const btreeRootNodeRightmostItem = await this._getBTreeRootNodeRightmostItem()
     // const btreeRootNodeItems = await this._getBTreeNodeItems(btreeRootNodeRightmostItem)
     // const btreeItem = await this._getBTreeItem(index)
 
-    // await this._deleteBTreeNodeItem(btreeItem, btreeRootNodeItems)
+    // await this._deleteBTreeNodeItem(btreeItem, btreeRootNodeItems, btreeRootNodeRightmostItem)
 
     const item = await this._getItem(index)
 
