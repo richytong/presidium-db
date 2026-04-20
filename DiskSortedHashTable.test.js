@@ -142,12 +142,10 @@ const test1 = new Test('DiskSortedHashTable', async function integration1() {
     assert.equal(forwardValues[1], '#000')
   }
 
-  /* TODO
   {
     const items = await ht1024._traverseInOrder()
     assert.deepEqual(items.map(item => item.sortValue), [2, 4])
   }
-  */
 
   {
     const reverseValues = []
@@ -891,7 +889,12 @@ const test11 = new Test('DiskSortedHashTable', async function integration11() {
     assert.equal(forwardValues[2], '#000')
   }
 
-  await ht1024.delete('maroon')
+  {
+    const items = await ht1024._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [1, 2, 4])
+  }
+
+  await ht1024.delete('maroon').then(didDelete => assert(didDelete))
 
   {
     const forwardValues = []
@@ -903,7 +906,12 @@ const test11 = new Test('DiskSortedHashTable', async function integration11() {
     assert.equal(forwardValues[1], '#000')
   }
 
-  await ht1024.delete('yellow')
+  {
+    const items = await ht1024._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [2, 4])
+  }
+
+  await ht1024.delete('yellow').then(didDelete => assert(didDelete))
 
   {
     const forwardValues = []
@@ -914,7 +922,12 @@ const test11 = new Test('DiskSortedHashTable', async function integration11() {
     assert.equal(forwardValues[0], '#000')
   }
 
-  await ht1024.delete('black')
+  {
+    const items = await ht1024._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [4])
+  }
+
+  await ht1024.delete('black').then(didDelete => assert(didDelete))
 
   {
     const forwardValues = []
@@ -922,6 +935,11 @@ const test11 = new Test('DiskSortedHashTable', async function integration11() {
       forwardValues.push(value)
     }
     assert.equal(forwardValues.length, 0)
+  }
+
+  {
+    const items = await ht1024._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [])
   }
 
   ht1024.close()
@@ -1026,6 +1044,38 @@ const test13 = new Test('DiskSortedHashTable', async function integration13() {
   }
 
   ht1024.close()
+}).case()
+
+const test14_00 = new Test('DiskSortedHashTable', async function integration14_00() {
+  const ht100 = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/10`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/10_header`,
+    initialLength: 100,
+    sortValueType: 'number',
+    resizeRatio: 0,
+  })
+  await ht100.destroy()
+  await ht100.init()
+
+  await ht100.set('1', 'value1', 1)
+  await ht100.set('2', 'value2', 2)
+  await ht100.set('3', 'value3', 3)
+  await ht100.set('4', 'value4', 4)
+  await ht100.set('5', 'value5', 5)
+  await ht100.set('6', 'value6', 6)
+  await ht100.set('7', 'value7', 7)
+  await ht100.set('8', 'value8', 8)
+  await ht100.set('9', 'value9', 9)
+  await ht100.set('10', 'value10', 10)
+  await ht100.set('11', 'value11', 11)
+  await ht100.set('12', 'value12', 12)
+  await ht100.set('13', 'value13', 13)
+  await ht100.set('14', 'value14', 14)
+  await ht100.set('15', 'value15', 15)
+
+  await ht100._logBTree()
+
+  ht100.close()
 }).case()
 
 const test14_0 = new Test('DiskSortedHashTable', async function integration14_0() {
@@ -1498,6 +1548,223 @@ const test14_0 = new Test('DiskSortedHashTable', async function integration14_0(
       'value3',
       'value2',
       'value1',
+    ])
+  }
+
+  await ht100.delete('33')
+
+  {
+    const items = await ht100._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+      11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+      21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
+      31, 32,
+    ])
+  }
+
+  await ht100.delete('31')
+
+  {
+    const items = await ht100._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+      11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+      21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
+      32,
+    ])
+  }
+
+  await ht100.delete('32')
+
+  {
+    const items = await ht100._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+      11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+      21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
+    ])
+  }
+
+
+  await ht100.delete('1')
+
+  {
+    const items = await ht100._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [
+      2, 3, 4, 5, 6, 7, 8, 9, 10,
+      11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+      21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
+    ])
+  }
+
+  await ht100.delete('29')
+
+  {
+    const items = await ht100._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [
+      2, 3, 4, 5, 6, 7, 8, 9, 10,
+      11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+      21, 22, 23, 24, 25, 26, 27, 28, 30,
+    ])
+  }
+
+  await ht100.delete('30')
+
+  {
+    const items = await ht100._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [
+      2, 3, 4, 5, 6, 7, 8, 9, 10,
+      11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+      21, 22, 23, 24, 25, 26, 27, 28,
+    ])
+  }
+
+  await ht100.delete('27')
+
+  {
+    const items = await ht100._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [
+      2, 3, 4, 5, 6, 7, 8, 9, 10,
+      11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+      21, 22, 23, 24, 25, 26, 28,
+    ])
+  }
+
+  await ht100.delete('28')
+
+  {
+    const items = await ht100._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [
+      2, 3, 4, 5, 6, 7, 8, 9, 10,
+      11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+      21, 22, 23, 24, 25, 26,
+    ])
+  }
+
+  await ht100.delete('5')
+
+  {
+    const items = await ht100._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [
+      2, 3, 4, 6, 7, 8, 9, 10,
+      11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+      21, 22, 23, 24, 25, 26,
+    ])
+  }
+
+  await ht100.delete('4')
+
+  {
+    const items = await ht100._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [
+      2, 3, 6, 7, 8, 9, 10,
+      11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+      21, 22, 23, 24, 25, 26,
+    ])
+  }
+
+  await ht100.delete('23')
+
+  {
+    const items = await ht100._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [
+      2, 3, 6, 7, 8, 9, 10,
+      11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+      21, 22, 24, 25, 26,
+    ])
+  }
+
+  await ht100.delete('23').then(didDelete => assert(!didDelete))
+
+  await ht100.delete('13')
+
+  {
+    const items = await ht100._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [
+      2, 3, 6, 7, 8, 9, 10,
+      11, 12, 14, 15, 16, 17, 18, 19, 20,
+      21, 22, 24, 25, 26,
+    ])
+  }
+
+  await ht100.delete('3')
+
+  {
+    const items = await ht100._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [
+      2, 6, 7, 8, 9, 10,
+      11, 12, 14, 15, 16, 17, 18, 19, 20,
+      21, 22, 24, 25, 26,
+    ])
+  }
+
+  await ht100.delete('2')
+
+  {
+    const items = await ht100._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [
+      6, 7, 8, 9, 10,
+      11, 12, 14, 15, 16, 17, 18, 19, 20,
+      21, 22, 24, 25, 26,
+    ])
+  }
+
+  await ht100.delete('6')
+
+  {
+    const items = await ht100._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [
+      7, 8, 9, 10,
+      11, 12, 14, 15, 16, 17, 18, 19, 20,
+      21, 22, 24, 25, 26,
+    ])
+  }
+
+  await ht100.delete('7')
+
+  {
+    const items = await ht100._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [
+      8, 9, 10,
+      11, 12, 14, 15, 16, 17, 18, 19, 20,
+      21, 22, 24, 25, 26,
+    ])
+  }
+
+  await ht100.delete('17')
+
+  {
+    const items = await ht100._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [
+      8, 9, 10,
+      11, 12, 14, 15, 16, 18, 19, 20,
+      21, 22, 24, 25, 26,
+    ])
+  }
+
+  await ht100.delete('12')
+
+  {
+    const items = await ht100._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [
+      8, 9, 10,
+      11, 14, 15, 16, 18, 19, 20,
+      21, 22, 24, 25, 26,
+    ])
+  }
+
+  await ht100._logBTree()
+  await ht100.delete('20')
+  await ht100._logBTree()
+  process.exit()
+
+  {
+    const items = await ht100._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [
+      8, 9, 10,
+      11, 14, 15, 16, 18, 19,
+      21, 22, 24, 25, 26,
     ])
   }
 
@@ -3017,6 +3284,9 @@ const test17 = new Test('DiskSortedHashTable', async function integration17() {
     n += 1
   }
 
+  await ht._logBTree()
+  process.exit()
+
   await assertBalanced(ht)
   await assertMinHeight(ht, calculateMinBTreeHeight(1023, 2))
   await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 2))
@@ -4379,7 +4649,9 @@ const test = Test.all([
 ])
 
 if (process.argv[1] == __filename) {
-  test()
+  // test()
+  test14_0()
+  // test14_00()
 }
 
 module.exports = test
