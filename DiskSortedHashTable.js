@@ -54,6 +54,9 @@ const REMOVED = 2
  * })
  * ```
  *
+ * Limits:
+ *   * 511 KiB for key, value, and sortValue.
+ *
  * ## Resizing the disk sorted hash table
  * When an item is inserted into the disk sorted hash table via [set](/docs/DiskHashTable#set), the current capacity ratio of the table is calculated as the table's count divided by the table's length. If the current capacity ratio exceeds the `resizeRatio` (and the `resizeRatio` is not 0), a resize of the table occurs.
  *
