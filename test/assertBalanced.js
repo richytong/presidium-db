@@ -4,7 +4,7 @@ const assert = require('assert')
 async function assertBalanced(ht) {
   const leafHeights = []
   await ht._constructBTree({
-    unique: true,
+    unique: false,
     onLeaf({ height }) {
       leafHeights.push(height)
     }
