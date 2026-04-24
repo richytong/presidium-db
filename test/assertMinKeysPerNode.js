@@ -1,7 +1,7 @@
 // assertMinKeysPerNode(ht DiskSortedHashTable, minKeysPerNode number) -> Promise<>
 async function assertMinKeysPerNode(ht, minKeysPerNode) {
   await ht._constructBTree({
-    unique: true,
+    unique: false,
     onNode({ node }) {
       if (node.items.length < minKeysPerNode) {
         if (node.root) {
