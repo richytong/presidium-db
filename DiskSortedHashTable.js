@@ -2193,7 +2193,7 @@ class DiskSortedHashTable {
       // point grandparents to new internal node
       if (btreeParentNodeItem.btreeParentNodeItem == null) {
         // skip
-      } else if (btreeParentNodeItem.btreeParentNodeItem.isLeftChildPointer) {
+      } else if (btreeParentNodeItem.btreeParentNodeItem.isLeftChildPointer) { // leftmost grandparent
         if (btreeParentNodeItem.btreeParentNodeItem.btreeLeftChildNodeRightmostItemIndex === rightParentNodeItem.index) { // right parent node item was rightmost item
           if (rightParentNodeItem.rightItem == null) {
             // point right grandparent left child
@@ -2201,17 +2201,6 @@ class DiskSortedHashTable {
               btreeParentNodeItem.btreeParentNodeItem.index,
               rightSiblingNodeItems[0].index
             )
-
-            /* unreachable
-            if (btreeParentNodeItem.btreeParentNodeItem.leftItem) {
-              // point left grandparent right child
-              await this._writeBTreeRightChildNodeRightmostItemIndex(
-                btreeParentNodeItem.btreeParentNodeItem.leftItem.index,
-                rightSiblingNodeItems[0].index
-              )
-            }
-            */
-
           }
         }
       } else if (btreeParentNodeItem.btreeParentNodeItem.isRightChildPointer) {
