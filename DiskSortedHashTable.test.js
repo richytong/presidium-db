@@ -4152,113 +4152,6 @@ const test14_5 = new Test('DiskSortedHashTable', async function integration14_5(
   ht100.close()
 }).case()
 
-const test14_6 = new Test('DiskSortedHashTable', async function integration14_6() {
-  const ht = new DiskSortedHashTable({
-    storagePath: `${__dirname}/DiskSortedHashTable_test_data/10`,
-    headerPath: `${__dirname}/DiskSortedHashTable_test_data/10_header`,
-    initialLength: 100,
-    sortValueType: 'number',
-    resizeRatio: 0,
-  })
-  await ht.destroy()
-  await ht.init()
-
-  async function logForwardValues() {
-    const values = []
-    for await (const value of ht.forwardIterator()) {
-      values.push(value)
-    }
-    console.log(values)
-  }
-
-  await ht.set('100', 'value100', 100)
-  await ht.set('200', 'value200', 200)
-  await ht.set('300', 'value300', 300)
-  await ht.set('400', 'value400', 400)
-  await ht.set('50', 'value50', 50)
-  await ht.set('500', 'value500', 500)
-  await ht.set('600', 'value600', 600)
-  await ht.set('25', 'value25', 25)
-  await ht.set('15', 'value15', 15)
-
-
-  await ht.set('700', 'value700', 700)
-  await ht.set('800', 'value800', 800)
-  await ht.set('900', 'value900', 900)
-  await ht.set('1000', 'value1000', 1000)
-  await ht.set('1100', 'value1100', 1100)
-
-  await ht.delete('1100')
-  await ht.delete('700')
-  await ht.set('501', 'value501', 501)
-
-  await ht.delete('300')
-  await ht._logBTree()
-
-  // await ht.set('3', 'value3', 3)
-  // await ht.set('4', 'value4', 4)
-  // await ht.set('5', 'value5', 5)
-  // await ht.set('6', 'value6', 6)
-  // await ht.set('7', 'value7', 7)
-  // await ht.set('8', 'value8', 8)
-
-  // await ht._logBTree()
-  // assert.strictEqual(ht.count(), 9)
-
-  /*
-  assert.deepEqual(
-    JSON.stringify(await ht._constructBTree({ unique: false }), (key, value) => {
-      if (key == 'items' || key == 'keys') {
-        return undefined
-      }
-      return value
-    }),
-    JSON.stringify({
-      "50": {
-        "leftChild": {
-          "25": {}
-        },
-        "rightChild": {
-          "100": {}
-        }
-      },
-      "200": {
-        "leftChild": {
-          "100": {}
-        },
-        "rightChild": {
-          "300": {}
-        }
-      },
-      "400": {
-        "leftChild": {
-          "300": {}
-        },
-        "rightChild": {
-          "500": {},
-          "600": {}
-        }
-      },
-      "root": true
-    })
-  )
-  */
-
-  /*
-  {
-    const items = await ht100._traverseInOrder()
-    assert.deepEqual(items.map(item => item.sortValue), [
-      9, 10,
-      11, 12, 13, 14, 15, 16, 17, 18, 190, 200,
-      210, 220, 230, 240, 250, 260, 270, 280, 290, 300,
-      310, 320, 330,
-    ])
-  }
-  */
-
-  ht.close()
-}).case()
-
 const test15 = new Test('DiskSortedHashTable', async function integration15() {
   const ht10 = new DiskSortedHashTable({
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/10`,
@@ -7043,7 +6936,6 @@ if (process.argv[1] == __filename) {
     test14_3,
     test14_4,
     test14_5,
-    test14_6,
     test17_7_0,
     test17_7_1,
     test17_7_2,
@@ -7057,7 +6949,7 @@ if (process.argv[1] == __filename) {
     // test17_4,
     // test17_5,
   ])
-  test14_6()
+  test()
 }
 
 module.exports = test
