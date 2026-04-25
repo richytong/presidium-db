@@ -4152,6 +4152,113 @@ const test14_5 = new Test('DiskSortedHashTable', async function integration14_5(
   ht100.close()
 }).case()
 
+const test14_6 = new Test('DiskSortedHashTable', async function integration14_6() {
+  const ht = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/10`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/10_header`,
+    initialLength: 100,
+    sortValueType: 'number',
+    resizeRatio: 0,
+  })
+  await ht.destroy()
+  await ht.init()
+
+  async function logForwardValues() {
+    const values = []
+    for await (const value of ht.forwardIterator()) {
+      values.push(value)
+    }
+    console.log(values)
+  }
+
+  await ht.set('100', 'value100', 100)
+  await ht.set('200', 'value200', 200)
+  await ht.set('300', 'value300', 300)
+  await ht.set('400', 'value400', 400)
+  await ht.set('50', 'value50', 50)
+  await ht.set('500', 'value500', 500)
+  await ht.set('600', 'value600', 600)
+  await ht.set('25', 'value25', 25)
+  await ht.set('15', 'value15', 15)
+
+
+  await ht.set('700', 'value700', 700)
+  await ht.set('800', 'value800', 800)
+  await ht.set('900', 'value900', 900)
+  await ht.set('1000', 'value1000', 1000)
+  await ht.set('1100', 'value1100', 1100)
+
+  await ht.delete('1100')
+  await ht.delete('700')
+  await ht.set('501', 'value501', 501)
+
+  await ht.delete('300')
+  await ht._logBTree()
+
+  // await ht.set('3', 'value3', 3)
+  // await ht.set('4', 'value4', 4)
+  // await ht.set('5', 'value5', 5)
+  // await ht.set('6', 'value6', 6)
+  // await ht.set('7', 'value7', 7)
+  // await ht.set('8', 'value8', 8)
+
+  // await ht._logBTree()
+  // assert.strictEqual(ht.count(), 9)
+
+  /*
+  assert.deepEqual(
+    JSON.stringify(await ht._constructBTree({ unique: false }), (key, value) => {
+      if (key == 'items' || key == 'keys') {
+        return undefined
+      }
+      return value
+    }),
+    JSON.stringify({
+      "50": {
+        "leftChild": {
+          "25": {}
+        },
+        "rightChild": {
+          "100": {}
+        }
+      },
+      "200": {
+        "leftChild": {
+          "100": {}
+        },
+        "rightChild": {
+          "300": {}
+        }
+      },
+      "400": {
+        "leftChild": {
+          "300": {}
+        },
+        "rightChild": {
+          "500": {},
+          "600": {}
+        }
+      },
+      "root": true
+    })
+  )
+  */
+
+  /*
+  {
+    const items = await ht100._traverseInOrder()
+    assert.deepEqual(items.map(item => item.sortValue), [
+      9, 10,
+      11, 12, 13, 14, 15, 16, 17, 18, 190, 200,
+      210, 220, 230, 240, 250, 260, 270, 280, 290, 300,
+      310, 320, 330,
+    ])
+  }
+  */
+
+  ht.close()
+}).case()
+
 const test15 = new Test('DiskSortedHashTable', async function integration15() {
   const ht10 = new DiskSortedHashTable({
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/10`,
@@ -4873,6 +4980,7 @@ const test17 = new Test('DiskSortedHashTable', async function integration17() {
   await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 2))
   await assertMinKeysPerNode(ht, 1)
   await assertMaxKeysPerNode(ht, 3)
+  assert.equal(ht.count(), 1023)
 
   assert.deepEqual(values, sortedNumbers.map(n => `value${n}`))
 
@@ -4899,20 +5007,16 @@ const test17 = new Test('DiskSortedHashTable', async function integration17() {
 
   let ndeleted = 0
   for (const n of randomNumbers) {
-    // await ht._logBTree()
     console.log('delete', n)
     await ht.delete(`${n}`)
     ndeleted += 1
-    // if (n === 720) {
-    // await ht._logBTree()
-    // process.exit()
-    // }
 
     await assertBalanced(ht)
     await assertMaxHeight(ht, calculateMaxBTreeHeight(1023 - ndeleted, 2))
     await assertMinHeight(ht, calculateMinBTreeHeight(1023 - ndeleted, 2))
     await assertMinKeysPerNode(ht, 1)
     await assertMaxKeysPerNode(ht, 3)
+    assert.equal(ht.count(), 1023 - ndeleted)
 
     sortedNumbers.splice(sortedNumbers.indexOf(n), 1)
 
@@ -4922,7 +5026,7 @@ const test17 = new Test('DiskSortedHashTable', async function integration17() {
     }
   }
 
-  await ht.close()
+  ht.close()
 }).case()
 
 const test17_1 = new Test('DiskSortedHashTable', async function integration17_1() {
@@ -4953,6 +5057,7 @@ const test17_1 = new Test('DiskSortedHashTable', async function integration17_1(
   await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 2))
   await assertMinKeysPerNode(ht, 1)
   await assertMaxKeysPerNode(ht, 3)
+  assert.equal(ht.count(), 1023)
 
   values.reverse()
   assert.deepEqual(values, sortedNumbers.map(n => `value${n}`))
@@ -4978,7 +5083,7 @@ const test17_1 = new Test('DiskSortedHashTable', async function integration17_1(
     assert.deepEqual(reverseValues, values.reverse())
   }
 
-  await ht.close()
+  ht.close()
 }).case()
 
 const test17_2 = new Test('DiskSortedHashTable', async function integration17_2() {
@@ -5020,6 +5125,7 @@ const test17_2 = new Test('DiskSortedHashTable', async function integration17_2(
   await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 2))
   await assertMinKeysPerNode(ht, 1)
   await assertMaxKeysPerNode(ht, 3)
+  assert.equal(ht.count(), 1023)
 
   values.sort((a, b) => Number(a.replace('value', '') - Number(b.replace('value', ''))))
   assert.deepEqual(values, sortedNumbers.map(n => `value${n}`))
@@ -5045,7 +5151,7 @@ const test17_2 = new Test('DiskSortedHashTable', async function integration17_2(
     assert.deepEqual(reverseValues, values.reverse())
   }
 
-  await ht.close()
+  ht.close()
 }).case()
 
 const test17_3 = new Test('DiskSortedHashTable', async function integration17_3() {
@@ -5087,6 +5193,7 @@ const test17_3 = new Test('DiskSortedHashTable', async function integration17_3(
   await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 2))
   await assertMinKeysPerNode(ht, 1)
   await assertMaxKeysPerNode(ht, 3)
+  assert.equal(ht.count(), 1023)
 
   values.sort((a, b) => Number(a.replace('value', '') - Number(b.replace('value', ''))))
   assert.deepEqual(values, sortedNumbers.map(n => `value${n}`))
@@ -5112,11 +5219,12 @@ const test17_3 = new Test('DiskSortedHashTable', async function integration17_3(
     assert.deepEqual(reverseValues, values.reverse())
   }
 
-  await ht.close()
+  ht.close()
 }).case()
 
 const test17_4 = new Test('DiskSortedHashTable', async function integration17_4() {
-  const sortedNumbers = [...require('./test/randomNumbers1023_1.json')].sort((a, b) => a - b)
+  const randomNumbers = require('./test/randomNumbers1023_1.json')
+  const sortedNumbers = [...randomNumbers].sort((a, b) => a - b)
   assert.equal(sortedNumbers.length, 1023)
 
   const ht = new DiskSortedHashTable({
@@ -5144,6 +5252,7 @@ const test17_4 = new Test('DiskSortedHashTable', async function integration17_4(
   await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 3))
   await assertMinKeysPerNode(ht, 2)
   await assertMaxKeysPerNode(ht, 5)
+  assert.equal(ht.count(), 1023)
 
   assert.deepEqual(values, sortedNumbers.map(n => `value${n}`))
 
@@ -5168,11 +5277,34 @@ const test17_4 = new Test('DiskSortedHashTable', async function integration17_4(
     assert.deepEqual(reverseValues, values.reverse())
   }
 
-  await ht.close()
+  let ndeleted = 0
+  for (const n of randomNumbers) {
+    console.log('delete', n)
+    await ht.delete(`${n}`)
+    ndeleted += 1
+
+    await assertBalanced(ht)
+    await assertMaxHeight(ht, calculateMaxBTreeHeight(1023 - ndeleted, 3))
+    await assertMinHeight(ht, calculateMinBTreeHeight(1023 - ndeleted, 3))
+    await assertMinKeysPerNode(ht, 2)
+    await assertMaxKeysPerNode(ht, 5)
+    assert.equal(ht.count(), 1023 - ndeleted)
+
+    sortedNumbers.splice(sortedNumbers.indexOf(n), 1)
+
+    {
+      const items = await ht._traverseInOrder()
+      assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
+    }
+  }
+
+  ht.close()
+
 }).case()
 
 const test17_5 = new Test('DiskSortedHashTable', async function integration17_5() {
-  const sortedNumbers = [...require('./test/randomNumbers1023_1.json')].sort((a, b) => a - b)
+  const randomNumbers = require('./test/randomNumbers1023_1.json')
+  const sortedNumbers = [...randomNumbers].sort((a, b) => a - b)
   assert.equal(sortedNumbers.length, 1023)
 
   const ht = new DiskSortedHashTable({
@@ -5200,6 +5332,7 @@ const test17_5 = new Test('DiskSortedHashTable', async function integration17_5(
   await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 3))
   await assertMinKeysPerNode(ht, 2)
   await assertMaxKeysPerNode(ht, 5)
+  assert.equal(ht.count(), 1023)
 
   values.reverse()
   assert.deepEqual(values, sortedNumbers.map(n => `value${n}`))
@@ -5225,7 +5358,28 @@ const test17_5 = new Test('DiskSortedHashTable', async function integration17_5(
     assert.deepEqual(reverseValues, values.reverse())
   }
 
-  await ht.close()
+  let ndeleted = 0
+  for (const n of randomNumbers) {
+    console.log('delete', n)
+    await ht.delete(`${n}`)
+    ndeleted += 1
+
+    await assertBalanced(ht)
+    await assertMaxHeight(ht, calculateMaxBTreeHeight(1023 - ndeleted, 3))
+    await assertMinHeight(ht, calculateMinBTreeHeight(1023 - ndeleted, 3))
+    await assertMinKeysPerNode(ht, 2)
+    await assertMaxKeysPerNode(ht, 5)
+    assert.equal(ht.count(), 1023 - ndeleted)
+
+    sortedNumbers.splice(sortedNumbers.indexOf(n), 1)
+
+    {
+      const items = await ht._traverseInOrder()
+      assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
+    }
+  }
+
+  ht.close()
 }).case()
 
 const test17_6 = new Test('DiskSortedHashTable', async function integration17_6() {
@@ -5268,6 +5422,7 @@ const test17_6 = new Test('DiskSortedHashTable', async function integration17_6(
   await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 3))
   await assertMinKeysPerNode(ht, 2)
   await assertMaxKeysPerNode(ht, 5)
+  assert.equal(ht.count(), 1023)
 
   values.sort((a, b) => Number(a.replace('value', '') - Number(b.replace('value', ''))))
   assert.deepEqual(values, sortedNumbers.map(n => `value${n}`))
@@ -5293,7 +5448,7 @@ const test17_6 = new Test('DiskSortedHashTable', async function integration17_6(
     assert.deepEqual(reverseValues, values.reverse())
   }
 
-  await ht.close()
+  ht.close()
 }).case()
 
 const test17_7_0 = new Test('DiskSortedHashTable', async function integration17_7_0() {
@@ -5338,6 +5493,7 @@ const test17_7_0 = new Test('DiskSortedHashTable', async function integration17_
   await assertMaxHeight(ht, calculateMaxBTreeHeight(127, 3))
   await assertMinKeysPerNode(ht, 2)
   await assertMaxKeysPerNode(ht, 5)
+  assert.equal(ht.count(), 127)
 
   values.sort((a, b) => Number(a.replace('value', '') - Number(b.replace('value', ''))))
   assert.deepEqual(values, sortedNumbers.map(n => `value${n}`))
@@ -5374,6 +5530,7 @@ const test17_7_0 = new Test('DiskSortedHashTable', async function integration17_
     await assertMinHeight(ht, calculateMinBTreeHeight(127 - ndeleted, 3))
     await assertMinKeysPerNode(ht, 2)
     await assertMaxKeysPerNode(ht, 5)
+    assert.equal(ht.count(), 127 - ndeleted)
 
     sortedNumbers.splice(sortedNumbers.indexOf(n), 1)
 
@@ -5383,7 +5540,9 @@ const test17_7_0 = new Test('DiskSortedHashTable', async function integration17_
     }
   }
 
-  await ht.close()
+  assert.equal(ht.count(), 0)
+
+  ht.close()
 }).case()
 
 const test17_7_1 = new Test('DiskSortedHashTable', async function integration17_7_1() {
@@ -5428,6 +5587,7 @@ const test17_7_1 = new Test('DiskSortedHashTable', async function integration17_
   await assertMaxHeight(ht, calculateMaxBTreeHeight(127, 2))
   await assertMinKeysPerNode(ht, 1)
   await assertMaxKeysPerNode(ht, 3)
+  assert.equal(ht.count(), 127)
 
   values.sort((a, b) => Number(a.replace('value', '') - Number(b.replace('value', ''))))
   assert.deepEqual(values, sortedNumbers.map(n => `value${n}`))
@@ -5464,6 +5624,7 @@ const test17_7_1 = new Test('DiskSortedHashTable', async function integration17_
     await assertMinHeight(ht, calculateMinBTreeHeight(127 - ndeleted, 2))
     await assertMinKeysPerNode(ht, 1)
     await assertMaxKeysPerNode(ht, 3)
+    assert.equal(ht.count(), 127 - ndeleted)
 
     sortedNumbers.splice(sortedNumbers.indexOf(n), 1)
 
@@ -5473,7 +5634,443 @@ const test17_7_1 = new Test('DiskSortedHashTable', async function integration17_
     }
   }
 
-  await ht.close()
+  assert.equal(ht.count(), 0)
+
+  ht.close()
+}).case()
+
+const test17_7_2 = new Test('DiskSortedHashTable', async function integration17_7_2() {
+  const randomNumbers = require('./test/randomNumbers127_1.json')
+  const sortedNumbers = [...randomNumbers].sort((a, b) => a - b)
+  assert.equal(sortedNumbers.length, 127)
+
+  const ht = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/256`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/256_header`,
+    initialLength: 256,
+    sortValueType: 'number',
+    resizeRatio: 0,
+    degree: 3,
+  })
+  await ht.destroy()
+  await ht.init()
+
+  const values = []
+  let n1 = 127
+  let n2 = 1
+  while (n1 >= 64) {
+
+    if (n1 == 64) {
+      console.log('set', `${n1}`, `value${n1}`, n1)
+      await ht.set(`${n1}`, `value${n1}`, n1)
+      values.push(`value${n1}`)
+    } else {
+      console.log('set', `${n1}`, `value${n1}`, n1)
+      await ht.set(`${n1}`, `value${n1}`, n1)
+      console.log('set', `${n2}`, `value${n2}`, n2)
+      await ht.set(`${n2}`, `value${n2}`, n2)
+      values.push(`value${n1}`)
+      values.push(`value${n2}`)
+    }
+    n1 -= 1
+    n2 += 1
+  }
+
+  await assertBalanced(ht)
+  await assertMinHeight(ht, calculateMinBTreeHeight(127, 3))
+  await assertMaxHeight(ht, calculateMaxBTreeHeight(127, 3))
+  await assertMinKeysPerNode(ht, 2)
+  await assertMaxKeysPerNode(ht, 5)
+  assert.equal(ht.count(), 127)
+
+  values.sort((a, b) => Number(a.replace('value', '') - Number(b.replace('value', ''))))
+  assert.deepEqual(values, sortedNumbers.map(n => `value${n}`))
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator()) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values)
+  }
+
+  {
+    const items = await ht._traverseInOrder()
+    assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator()) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, values.reverse())
+  }
+
+  const sortedNumbers2 = [...sortedNumbers]
+
+  let ndeleted = 0
+  for (const n of sortedNumbers) {
+    console.log('delete', n)
+    await ht.delete(`${n}`)
+    ndeleted += 1
+
+    await assertBalanced(ht)
+    await assertMaxHeight(ht, calculateMaxBTreeHeight(127 - ndeleted, 3))
+    await assertMinHeight(ht, calculateMinBTreeHeight(127 - ndeleted, 3))
+    await assertMinKeysPerNode(ht, 2)
+    await assertMaxKeysPerNode(ht, 5)
+    assert.equal(ht.count(), 127 - ndeleted)
+
+    sortedNumbers2.splice(sortedNumbers2.indexOf(n), 1)
+
+    {
+      const items = await ht._traverseInOrder()
+      assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers2)
+    }
+  }
+
+  assert.equal(ht.count(), 0)
+
+  ht.close()
+}).case()
+
+const test17_7_3 = new Test('DiskSortedHashTable', async function integration17_7_3() {
+  const randomNumbers = require('./test/randomNumbers127_1.json')
+  const sortedNumbers = [...randomNumbers].sort((a, b) => a - b)
+  assert.equal(sortedNumbers.length, 127)
+
+  const ht = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/256`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/256_header`,
+    initialLength: 256,
+    sortValueType: 'number',
+    resizeRatio: 0,
+    degree: 3,
+  })
+  await ht.destroy()
+  await ht.init()
+
+  const values = []
+  let n = 1
+  while (n < 128) {
+    console.log('set', `${n}`, `value${n}`, n)
+    await ht.set(`${n}`, `value${n}`, n)
+    values.push(`value${n}`)
+    n += 1
+  }
+
+  await assertBalanced(ht)
+  await assertMinHeight(ht, calculateMinBTreeHeight(127, 3))
+  await assertMaxHeight(ht, calculateMaxBTreeHeight(127, 3))
+  await assertMinKeysPerNode(ht, 2)
+  await assertMaxKeysPerNode(ht, 5)
+  assert.equal(ht.count(), 127)
+
+  values.sort((a, b) => Number(a.replace('value', '') - Number(b.replace('value', ''))))
+  assert.deepEqual(values, sortedNumbers.map(n => `value${n}`))
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator()) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values)
+  }
+
+  {
+    const items = await ht._traverseInOrder()
+    assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator()) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, values.reverse())
+  }
+
+  const sortedNumbers2 = [...sortedNumbers]
+
+  let ndeleted = 0
+  for (const n of sortedNumbers) {
+    console.log('delete', n)
+    await ht.delete(`${n}`)
+    ndeleted += 1
+
+    await assertBalanced(ht)
+    await assertMaxHeight(ht, calculateMaxBTreeHeight(127 - ndeleted, 3))
+    await assertMinHeight(ht, calculateMinBTreeHeight(127 - ndeleted, 3))
+    await assertMinKeysPerNode(ht, 2)
+    await assertMaxKeysPerNode(ht, 5)
+    assert.equal(ht.count(), 127 - ndeleted)
+
+    sortedNumbers2.splice(sortedNumbers2.indexOf(n), 1)
+
+    {
+      const items = await ht._traverseInOrder()
+      assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers2)
+    }
+  }
+
+  assert.equal(ht.count(), 0)
+
+  ht.close()
+}).case()
+
+const test17_7_4 = new Test('DiskSortedHashTable', async function integration17_7_4() {
+  const randomNumbers = require('./test/randomNumbers127_1.json')
+  const sortedNumbers = [...randomNumbers].sort((a, b) => a - b)
+  assert.equal(sortedNumbers.length, 127)
+
+  const ht = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/256`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/256_header`,
+    initialLength: 256,
+    sortValueType: 'number',
+    resizeRatio: 0,
+    degree: 2,
+  })
+  await ht.destroy()
+  await ht.init()
+
+  const values = []
+  let n = 1
+  while (n < 128) {
+    console.log('set', `${n}`, `value${n}`, n)
+    await ht.set(`${n}`, `value${n}`, n)
+    values.push(`value${n}`)
+    n += 1
+  }
+
+  await assertBalanced(ht)
+  await assertMinHeight(ht, calculateMinBTreeHeight(127, 2))
+  await assertMaxHeight(ht, calculateMaxBTreeHeight(127, 2))
+  await assertMinKeysPerNode(ht, 1)
+  await assertMaxKeysPerNode(ht, 3)
+  assert.equal(ht.count(), 127)
+
+  values.sort((a, b) => Number(a.replace('value', '') - Number(b.replace('value', ''))))
+  assert.deepEqual(values, sortedNumbers.map(n => `value${n}`))
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator()) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values)
+  }
+
+  {
+    const items = await ht._traverseInOrder()
+    assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator()) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, values.reverse())
+  }
+
+  const sortedNumbers2 = [...sortedNumbers]
+
+  let ndeleted = 0
+  for (const n of sortedNumbers) {
+    console.log('delete', n)
+    await ht.delete(`${n}`)
+    ndeleted += 1
+
+    await assertBalanced(ht)
+    await assertMaxHeight(ht, calculateMaxBTreeHeight(127 - ndeleted, 2))
+    await assertMinHeight(ht, calculateMinBTreeHeight(127 - ndeleted, 2))
+    await assertMinKeysPerNode(ht, 1)
+    await assertMaxKeysPerNode(ht, 3)
+    assert.equal(ht.count(), 127 - ndeleted)
+
+    sortedNumbers2.splice(sortedNumbers2.indexOf(n), 1)
+
+    {
+      const items = await ht._traverseInOrder()
+      assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers2)
+    }
+  }
+
+  assert.equal(ht.count(), 0)
+
+  ht.close()
+}).case()
+
+const test17_7_5 = new Test('DiskSortedHashTable', async function integration17_7_5() {
+  const randomNumbers = require('./test/randomNumbers127_1.json')
+  const sortedNumbers = [...randomNumbers].sort((a, b) => a - b)
+  assert.equal(sortedNumbers.length, 127)
+
+  const ht = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/256`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/256_header`,
+    initialLength: 256,
+    sortValueType: 'number',
+    resizeRatio: 0,
+    degree: 3,
+  })
+  await ht.destroy()
+  await ht.init()
+
+  const values = []
+  let n = 1
+  while (n < 128) {
+    console.log('set', `${n}`, `value${n}`, n)
+    await ht.set(`${n}`, `value${n}`, n)
+    values.push(`value${n}`)
+    n += 1
+  }
+
+  await assertBalanced(ht)
+  await assertMinHeight(ht, calculateMinBTreeHeight(127, 3))
+  await assertMaxHeight(ht, calculateMaxBTreeHeight(127, 3))
+  await assertMinKeysPerNode(ht, 2)
+  await assertMaxKeysPerNode(ht, 5)
+  assert.equal(ht.count(), 127)
+
+  values.sort((a, b) => Number(a.replace('value', '') - Number(b.replace('value', ''))))
+  assert.deepEqual(values, sortedNumbers.map(n => `value${n}`))
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator()) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values)
+  }
+
+  {
+    const items = await ht._traverseInOrder()
+    assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator()) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, values.reverse())
+  }
+
+  const sortedNumbers2 = [...sortedNumbers]
+  const reverseSortedNumbers = [...sortedNumbers].reverse()
+
+  let ndeleted = 0
+  for (const n of reverseSortedNumbers) {
+    console.log('delete', n)
+    await ht.delete(`${n}`)
+    ndeleted += 1
+
+    await assertBalanced(ht)
+    await assertMaxHeight(ht, calculateMaxBTreeHeight(127 - ndeleted, 3))
+    await assertMinHeight(ht, calculateMinBTreeHeight(127 - ndeleted, 3))
+    await assertMinKeysPerNode(ht, 2)
+    await assertMaxKeysPerNode(ht, 5)
+    assert.equal(ht.count(), 127 - ndeleted)
+
+    sortedNumbers2.splice(sortedNumbers2.indexOf(n), 1)
+
+    {
+      const items = await ht._traverseInOrder()
+      assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers2)
+    }
+  }
+
+  assert.equal(ht.count(), 0)
+
+  ht.close()
+}).case()
+
+const test17_7_6 = new Test('DiskSortedHashTable', async function integration17_7_6() {
+  const randomNumbers = require('./test/randomNumbers127_1.json')
+  const sortedNumbers = [...randomNumbers].sort((a, b) => a - b)
+  assert.equal(sortedNumbers.length, 127)
+
+  const ht = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/256`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/256_header`,
+    initialLength: 256,
+    sortValueType: 'number',
+    resizeRatio: 0,
+    degree: 2,
+  })
+  await ht.destroy()
+  await ht.init()
+
+  const values = []
+  let n = 1
+  while (n < 128) {
+    console.log('set', `${n}`, `value${n}`, n)
+    await ht.set(`${n}`, `value${n}`, n)
+    values.push(`value${n}`)
+    n += 1
+  }
+
+  await assertBalanced(ht)
+  await assertMinHeight(ht, calculateMinBTreeHeight(127, 2))
+  await assertMaxHeight(ht, calculateMaxBTreeHeight(127, 2))
+  await assertMinKeysPerNode(ht, 1)
+  await assertMaxKeysPerNode(ht, 3)
+  assert.equal(ht.count(), 127)
+
+  values.sort((a, b) => Number(a.replace('value', '') - Number(b.replace('value', ''))))
+  assert.deepEqual(values, sortedNumbers.map(n => `value${n}`))
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator()) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values)
+  }
+
+  {
+    const items = await ht._traverseInOrder()
+    assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator()) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, values.reverse())
+  }
+
+  const sortedNumbers2 = [...sortedNumbers]
+  const reverseSortedNumbers = [...sortedNumbers].reverse()
+
+  let ndeleted = 0
+  for (const n of reverseSortedNumbers) {
+    console.log('delete', n)
+    await ht.delete(`${n}`)
+    ndeleted += 1
+
+    await assertBalanced(ht)
+    await assertMaxHeight(ht, calculateMaxBTreeHeight(127 - ndeleted, 2))
+    await assertMinHeight(ht, calculateMinBTreeHeight(127 - ndeleted, 2))
+    await assertMinKeysPerNode(ht, 1)
+    await assertMaxKeysPerNode(ht, 3)
+    assert.equal(ht.count(), 127 - ndeleted)
+
+    sortedNumbers2.splice(sortedNumbers2.indexOf(n), 1)
+
+    {
+      const items = await ht._traverseInOrder()
+      assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers2)
+    }
+  }
+
+  assert.equal(ht.count(), 0)
+
+  ht.close()
 }).case()
 
 const test17_7 = new Test('DiskSortedHashTable', async function integration17_7() {
@@ -5519,6 +6116,7 @@ const test17_7 = new Test('DiskSortedHashTable', async function integration17_7(
   await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 3))
   await assertMinKeysPerNode(ht, 2)
   await assertMaxKeysPerNode(ht, 5)
+  assert.equal(ht.count(), 1023)
 
   values.sort((a, b) => Number(a.replace('value', '') - Number(b.replace('value', ''))))
   assert.deepEqual(values, sortedNumbers.map(n => `value${n}`))
@@ -5544,7 +6142,7 @@ const test17_7 = new Test('DiskSortedHashTable', async function integration17_7(
     assert.deepEqual(reverseValues, values.reverse())
   }
 
-  await ht.close()
+  ht.close()
 }).case()
 
 const test18 = new Test('DiskSortedHashTable', async function integration18() {
@@ -5599,6 +6197,7 @@ const test18 = new Test('DiskSortedHashTable', async function integration18() {
     await assertMaxHeight(ht, calculateMaxBTreeHeight(127, 2))
     await assertMinKeysPerNode(ht, 1)
     await assertMaxKeysPerNode(ht, 3)
+    assert.equal(ht.count(), 127)
 
     {
       const forwardValues = []
@@ -5621,11 +6220,37 @@ const test18 = new Test('DiskSortedHashTable', async function integration18() {
       assert.deepEqual(reverseValues, sortedValuesReverse)
     }
 
+    const sortedNumbers1 = [...sortedNumbers]
+
+    let ndeleted = 0
+    for (const n of numbers) {
+      console.log('delete', `key${n}`)
+      await ht.delete(`key${n}`)
+      ndeleted += 1
+
+      await assertBalanced(ht)
+      await assertMaxHeight(ht, calculateMaxBTreeHeight(127 - ndeleted, 2))
+      await assertMinHeight(ht, calculateMinBTreeHeight(127 - ndeleted, 2))
+      await assertMinKeysPerNode(ht, 1)
+      await assertMaxKeysPerNode(ht, 3)
+      assert.equal(ht.count(), 127 - ndeleted)
+
+      sortedNumbers1.splice(sortedNumbers1.indexOf(n), 1)
+
+      {
+        const items = await ht._traverseInOrder()
+        assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers1)
+      }
+
+    }
+
+    assert.equal(ht.count(), 0)
+
     await ht.clear()
   }
 
 
-  await ht.close()
+  ht.close()
   await ht.destroy()
 
 }).case()
@@ -5649,28 +6274,29 @@ const test19 = new Test('DiskSortedHashTable', async function integration19() {
   await ht.destroy()
   await ht.init()
 
-  for (const numbers of [
-    require('./test/randomNumbers127_1.json'),
-    require('./test/randomNumbers127_2.json'),
-    require('./test/randomNumbers127_3.json'),
-    require('./test/randomNumbers127_4.json'),
-    require('./test/randomNumbers127_5.json'),
-    require('./test/randomNumbers127_6.json'),
-    require('./test/randomNumbers127_7.json'),
-    require('./test/randomNumbers127_8.json'),
-    require('./test/randomNumbers127_9.json'),
-    require('./test/randomNumbers127_10.json'),
-    require('./test/randomNumbers127_11.json'),
-    require('./test/randomNumbers127_12.json'),
-    require('./test/randomNumbers127_13.json'),
-    require('./test/randomNumbers127_14.json'),
-    require('./test/randomNumbers127_15.json'),
-    require('./test/randomNumbers127_16.json'),
-    require('./test/randomNumbers127_17.json'),
-    require('./test/randomNumbers127_18.json'),
-    require('./test/randomNumbers127_19.json'),
-    require('./test/randomNumbers127_20.json'),
+  for (const filename of [
+    './test/randomNumbers127_1.json',
+    './test/randomNumbers127_2.json',
+    './test/randomNumbers127_3.json',
+    './test/randomNumbers127_4.json',
+    './test/randomNumbers127_5.json',
+    './test/randomNumbers127_6.json',
+    './test/randomNumbers127_7.json',
+    './test/randomNumbers127_8.json',
+    './test/randomNumbers127_9.json',
+    './test/randomNumbers127_10.json',
+    './test/randomNumbers127_11.json',
+    './test/randomNumbers127_12.json',
+    './test/randomNumbers127_13.json',
+    './test/randomNumbers127_14.json',
+    './test/randomNumbers127_15.json',
+    './test/randomNumbers127_16.json',
+    './test/randomNumbers127_17.json',
+    './test/randomNumbers127_18.json',
+    './test/randomNumbers127_19.json',
+    './test/randomNumbers127_20.json',
   ]) {
+    const numbers = require(filename)
     console.log(JSON.stringify(numbers))
 
     for (const n of numbers) {
@@ -5682,6 +6308,7 @@ const test19 = new Test('DiskSortedHashTable', async function integration19() {
     await assertMaxHeight(ht, calculateMaxBTreeHeight(127, 3))
     await assertMinKeysPerNode(ht, 2)
     await assertMaxKeysPerNode(ht, 5)
+    assert.equal(ht.count(), 127)
 
     {
       const forwardValues = []
@@ -5704,11 +6331,36 @@ const test19 = new Test('DiskSortedHashTable', async function integration19() {
       assert.deepEqual(reverseValues, sortedValuesReverse)
     }
 
+    const sortedNumbers1 = [...sortedNumbers]
+
+    let ndeleted = 0
+    for (const n of numbers) {
+      console.log('delete', `key${n}`)
+      await ht.delete(`key${n}`)
+      ndeleted += 1
+
+      await assertBalanced(ht)
+      await assertMaxHeight(ht, calculateMaxBTreeHeight(127 - ndeleted, 3))
+      await assertMinHeight(ht, calculateMinBTreeHeight(127 - ndeleted, 3))
+      await assertMinKeysPerNode(ht, 2)
+      await assertMaxKeysPerNode(ht, 5)
+      assert.equal(ht.count(), 127 - ndeleted)
+
+      sortedNumbers1.splice(sortedNumbers1.indexOf(n), 1)
+
+      {
+        const items = await ht._traverseInOrder()
+        assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers1)
+      }
+
+    }
+
+    assert.equal(ht.count(), 0)
+
     await ht.clear()
   }
 
-
-  await ht.close()
+  ht.close()
   await ht.destroy()
 
 }).case()
@@ -5752,6 +6404,7 @@ const test20 = new Test('DiskSortedHashTable', async function integration20() {
     await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 2))
     await assertMinKeysPerNode(ht, 1)
     await assertMaxKeysPerNode(ht, 3)
+    assert.equal(ht.count(), 1023)
 
     {
       const forwardValues = []
@@ -5778,7 +6431,7 @@ const test20 = new Test('DiskSortedHashTable', async function integration20() {
   }
 
 
-  await ht.close()
+  ht.close()
   await ht.destroy()
 
 }).case()
@@ -5822,6 +6475,7 @@ const test21 = new Test('DiskSortedHashTable', async function integration21() {
     await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 3))
     await assertMinKeysPerNode(ht, 2)
     await assertMaxKeysPerNode(ht, 5)
+    assert.equal(ht.count(), 1023)
 
     {
       const forwardValues = []
@@ -5848,7 +6502,7 @@ const test21 = new Test('DiskSortedHashTable', async function integration21() {
   }
 
 
-  await ht.close()
+  ht.close()
   await ht.destroy()
 
 }).case()
@@ -5892,6 +6546,7 @@ const test22 = new Test('DiskSortedHashTable', async function integration22() {
     await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 4))
     await assertMinKeysPerNode(ht, 3)
     await assertMaxKeysPerNode(ht, 7)
+    assert.equal(ht.count(), 1023)
 
     {
       const forwardValues = []
@@ -5918,7 +6573,7 @@ const test22 = new Test('DiskSortedHashTable', async function integration22() {
   }
 
 
-  await ht.close()
+  ht.close()
   await ht.destroy()
 
 }).case()
@@ -5962,7 +6617,7 @@ const test23_0 = new Test('DiskSortedHashTable', async function integration23_0(
 
   await assertMinKeysPerNode(ht, 4) // ok because the standard minimum keys-per-node rule for b-trees does not apply to the root node
 
-  await ht.close()
+  ht.close()
   await ht.destroy()
 }).case()
 
@@ -6005,6 +6660,7 @@ const test23 = new Test('DiskSortedHashTable', async function integration23() {
     await assertMaxHeight(ht, calculateMaxBTreeHeight(1023, 5))
     await assertMinKeysPerNode(ht, 4)
     await assertMaxKeysPerNode(ht, 9)
+    assert.equal(ht.count(), 1023)
 
     {
       const forwardValues = []
@@ -6031,7 +6687,7 @@ const test23 = new Test('DiskSortedHashTable', async function integration23() {
   }
 
 
-  await ht.close()
+  ht.close()
   await ht.destroy()
 
 }).case()
@@ -6076,6 +6732,7 @@ const test24 = new Test('DiskSortedHashTable', async function integration24() {
     await assertMaxHeight(ht, calculateMaxBTreeHeight(32767, 3))
     await assertMinKeysPerNode(ht, 2)
     await assertMaxKeysPerNode(ht, 5)
+    assert.equal(ht.count(), 32767)
 
     {
       const forwardValues = []
@@ -6102,7 +6759,7 @@ const test24 = new Test('DiskSortedHashTable', async function integration24() {
   }
 
 
-  await ht.close()
+  ht.close()
   await ht.destroy()
 
 }).case()
@@ -6147,6 +6804,7 @@ const test25 = new Test('DiskSortedHashTable', async function integration25() {
     await assertMaxHeight(ht, calculateMaxBTreeHeight(32767, 2))
     await assertMinKeysPerNode(ht, 1)
     await assertMaxKeysPerNode(ht, 3)
+    assert.equal(ht.count(), 32767)
 
     {
       const forwardValues = []
@@ -6173,7 +6831,7 @@ const test25 = new Test('DiskSortedHashTable', async function integration25() {
   }
 
 
-  await ht.close()
+  ht.close()
   await ht.destroy()
 
 }).case()
@@ -6218,6 +6876,7 @@ const test26 = new Test('DiskSortedHashTable', async function integration26() {
     await assertMaxHeight(ht, calculateMaxBTreeHeight(32767, 4))
     await assertMinKeysPerNode(ht, 3)
     await assertMaxKeysPerNode(ht, 7)
+    assert.equal(ht.count(), 32767)
 
     {
       const forwardValues = []
@@ -6244,7 +6903,7 @@ const test26 = new Test('DiskSortedHashTable', async function integration26() {
   }
 
 
-  await ht.close()
+  ht.close()
   await ht.destroy()
 
 }).case()
@@ -6289,6 +6948,7 @@ const test27 = new Test('DiskSortedHashTable', async function integration27() {
     await assertMaxHeight(ht, calculateMaxBTreeHeight(32767, 5))
     await assertMinKeysPerNode(ht, 4)
     await assertMaxKeysPerNode(ht, 9)
+    assert.equal(ht.count(), 32767)
 
     {
       const forwardValues = []
@@ -6315,7 +6975,7 @@ const test27 = new Test('DiskSortedHashTable', async function integration27() {
   }
 
 
-  await ht.close()
+  ht.close()
   await ht.destroy()
 
 }).case()
@@ -6383,11 +7043,21 @@ if (process.argv[1] == __filename) {
     test14_3,
     test14_4,
     test14_5,
+    test14_6,
     test17_7_0,
     test17_7_1,
-    test17,
+    test17_7_2,
+    test17_7_3,
+    test17_7_4,
+    test17_7_5,
+    test17_7_6,
+    test18,
+    test19,
+    // test17,
+    // test17_4,
+    // test17_5,
   ])
-  test()
+  test14_6()
 }
 
 module.exports = test
