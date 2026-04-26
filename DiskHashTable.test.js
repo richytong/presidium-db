@@ -12,6 +12,7 @@ const test1 = new Test('DiskHashTable', async function integration1() {
   await ht1024.init()
 
   assert.strictEqual(ht1024.count(), 0)
+  assert.equal(ht1024._deletedCount, 0)
 
   assert.strictEqual(await ht1024.get('notfound'), undefined)
 
@@ -22,15 +23,18 @@ const test1 = new Test('DiskHashTable', async function integration1() {
   assert.equal(await ht1024.get('yellow'), '#FFFF00')
 
   assert.equal(ht1024.count(), 2)
+  assert.equal(ht1024._deletedCount, 0)
 
   await ht1024.set('maroon', '#800___')
 
   assert.equal(ht1024.count(), 2)
+  assert.equal(ht1024._deletedCount, 0)
 
   assert.equal(await ht1024.get('maroon'), '#800___')
   await ht1024.delete('maroon').then(didDelete => assert(didDelete))
 
   assert.equal(ht1024.count(), 1)
+  assert.equal(ht1024._deletedCount, 1)
 
   assert.strictEqual(await ht1024.get('maroon'), undefined)
 
@@ -38,11 +42,13 @@ const test1 = new Test('DiskHashTable', async function integration1() {
   assert.equal(await ht1024.get('maroon'), '#800000')
 
   assert.equal(ht1024.count(), 2)
+  assert.equal(ht1024._deletedCount, 0)
 
   assert.strictEqual(await ht1024.get('notfound'), undefined)
   await ht1024.delete('notfound').then(didDelete => assert(!didDelete))
 
   assert.equal(ht1024.count(), 2)
+  assert.equal(ht1024._deletedCount, 0)
 
   const ht1 = new DiskHashTable({
     storagePath: `${__dirname}/DiskHashTable_test_data/1`,
