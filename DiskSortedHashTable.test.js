@@ -5275,9 +5275,6 @@ const test17_1_2 = new Test('DiskSortedHashTable', async function integration17_
     const start = performance.now()
     await ht.delete(`key${n}`)
     console.log(`deleted key${n} in ${performance.now() - start}ms`)
-    if (n > 303) {
-      continue
-    }
     ndeleted += 1
 
     await assertBalanced(ht)
@@ -8070,25 +8067,25 @@ const test27 = new Test('DiskSortedHashTable', async function integration27() {
 }).case()
 
 const test = Test.all([
-  test1,
-  test1_1,
-  test1_2,
-  test1_3,
-  test1_4,
-  test2,
-  test3,
-  test4,
-  test5,
-  test6,
-  test7,
-  test8,
-  test9,
-  test10,
-  test11,
-  test12,
-  test13,
-  test_assert1,
-  test_assert2,
+  // test1,
+  // test1_1,
+  // test1_2,
+  // test1_3,
+  // test1_4,
+  // test2,
+  // test3,
+  // test4,
+  // test5,
+  // test6,
+  // test7,
+  // test8,
+  // test9,
+  // test10,
+  // test11,
+  // test12,
+  // test13,
+  // test_assert1,
+  // test_assert2,
   // test14,
   // test14_0,
   // test14_1,

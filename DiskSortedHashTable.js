@@ -73,7 +73,7 @@ const REMOVED = 2
  *   * `linux64`
  *
  * ## Resizing the disk sorted hash table
- * When an item is inserted into the disk sorted hash table via [set](/docs/DiskSortedHashTable#set), the current capacity ratio of the table is calculated as the table's count divided by the table's length. If the current capacity ratio exceeds the `resizeRatio` (and the `resizeRatio` is not 0), a resize of the table occurs.
+ * When an item is inserted into the disk sorted hash table via [set](/docs/DiskSortedHashTable#set), the current capacity ratio of the table is calculated as the sum of the table's count and deleted count divided by the table's length. If the current capacity ratio exceeds the `resizeRatio` (and the `resizeRatio` is not 0), a resize of the table occurs.
  *
  * During a table resize, each item of the table is added into a temporary storage file using the new table length calculated from the equation below:
  *
@@ -5047,10 +5047,10 @@ class DiskSortedHashTable {
       currentItem = await this._getItem(index)
     }
 
-    if (currentItem == null) {
+    if (currentItem == null) { // insert
       await this._insert(key, value, sortValue, index)
       await this._incrementCount()
-    } else {
+    } else { // update
       await this._update(key, value, sortValue, index)
       if (currentItem.statusMarker == REMOVED) {
         await this._incrementCount()
