@@ -6,6 +6,7 @@
  */
 
 const fs = require('fs')
+const preallocate = require('./_internal/preallocate')
 const crypto = require('crypto')
 
 const DATA_SLICE_SIZE = 512 * 1024
@@ -58,6 +59,9 @@ const REMOVED = 2
  * Limits:
  *   * 511 KiB for key, and value.
  *
+ * Supported platforms:
+ *   * `linux64`
+ *
  * ## Resizing the disk hash table
  * When an item is inserted into the disk hash table via [set](/docs/DiskHashTable#set), the current capacity ratio of the table is calculated as the table's count divided by the table's length. If the current capacity ratio exceeds the `resizeRatio` (and the `resizeRatio` is not 0), a resize of the table occurs.
  *
@@ -68,6 +72,9 @@ const REMOVED = 2
  * ```
  *
  * Once all of the items have been added into the temporary storage file, the temporary storage file is moved to the location of the old storage file to be used as the new storage file.
+ *
+ * ## Allocation of disk space
+ * The disk hash table initially preallocates a block of memory on disk of `(512 * initialLength)` KiB for database operations. When the disk hash table is resized, the block of memory on disk is reallocated to a new size of `(512 * initialLength * numberOfResizes * resizeFactor)` KiB.
  */
 class DiskHashTable {
   constructor(options) {
@@ -147,6 +154,9 @@ class DiskHashTable {
 
     const headIndex = headerReadBuffer.readInt32BE(8)
     this._headIndex = headIndex
+
+    await preallocate(this.headerPath, 12)
+    await preallocate(this.storagePath, DATA_SLICE_SIZE * length)
   }
 
   /**
@@ -316,7 +326,7 @@ class DiskHashTable {
 
     const readBuffer = await this._read(index)
     const statusMarker = readBuffer.readUInt8(0)
-    if (statusMarker === EMPTY) {
+    if (statusMarker == EMPTY || statusMarker == REMOVED) {
       return undefined
     }
 
@@ -333,7 +343,7 @@ class DiskHashTable {
 
     const readBuffer = await this._read(index)
     const statusMarker = readBuffer.readUInt8(0)
-    if (statusMarker === OCCUPIED) {
+    if (statusMarker == OCCUPIED) {
       const keyByteLength = readBuffer.readUInt32BE(1)
       const valueByteLength = readBuffer.readUInt32BE(5)
       const nextIndex = readBuffer.readInt32BE(9)
@@ -523,7 +533,7 @@ class DiskHashTable {
 
     const readBuffer = await this._read(index)
     const statusMarker = readBuffer.readUInt8(0)
-    if (statusMarker === OCCUPIED) {
+    if (statusMarker == OCCUPIED) {
       const keyByteLength = readBuffer.readUInt32BE(1)
       const valueByteLength = readBuffer.readUInt32BE(5)
       const valueBuffer = readBuffer.subarray(
@@ -582,7 +592,7 @@ class DiskHashTable {
     const readBuffer = await this._read(index)
     const statusMarker = readBuffer.readUInt8(0)
 
-    if (statusMarker === OCCUPIED) {
+    if (statusMarker == OCCUPIED) {
       await this._setStatusMarker(index, REMOVED)
       await this._decrementCount()
       return true
