@@ -157,6 +157,7 @@ const test1_3 = new Test('DiskHashTable', async function integration1_3() {
   assert.strictEqual(await ht1024.get('black'), undefined)
 
   assert.strictEqual(ht1024.count(), 0)
+  assert.strictEqual(ht1024._deletedCount, 0)
 
   ht1024.close()
 }).case()
