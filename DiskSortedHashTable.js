@@ -6,6 +6,7 @@
  */
 
 const fs = require('fs')
+const preallocate = require('./_internal/preallocate')
 const convert = require('./_internal/convert')
 
 const DATA_SLICE_SIZE = 512 * 1024
@@ -55,9 +56,10 @@ const REMOVED = 2
  *
  * ```javascript
  * const sortedHt = new DiskSortedHashTable({
- *   initialLength: 1024,
  *   storagePath: '/path/to/storage-file',
  *   headerPath: '/path/to/header-file',
+ *   initialLength: 1024,
+ *   sortValueType: 'number',
  *   resizeRatio: 0.5,
  *   resizeFactor: 1000,
  *   degree: 2,
@@ -66,6 +68,9 @@ const REMOVED = 2
  *
  * Limits:
  *   * 511 KiB for key, value, and sortValue.
+ *
+ * Supported platforms:
+ *   * `linux64`
  *
  * ## Resizing the disk sorted hash table
  * When an item is inserted into the disk sorted hash table via [set](/docs/DiskSortedHashTable#set), the current capacity ratio of the table is calculated as the table's count divided by the table's length. If the current capacity ratio exceeds the `resizeRatio` (and the `resizeRatio` is not 0), a resize of the table occurs.
@@ -80,6 +85,9 @@ const REMOVED = 2
  *
  * ## Optimizing the disk sorted hash table b-tree
  * The value for `degree` ultimately affects the height of the internal b-tree, which determines the speed of insert and update operations via [set](/docs/DiskSortedHashTable#set) on the disk sorted hash table. A higher value for `degree` results in a shorter b-tree and more items per b-tree node, while a lower value results in a taller b-tree and fewer items per b-tree node. The default value of `2` is a safe choice for most use cases.
+ *
+ * ## Allocation of disk space
+ * The disk sorted hash table initially preallocates a block of memory on disk of `(512 * initialLength)` KiB for database operations. When the disk sorted hash table is resized, the block of memory on disk is reallocated to a new size of `(512 * initialLength * numberOfResizes * resizeFactor)` KiB.
  */
 class DiskSortedHashTable {
   constructor(options) {
@@ -160,6 +168,9 @@ class DiskSortedHashTable {
 
     const count = headerReadBuffer.readUInt32BE(4)
     this._count = count
+
+    await preallocate(this.headerPath, 20)
+    await preallocate(this.storagePath, DATA_SLICE_SIZE * length)
   }
 
   /**
@@ -443,7 +454,7 @@ class DiskSortedHashTable {
     const readBuffer = await this._read(index)
 
     const statusMarker = readBuffer.readUInt8(0)
-    if (statusMarker === EMPTY) {
+    if (statusMarker == EMPTY) {
       return undefined
     }
 
@@ -4865,7 +4876,7 @@ class DiskSortedHashTable {
 
     if (sortValue == item.sortValue) {
 
-      if (item.statusMarker === REMOVED) {
+      if (item.statusMarker == REMOVED) {
 
         const btreeRootNodeRightmostItem = await this._getBTreeRootNodeRightmostItem()
         const btreeRootNodeItems = await this._getBTreeNodeItems(btreeRootNodeRightmostItem)
@@ -4908,7 +4919,7 @@ class DiskSortedHashTable {
 
     } else {
 
-      if (item.statusMarker === OCCUPIED) {
+      if (item.statusMarker == OCCUPIED) {
         const btreeRootNodeRightmostItem = await this._getBTreeRootNodeRightmostItem()
         const btreeRootNodeItems = await this._getBTreeNodeItems(btreeRootNodeRightmostItem)
         const btreeItem = await this._getBTreeItem(index)
@@ -5035,7 +5046,7 @@ class DiskSortedHashTable {
       length: buffer.length,
     })
 
-    if (item.statusMarker === REMOVED) {
+    if (item.statusMarker == REMOVED) {
       await this._incrementCount()
     }
   }
@@ -5177,7 +5188,7 @@ class DiskSortedHashTable {
     const readBuffer = await this._read(index)
 
     const statusMarker = readBuffer.readUInt8(0)
-    if (statusMarker === OCCUPIED) {
+    if (statusMarker == OCCUPIED) {
       const keyByteLength = readBuffer.readUInt32BE(1)
       const sortValueByteLength = readBuffer.readUInt32BE(5)
       const valueByteLength = readBuffer.readUInt32BE(9)
@@ -5294,7 +5305,6 @@ class DiskSortedHashTable {
    * ```
    */
   async delete(key) {
-    const start = performance.now()
     let index = this._hash1(key)
     const startIndex = index
     const stepSize = this._hash2(key)
@@ -5313,23 +5323,19 @@ class DiskSortedHashTable {
       currentKey = await this._getKey(index)
     }
 
+    console.log({ key, index, currentKey })
+
     if (currentKey == null) {
       return false
     }
 
-    const duration = performance.now() - start
-    console.log(`delete _getKey loop: ${duration}`)
-
     const item = await this._getItem(index)
 
-    if (item.statusMarker === OCCUPIED) {
-      const start = performance.now()
+    if (item.statusMarker == OCCUPIED) {
       const btreeRootNodeRightmostItem = await this._getBTreeRootNodeRightmostItem()
       const btreeRootNodeItems = await this._getBTreeNodeItems(btreeRootNodeRightmostItem)
       const btreeItem = await this._getBTreeItem(index)
       await this._deleteBTreeNodeItem(btreeItem, btreeRootNodeItems, btreeRootNodeItems)
-      const duration = performance.now() - start
-      console.log(`_deleteBTreeNodeItem: ${duration}`)
     }
 
     if (item.reverseIndex == -1) { // item to delete is first in the list
@@ -5351,11 +5357,9 @@ class DiskSortedHashTable {
       await this._updateForwardIndex(item.reverseIndex, item.forwardIndex)
     }
 
-    if (item.statusMarker === OCCUPIED) {
+    if (item.statusMarker == OCCUPIED) {
       await this._setStatusMarker(index, REMOVED)
       await this._decrementCount()
-      const duration = performance.now() - start
-      console.log(`delete: ${duration}`)
       return true
     }
 
