@@ -62,11 +62,6 @@ const test1 = new Test('DiskHashTable', async function integration1() {
 
   assert.strictEqual(await ht1024.get('notfound'), undefined)
 
-  await assert.rejects(
-    ht1024._getKey(-1),
-    new Error('Negative index')
-  )
-
   ht1024.close()
   ht1.close()
 }).case()

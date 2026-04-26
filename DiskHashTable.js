@@ -318,23 +318,6 @@ class DiskHashTable {
     return readBuffer
   }
 
-  // _getKey(index number) -> key Promise<string>
-  async _getKey(index) {
-    if (index == -1) {
-      throw new Error('Negative index')
-    }
-
-    const readBuffer = await this._read(index)
-    const statusMarker = readBuffer.readUInt8(0)
-    if (statusMarker == EMPTY || statusMarker == REMOVED) {
-      return undefined
-    }
-
-    const keyByteLength = readBuffer.readUInt32BE(1)
-    const keyBuffer = readBuffer.subarray(13, keyByteLength + 13)
-    return keyBuffer.toString(ENCODING)
-  }
-
   // _getItem(index number) -> item { index: number, nextIndex: number, value: string }
   async _getItem(index) {
     if (index == -1) {
@@ -343,7 +326,7 @@ class DiskHashTable {
 
     const readBuffer = await this._read(index)
     const statusMarker = readBuffer.readUInt8(0)
-    if (statusMarker == OCCUPIED) {
+    if (statusMarker == OCCUPIED || statusMarker == REMOVED) {
       const keyByteLength = readBuffer.readUInt32BE(1)
       const valueByteLength = readBuffer.readUInt32BE(5)
       const nextIndex = readBuffer.readInt32BE(9)
@@ -354,7 +337,7 @@ class DiskHashTable {
         13 + keyByteLength + valueByteLength
       )
       const value = valueBuffer.toString(ENCODING)
-      return { index, nextIndex, key, value }
+      return { statusMarker, index, nextIndex, key, value }
     }
 
     return undefined
@@ -411,9 +394,9 @@ class DiskHashTable {
     const startIndex = index
     const stepSize = this._hash2(key)
 
-    let currentKey = await this._getKey(index)
-    while (currentKey) {
-      if (key == currentKey) {
+    let currentItem = await this._getItem(index)
+    while (currentItem) {
+      if (key == currentItem.key) {
         break
       }
 
@@ -422,16 +405,19 @@ class DiskHashTable {
         throw new Error('Disk hash table is full')
       }
 
-      currentKey = await this._getKey(index)
+      currentItem = await this._getItem(index)
     }
 
     let nextIndex
-    if (currentKey == null) { // insert
+    if (currentItem == null) { // insert
       await this._incrementCount()
       nextIndex = await this._getHeadIndex()
       await this._setHeadIndex(index)
     } else { // update
       nextIndex = await this._getNextIndex(index)
+      if (currentItem.statusMarker == REMOVED) {
+        await this._incrementCount()
+      }
     }
 
     const position = index * DATA_SLICE_SIZE
@@ -513,9 +499,9 @@ class DiskHashTable {
     const startIndex = index
     const stepSize = this._hash2(key)
 
-    let currentKey = await this._getKey(index)
-    while (currentKey) {
-      if (key == currentKey) {
+    let currentItem = await this._getItem(index)
+    while (currentItem) {
+      if (key == currentItem.key) {
         break
       }
 
@@ -524,23 +510,15 @@ class DiskHashTable {
         return undefined // entire table searched
       }
 
-      currentKey = await this._getKey(index)
+      currentItem = await this._getItem(index)
     }
 
-    if (currentKey == null) {
+    if (currentItem == null) {
       return undefined
     }
 
-    const readBuffer = await this._read(index)
-    const statusMarker = readBuffer.readUInt8(0)
-    if (statusMarker == OCCUPIED) {
-      const keyByteLength = readBuffer.readUInt32BE(1)
-      const valueByteLength = readBuffer.readUInt32BE(5)
-      const valueBuffer = readBuffer.subarray(
-        13 + keyByteLength,
-        13 + keyByteLength + valueByteLength
-      )
-      return valueBuffer.toString(ENCODING)
+    if (currentItem.statusMarker == OCCUPIED) {
+      return currentItem.value
     }
 
     return undefined
@@ -571,9 +549,9 @@ class DiskHashTable {
     const startIndex = index
     const stepSize = this._hash2(key)
 
-    let currentKey = await this._getKey(index)
-    while (currentKey) {
-      if (key == currentKey) {
+    let currentItem = await this._getItem(index)
+    while (currentItem) {
+      if (key == currentItem.key) {
         break
       }
 
@@ -582,10 +560,10 @@ class DiskHashTable {
         return false // entire table searched
       }
 
-      currentKey = await this._getKey(index)
+      currentItem = await this._getItem(index)
     }
 
-    if (currentKey == null) {
+    if (currentItem == null) {
       return false
     }
 
