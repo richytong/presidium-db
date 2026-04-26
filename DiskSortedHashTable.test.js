@@ -118,11 +118,13 @@ const test1 = new Test('DiskSortedHashTable', async function integration1() {
   await ht1024.delete('notfound').then(didDelete => assert(!didDelete))
 
   assert.equal(ht1024.count(), 3)
+  assert.equal(ht1024._deletedCount, 0)
 
   await ht1024.delete('maroon').then(didDelete => assert(didDelete))
   assert.strictEqual(await ht1024.get('maroon'), undefined)
 
   assert.equal(ht1024.count(), 2)
+  assert.equal(ht1024._deletedCount, 1)
 
   {
     const forwardValues = []
@@ -152,6 +154,7 @@ const test1 = new Test('DiskSortedHashTable', async function integration1() {
   await ht1024.clear()
 
   assert.equal(ht1024.count(), 0)
+  assert.equal(ht1024._deletedCount, 0)
 
   {
     const forwardValues = []
@@ -186,11 +189,6 @@ const test1 = new Test('DiskSortedHashTable', async function integration1() {
     new Error('Hash table is full')
   )
 
-  await assert.rejects(
-    ht1._getKey(-1),
-    new Error('Negative index')
-  )
-
   ht1024.close()
   ht1.close()
 }).case()
@@ -207,16 +205,34 @@ const test1_1 = new Test('DiskSortedHashTable', async function integration1_1() 
 
   await ht2.set('maroon', '#800000', 1)
   assert.equal(await ht2.get('maroon'), '#800000')
+  assert.equal(ht2.count(), 1)
+  assert.equal(ht2._deletedCount, 0)
+
   const collisionKey = 'maroon1'
   await ht2.set(collisionKey, '#800000(1)', 1)
+  assert.equal(ht2.count(), 2)
+  assert.equal(ht2._deletedCount, 0)
+
   assert.equal(await ht2.get('maroon'), '#800000')
   assert.equal(await ht2.get(collisionKey), '#800000(1)')
+
   await ht2.delete('maroon').then(didDelete => assert(didDelete))
+  assert.equal(ht2.count(), 1)
+  assert.equal(ht2._deletedCount, 1)
+
   await ht2.delete('maroon').then(didDelete => assert(!didDelete))
+  assert.equal(ht2.count(), 1)
+  assert.equal(ht2._deletedCount, 1)
+
   assert.equal(await ht2.get('maroon'), undefined)
   await ht2.delete(collisionKey).then(didDelete => assert(didDelete))
+  assert.equal(ht2.count(), 0)
+  assert.equal(ht2._deletedCount, 2)
+
   assert.equal(await ht2.get(collisionKey), undefined)
   await ht2.delete('maroon3').then(didDelete => assert(!didDelete))
+  assert.equal(ht2.count(), 0)
+  assert.equal(ht2._deletedCount, 2)
 
   ht2.close()
 }).case()
@@ -870,6 +886,9 @@ const test11 = new Test('DiskSortedHashTable', async function integration11() {
   await ht1024.set('yellow', '#FFFF00', 2)
   await ht1024.set('black', '#000', 4)
 
+  assert.equal(ht1024.count(), 3)
+  assert.equal(ht1024._deletedCount, 0)
+
   {
     const forwardValues = []
     for await (const value of ht1024.forwardIterator()) {
@@ -889,6 +908,7 @@ const test11 = new Test('DiskSortedHashTable', async function integration11() {
   await ht1024.delete('maroon').then(didDelete => assert(didDelete))
 
   assert.equal(ht1024.count(), 2)
+  assert.equal(ht1024._deletedCount, 1)
 
   {
     const forwardValues = []
@@ -908,6 +928,7 @@ const test11 = new Test('DiskSortedHashTable', async function integration11() {
   await ht1024.delete('yellow').then(didDelete => assert(didDelete))
 
   assert.equal(ht1024.count(), 1)
+  assert.equal(ht1024._deletedCount, 2)
 
   {
     const forwardValues = []
@@ -926,6 +947,7 @@ const test11 = new Test('DiskSortedHashTable', async function integration11() {
   await ht1024.delete('black').then(didDelete => assert(didDelete))
 
   assert.equal(ht1024.count(), 0)
+  assert.equal(ht1024._deletedCount, 3)
 
   {
     const forwardValues = []
@@ -8048,25 +8070,25 @@ const test27 = new Test('DiskSortedHashTable', async function integration27() {
 }).case()
 
 const test = Test.all([
-  // test1,
-  // test1_1,
-  // test1_2,
-  // test1_3,
-  // test1_4,
-  // test2,
-  // test3,
-  // test4,
-  // test5,
-  // test6,
-  // test7,
-  // test8,
-  // test9,
-  // test10,
-  // test11,
-  // test12,
-  // test13,
-  // test_assert1,
-  // test_assert2,
+  test1,
+  test1_1,
+  test1_2,
+  test1_3,
+  test1_4,
+  test2,
+  test3,
+  test4,
+  test5,
+  test6,
+  test7,
+  test8,
+  test9,
+  test10,
+  test11,
+  test12,
+  test13,
+  test_assert1,
+  test_assert2,
   // test14,
   // test14_0,
   // test14_1,

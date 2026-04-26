@@ -97,6 +97,7 @@ class DiskSortedHashTable {
     this.sortValueType = options.sortValueType
     this._length = null
     this._count = null
+    this._deletedCount = null
     this.storageFd = null
     this.headerFd = null
     this.resizeRatio = options.resizeRatio ?? 0
@@ -106,12 +107,13 @@ class DiskSortedHashTable {
 
   // _initializeHeader() -> headerReadBuffer Promise<Buffer>
   async _initializeHeader() {
-    const headerReadBuffer = Buffer.alloc(20)
+    const headerReadBuffer = Buffer.alloc(24)
     headerReadBuffer.writeUInt32BE(this.initialLength, 0)
     headerReadBuffer.writeUInt32BE(0, 4)
-    headerReadBuffer.writeInt32BE(-1, 8)
+    headerReadBuffer.writeUInt32BE(0, 8)
     headerReadBuffer.writeInt32BE(-1, 12)
     headerReadBuffer.writeInt32BE(-1, 16)
+    headerReadBuffer.writeInt32BE(-1, 20)
 
     await this.headerFd.write(headerReadBuffer, {
       offset: 0,
@@ -169,7 +171,10 @@ class DiskSortedHashTable {
     const count = headerReadBuffer.readUInt32BE(4)
     this._count = count
 
-    await preallocate(this.headerPath, 20)
+    const deletedCount = headerReadBuffer.readUInt32BE(8)
+    this._deletedCount = deletedCount
+
+    await preallocate(this.headerPath, 24)
     await preallocate(this.storagePath, DATA_SLICE_SIZE * length)
   }
 
@@ -221,6 +226,9 @@ class DiskSortedHashTable {
 
     const count = headerReadBuffer.readUInt32BE(4)
     this._count = count
+
+    const deletedCount = headerReadBuffer.readUInt32BE(8)
+    this._deletedCount = deletedCount
   }
 
   /**
@@ -298,19 +306,20 @@ class DiskSortedHashTable {
   // header file
   // 4 bytes for table length
   // 4 bytes for item count
+  // 4 bytes for deleted item count
   // 4 bytes for first item index
   // 4 bytes for last item index
   // 4 bytes for btree root rightmost item index
 
   // _readHeader() -> headerReadBuffer Promise<Buffer>
   async _readHeader() {
-    const headerReadBuffer = Buffer.alloc(20)
+    const headerReadBuffer = Buffer.alloc(24)
 
     await this.headerFd.read({
       buffer: headerReadBuffer,
       offset: 0,
       position: 0,
-      length: 20,
+      length: 24,
     })
 
     return headerReadBuffer
@@ -354,7 +363,7 @@ class DiskSortedHashTable {
 
   // _writeFirstIndex(index number) -> Promise<>
   async _writeFirstIndex(index) {
-    const position = 8
+    const position = 12
     const buffer = Buffer.alloc(4)
     buffer.writeInt32BE(index, 0)
 
@@ -367,7 +376,7 @@ class DiskSortedHashTable {
 
   // _writeLastIndex(index number) -> Promise<>
   async _writeLastIndex(index) {
-    const position = 12
+    const position = 16
     const buffer = Buffer.alloc(4)
     buffer.writeInt32BE(index, 0)
 
@@ -380,7 +389,7 @@ class DiskSortedHashTable {
 
   // _writeBTreeRootRightmostItemIndex(index number) -> Promise<>
   async _writeBTreeRootRightmostItemIndex(index) {
-    const position = 16
+    const position = 20
     const buffer = Buffer.alloc(4)
     buffer.writeInt32BE(index, 0)
 
@@ -445,24 +454,6 @@ class DiskSortedHashTable {
     })
   }
 
-  // _getKey(index number) -> key Promise<string>
-  async _getKey(index) {
-    if (index == -1) {
-      throw new Error('Negative index')
-    }
-
-    const readBuffer = await this._read(index)
-
-    const statusMarker = readBuffer.readUInt8(0)
-    if (statusMarker == EMPTY) {
-      return undefined
-    }
-
-    const keyByteLength = readBuffer.readUInt32BE(1)
-    const keyBuffer = readBuffer.subarray(33, keyByteLength + 33)
-    return keyBuffer.toString(ENCODING)
-  }
-
   // _getBTreeRootNodeRightmostItem() -> btreeRootNodeRightmostItem Promise<{
   //   index: number,
   //   sortValue: string|number,
@@ -472,7 +463,7 @@ class DiskSortedHashTable {
   // }>
   async _getBTreeRootNodeRightmostItem() {
     const headerReadBuffer = await this._readHeader()
-    const index = headerReadBuffer.readInt32BE(16)
+    const index = headerReadBuffer.readInt32BE(20)
     if (index == -1) {
       return undefined
     }
@@ -548,30 +539,6 @@ class DiskSortedHashTable {
     btreeRootNodeRightmostItem,
     { sortValue }
   ) {
-
-    const _sv = async index => {
-      if (index == null) {
-        return undefined
-      }
-      if (index == -1) {
-        return undefined
-      }
-      const item = await this._getBTreeItem(index)
-      return item.sortValue
-    }
-
-    const _hy = async item => {
-      if (item == null) {
-        return
-      }
-      if (item.btreeLeftChildNodeRightmostItemIndex > -1) {
-        item.btreeLeftChildNodeRightmostItemSortValue = await _sv(item.btreeLeftChildNodeRightmostItemIndex)
-      }
-      if (item.btreeRightChildNodeRightmostItemIndex > -1) {
-        item.btreeRightChildNodeRightmostItemSortValue = await _sv(item.btreeRightChildNodeRightmostItemIndex)
-      }
-      return item
-    }
 
     // Maximum number of items per b-tree node: `(2 * degree) - 1`
     // Maximum number of children per b-tree node: `2 * degree`
@@ -650,30 +617,6 @@ class DiskSortedHashTable {
   async _splitBTreeChildNodeLeft(
     btreeChildNodeItems, btreeRightParentNodeItem, { sortValue }
   ) {
-
-    const _sv = async index => {
-      if (index == null) {
-        return undefined
-      }
-      if (index == -1) {
-        return undefined
-      }
-      const item = await this._getBTreeItem(index)
-      return item.sortValue
-    }
-
-    const _hy = async item => {
-      if (item == null) {
-        return
-      }
-      if (item.btreeLeftChildNodeRightmostItemIndex > -1) {
-        item.btreeLeftChildNodeRightmostItemSortValue = await _sv(item.btreeLeftChildNodeRightmostItemIndex)
-      }
-      if (item.btreeRightChildNodeRightmostItemIndex > -1) {
-        item.btreeRightChildNodeRightmostItemSortValue = await _sv(item.btreeRightChildNodeRightmostItemIndex)
-      }
-      return item
-    }
 
     const btreeLeftChildNodeItems = btreeChildNodeItems.slice(0, this.degree - 1)
     const btreeMiddleItem = btreeChildNodeItems[this.degree - 1]
@@ -784,31 +727,6 @@ class DiskSortedHashTable {
     btreeRootNodeRightmostItem,
     btreeParentNodeItem,
   ) {
-
-    const _sv = async index => {
-      if (index == null) {
-        return undefined
-      }
-      if (index == -1) {
-        return undefined
-      }
-      const item = await this._getBTreeItem(index)
-      return item.sortValue
-    }
-
-    const _hy = async item => {
-      if (item == null) {
-        return
-      }
-      if (item.btreeLeftChildNodeRightmostItemIndex > -1) {
-        item.btreeLeftChildNodeRightmostItemSortValue = await _sv(item.btreeLeftChildNodeRightmostItemIndex)
-      }
-      if (item.btreeRightChildNodeRightmostItemIndex > -1) {
-        item.btreeRightChildNodeRightmostItemSortValue = await _sv(item.btreeRightChildNodeRightmostItemIndex)
-      }
-      return item
-    }
-
 
     let i = btreeNodeItems.length - 1
 
@@ -4487,7 +4405,7 @@ class DiskSortedHashTable {
   // _getForwardStartItem() -> item { index: number, readBuffer: Buffer, sortValue: string|number, value: string }
   async _getForwardStartItem() {
     const headerReadBuffer = await this._readHeader()
-    const index = headerReadBuffer.readInt32BE(8)
+    const index = headerReadBuffer.readInt32BE(12)
     if (index == -1) {
       return undefined
     }
@@ -4498,7 +4416,7 @@ class DiskSortedHashTable {
   // _getReverseStartItem() -> item { index: number, readBuffer: Buffer, sortValue: string|number, value: string }
   async _getReverseStartItem() {
     const headerReadBuffer = await this._readHeader()
-    const index = headerReadBuffer.readInt32BE(12)
+    const index = headerReadBuffer.readInt32BE(16)
     if (index == -1) {
       return undefined
     }
@@ -4512,7 +4430,13 @@ class DiskSortedHashTable {
       return undefined
     }
     const readBuffer = await this._read(index)
-    return this._parseItem(readBuffer, index)
+    const item = this._parseItem(readBuffer, index)
+
+    if (item.statusMarker == EMPTY) {
+      return undefined
+    }
+
+    return item
   }
 
   // _updateForwardIndex(index number, forwardIndex number) -> Promise<>
@@ -4567,6 +4491,19 @@ class DiskSortedHashTable {
     })
   }
 
+  // _updateDeletedCount() -> Promise<>
+  async _updateDeletedCount() {
+    const position = 8
+    const buffer = Buffer.alloc(4)
+    buffer.writeUInt32BE(this._deletedCount, 0)
+
+    await this.headerFd.write(buffer, {
+      offset: 0,
+      position,
+      length: 4,
+    })
+  }
+
   // _incrementCount() -> Promise<>
   async _incrementCount() {
     this._count += 1
@@ -4577,6 +4514,18 @@ class DiskSortedHashTable {
   async _decrementCount() {
     this._count -= 1
     await this._updateCount()
+  }
+
+  // _incrementDeletedCount() -> Promise<>
+  async _incrementDeletedCount() {
+    this._deletedCount += 1
+    await this._updateDeletedCount()
+  }
+
+  // _decrementDeletedCount() -> Promise<>
+  async _decrementDeletedCount() {
+    this._deletedCount -= 1
+    await this._updateDeletedCount()
   }
 
   // _constructBTree(options { unique: boolean, onNode: function, onLeaf: function })
@@ -5045,10 +4994,6 @@ class DiskSortedHashTable {
       position,
       length: buffer.length,
     })
-
-    if (item.statusMarker == REMOVED) {
-      await this._incrementCount()
-    }
   }
 
   // _resize() -> Promise<>
@@ -5087,9 +5032,9 @@ class DiskSortedHashTable {
     const startIndex = index
     const stepSize = this._hash2(key)
 
-    let currentKey = await this._getKey(index)
-    while (currentKey) {
-      if (key == currentKey) {
+    let currentItem = await this._getItem(index)
+    while (currentItem) {
+      if (key == currentItem.key) {
         break
       }
       index = (index + stepSize) % this._length
@@ -5099,14 +5044,18 @@ class DiskSortedHashTable {
         }
         throw new Error('Hash table is full')
       }
-      currentKey = await this._getKey(index)
+      currentItem = await this._getItem(index)
     }
 
-    if (currentKey == null) {
+    if (currentItem == null) {
       await this._insert(key, value, sortValue, index)
       await this._incrementCount()
     } else {
       await this._update(key, value, sortValue, index)
+      if (currentItem.statusMarker == REMOVED) {
+        await this._incrementCount()
+        await this._decrementDeletedCount()
+      }
     }
   }
 
@@ -5135,7 +5084,7 @@ class DiskSortedHashTable {
    * ```
    */
   async set(key, value, sortValue) {
-    if (this.resizeRatio > 0 && (this._count / this._length) >= this.resizeRatio) {
+    if (this.resizeRatio > 0 && ((this._count + this._deletedCount) / this._length) >= this.resizeRatio) {
       await this._resize()
     }
 
@@ -5167,9 +5116,9 @@ class DiskSortedHashTable {
     const startIndex = index
     const stepSize = this._hash2(key)
 
-    let currentKey = await this._getKey(index)
-    while (currentKey) {
-      if (key == currentKey) {
+    let currentItem = await this._getItem(index)
+    while (currentItem) {
+      if (key == currentItem.key) {
         break
       }
 
@@ -5178,26 +5127,15 @@ class DiskSortedHashTable {
         return undefined // entire table searched
       }
 
-      currentKey = await this._getKey(index)
+      currentItem = await this._getItem(index)
     }
 
-    if (currentKey == null) {
+    if (currentItem == null) {
       return undefined
     }
 
-    const readBuffer = await this._read(index)
-
-    const statusMarker = readBuffer.readUInt8(0)
-    if (statusMarker == OCCUPIED) {
-      const keyByteLength = readBuffer.readUInt32BE(1)
-      const sortValueByteLength = readBuffer.readUInt32BE(5)
-      const valueByteLength = readBuffer.readUInt32BE(9)
-      const valueBuffer = readBuffer.subarray(
-        33 + keyByteLength + sortValueByteLength,
-        33 + keyByteLength + sortValueByteLength + valueByteLength
-      )
-
-      return valueBuffer.toString(ENCODING)
+    if (currentItem.statusMarker == OCCUPIED) {
+      return currentItem.value
     }
 
     return undefined
@@ -5309,9 +5247,9 @@ class DiskSortedHashTable {
     const startIndex = index
     const stepSize = this._hash2(key)
 
-    let currentKey = await this._getKey(index)
-    while (currentKey) {
-      if (key == currentKey) {
+    let currentItem = await this._getItem(index)
+    while (currentItem) {
+      if (key == currentItem.key) {
         break
       }
 
@@ -5320,46 +5258,43 @@ class DiskSortedHashTable {
         return false // entire table searched
       }
 
-      currentKey = await this._getKey(index)
+      currentItem = await this._getItem(index)
     }
 
-    console.log({ key, index, currentKey })
-
-    if (currentKey == null) {
+    if (currentItem == null) {
       return false
     }
 
-    const item = await this._getItem(index)
-
-    if (item.statusMarker == OCCUPIED) {
+    if (currentItem.statusMarker == OCCUPIED) {
       const btreeRootNodeRightmostItem = await this._getBTreeRootNodeRightmostItem()
       const btreeRootNodeItems = await this._getBTreeNodeItems(btreeRootNodeRightmostItem)
       const btreeItem = await this._getBTreeItem(index)
       await this._deleteBTreeNodeItem(btreeItem, btreeRootNodeItems, btreeRootNodeItems)
     }
 
-    if (item.reverseIndex == -1) { // item to delete is first in the list
-      if (item.forwardIndex > -1) { // there is an item behind item to delete
-        await this._updateReverseIndex(item.forwardIndex, -1)
-        await this._writeFirstIndex(item.forwardIndex)
+    if (currentItem.reverseIndex == -1) { // item to delete is first in the list
+      if (currentItem.forwardIndex > -1) { // there is an item behind item to delete
+        await this._updateReverseIndex(currentItem.forwardIndex, -1)
+        await this._writeFirstIndex(currentItem.forwardIndex)
       } else { // item to remove is first and last in the list
         await this._writeFirstIndex(-1)
         await this._writeLastIndex(-1)
       }
-    } else if (item.forwardIndex == -1) { // item to delete is last in the list
-      if (item.reverseIndex > -1) { // there is an item ahead of item to delete
-        await this._updateForwardIndex(item.reverseIndex, -1)
-        await this._writeLastIndex(item.forwardIndex)
+    } else if (currentItem.forwardIndex == -1) { // item to delete is last in the list
+      if (currentItem.reverseIndex > -1) { // there is an item ahead of item to delete
+        await this._updateForwardIndex(currentItem.reverseIndex, -1)
+        await this._writeLastIndex(currentItem.forwardIndex)
       } else { // item is first and last in the list (handled above)
       }
     } else { // item to delete is in the middle of the list
-      await this._updateReverseIndex(item.forwardIndex, item.reverseIndex)
-      await this._updateForwardIndex(item.reverseIndex, item.forwardIndex)
+      await this._updateReverseIndex(currentItem.forwardIndex, currentItem.reverseIndex)
+      await this._updateForwardIndex(currentItem.reverseIndex, currentItem.forwardIndex)
     }
 
-    if (item.statusMarker == OCCUPIED) {
+    if (currentItem.statusMarker == OCCUPIED) {
       await this._setStatusMarker(index, REMOVED)
       await this._decrementCount()
+      await this._incrementDeletedCount()
       return true
     }
 
