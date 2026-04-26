@@ -81,6 +81,7 @@ class DiskHashTable {
     this.initialLength = options.initialLength ?? 1024
     this._length = null
     this._count = null
+    this._deletedCount = null
     this.storagePath = options.storagePath
     this.headerPath = options.headerPath
     this.storageFd = null
@@ -91,10 +92,11 @@ class DiskHashTable {
 
   // _initializeHeader() -> headerReadBuffer Promise<Buffer>
   async _initializeHeader() {
-    const headerReadBuffer = Buffer.alloc(12)
+    const headerReadBuffer = Buffer.alloc(16)
     headerReadBuffer.writeUInt32BE(this.initialLength, 0)
     headerReadBuffer.writeUInt32BE(0, 4)
-    headerReadBuffer.writeInt32BE(-1, 8)
+    headerReadBuffer.writeInt32BE(0, 8)
+    headerReadBuffer.writeInt32BE(-1, 12)
 
     await this.headerFd.write(headerReadBuffer, {
       offset: 0,
@@ -152,10 +154,13 @@ class DiskHashTable {
     const count = headerReadBuffer.readUInt32BE(4)
     this._count = count
 
-    const headIndex = headerReadBuffer.readInt32BE(8)
+    const deletedCount = headerReadBuffer.readUInt32BE(8)
+    this._deletedCount = deletedCount
+
+    const headIndex = headerReadBuffer.readInt32BE(12)
     this._headIndex = headIndex
 
-    await preallocate(this.headerPath, 12)
+    await preallocate(this.headerPath, 16)
     await preallocate(this.storagePath, DATA_SLICE_SIZE * length)
   }
 
@@ -208,7 +213,10 @@ class DiskHashTable {
     const count = headerReadBuffer.readUInt32BE(4)
     this._count = count
 
-    const headIndex = headerReadBuffer.readInt32BE(8)
+    const deletedCount = headerReadBuffer.readUInt32BE(8)
+    this._deletedCount = deletedCount
+
+    const headIndex = headerReadBuffer.readInt32BE(12)
     this._headIndex = headIndex
   }
 
@@ -287,17 +295,18 @@ class DiskHashTable {
   // header file
   // 32 bits / 4 bytes table length
   // 32 bits / 4 bytes item count
+  // 32 bits / 4 bytes deleted item count
   // 32 bits / 4 bytes head index
 
   // _readHeader() -> headerReadBuffer Promise<Buffer>
   async _readHeader() {
-    const headerReadBuffer = Buffer.alloc(12)
+    const headerReadBuffer = Buffer.alloc(16)
 
     await this.headerFd.read({
       buffer: headerReadBuffer,
       offset: 0,
       position: 0,
-      length: 12,
+      length: 16,
     })
 
     return headerReadBuffer
@@ -359,13 +368,13 @@ class DiskHashTable {
   // _getHeadIndex() -> headIndex Promise<number>
   async _getHeadIndex() {
     const headerReadBuffer = await this._readHeader()
-    const headIndex = headerReadBuffer.readInt32BE(8)
+    const headIndex = headerReadBuffer.readInt32BE(12)
     return headIndex
   }
 
   // _setHeadIndex(index number) -> Promise<>
   async _setHeadIndex(index) {
-    const position = 8
+    const position = 12
     const buffer = Buffer.alloc(4)
     buffer.writeInt32BE(index, 0)
 
@@ -417,6 +426,7 @@ class DiskHashTable {
       nextIndex = await this._getNextIndex(index)
       if (currentItem.statusMarker == REMOVED) {
         await this._incrementCount()
+        await this._decrementDeletedCount()
       }
     }
 
@@ -468,7 +478,7 @@ class DiskHashTable {
    * ```
    */
   async set(key, value) {
-    if (this.resizeRatio > 0 && (this._count / this._length) >= this.resizeRatio) {
+    if (this.resizeRatio > 0 && ((this._count + this._deletedCount) / this._length) >= this.resizeRatio) {
       await this._resize()
     }
     await this._set(key, value)
@@ -573,6 +583,7 @@ class DiskHashTable {
     if (statusMarker == OCCUPIED) {
       await this._setStatusMarker(index, REMOVED)
       await this._decrementCount()
+      await this._incrementDeletedCount()
       return true
     }
 
@@ -592,6 +603,19 @@ class DiskHashTable {
     })
   }
 
+  // _updateDeletedCount() -> Promise<>
+  async _updateDeletedCount() {
+    const position = 8
+    const buffer = Buffer.alloc(4)
+    buffer.writeUInt32BE(this._deletedCount, 0)
+
+    await this.headerFd.write(buffer, {
+      offset: 0,
+      position,
+      length: 4,
+    })
+  }
+
   // _incrementCount() -> Promise<>
   async _incrementCount() {
     this._count += 1
@@ -602,6 +626,18 @@ class DiskHashTable {
   async _decrementCount() {
     this._count -= 1
     await this._updateCount()
+  }
+
+  // _incrementDeletedCount() -> Promise<>
+  async _incrementDeletedCount() {
+    this._deletedCount += 1
+    await this._updateDeletedCount()
+  }
+
+  // _decrementDeletedCount() -> Promise<>
+  async _decrementDeletedCount() {
+    this._deletedCount -= 1
+    await this._updateDeletedCount()
   }
 
   // _resize() -> Promise<>
