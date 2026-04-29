@@ -298,6 +298,7 @@ const test2_0 = new Test('DiskHashTable', async function integration2_0() {
     storagePath: `${__dirname}/DiskHashTable_test_data/1024`,
     headerPath: `${__dirname}/DiskHashTable_test_data/1024_header`,
     initialLength: 1024,
+    itemSize: 2048,
   })
   await ht1024.destroy()
   await ht1024.init()
