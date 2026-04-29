@@ -5958,6 +5958,40 @@ const test18 = new Test('DiskSortedHashTable', async function integration18() {
     assert.deepEqual(reverseValues, valuesReverse.slice(0, 11))
   }
 
+  await ht.delete('key17')
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator({ exclusiveStartKey: 'key17' })) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, [])
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator({ exclusiveStartKey: 'key17' })) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, [])
+  }
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator({ exclusiveStartKey: 'notfound' })) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, [])
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator({ exclusiveStartKey: 'notfound' })) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, [])
+  }
+
   ht.close()
 }).case()
 
