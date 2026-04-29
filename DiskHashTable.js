@@ -326,8 +326,8 @@ class DiskHashTable {
     return readBuffer
   }
 
-  // _getItem(index number) -> item { index: number, nextIndex: number, value: string }
-  async _getItem(index) {
+  // _getItem(index number, valueType 'string'|'binary') -> item { index: number, nextIndex: number, value: string }
+  async _getItem(index, valueType = 'binary') {
     if (index == -1) {
       return undefined
     }
@@ -340,11 +340,15 @@ class DiskHashTable {
       const nextIndex = readBuffer.readInt32BE(9)
       const keyBuffer = readBuffer.subarray(13, keyByteLength + 13)
       const key = keyBuffer.toString(ENCODING)
+
       const valueBuffer = readBuffer.subarray(
         13 + keyByteLength,
         13 + keyByteLength + valueByteLength
       )
-      const value = valueBuffer.toString(ENCODING)
+      const value = valueType == 'binary'
+        ? valueBuffer
+        : valueBuffer.toString(ENCODING)
+
       return { statusMarker, index, nextIndex, key, value }
     }
 
@@ -395,8 +399,8 @@ class DiskHashTable {
     return nextIndex
   }
 
-  // _set(key string, value string, fd fs.FileHandle) -> Promise<>
-  async _set(key, value, fd) {
+  // _set(key string, value string|Buffer|Uint8Array) -> Promise<>
+  async _set(key, value) {
     let index = this._hash1(key)
 
     const startIndex = index
@@ -446,7 +450,14 @@ class DiskHashTable {
     buffer.writeUint32BE(valueByteLength, 5)
     buffer.writeInt32BE(nextIndex, 9)
     buffer.write(key, 13, keyByteLength, ENCODING)
-    buffer.write(value, keyByteLength + 13, valueByteLength, ENCODING)
+
+    if (value.constructor == Uint8Array) {
+      Buffer.from(value).copy(buffer, 13 + keyByteLength)
+    } else if (value.constructor == Buffer) {
+      value.copy(buffer, 13 + keyByteLength)
+    } else {
+      buffer.write(value, 13 + keyByteLength, valueByteLength, ENCODING)
+    }
 
     await this.storageFd.write(buffer, {
       offset: 0,
@@ -480,7 +491,68 @@ class DiskHashTable {
     if (this.resizeRatio > 0 && ((this._count + this._deletedCount) / this._length) >= this.resizeRatio) {
       await this._resize()
     }
-    await this._set(key, value)
+    await this._set(key, value, 'string')
+  }
+
+  /**
+   * @name setBinary
+   *
+   * @docs
+   * ```coffeescript [specscript]
+   * setBinary(key string, value Buffer|Uint8Array) -> Promise<>
+   * ```
+   *
+   * Sets and stores a binary value by key in the disk hash table.
+   *
+   * Arguments:
+   *   * `key` - `string` - the key to set.
+   *   * `value` - `Buffer|Uint8Array` - the binary value to set corresponding to the key.
+   *
+   * Return:
+   *   * Empty promise.
+   *
+   * ```javascript
+   * const buffer = Buffer.from('my-buffer')
+   *
+   * await ht.set('my-key', buffer)
+   * ```
+   */
+  async setBinary(key, value) {
+    if (this.resizeRatio > 0 && ((this._count + this._deletedCount) / this._length) >= this.resizeRatio) {
+      await this._resize()
+    }
+    await this._set(key, value, 'binary')
+  }
+
+  // _get(key string, valueType 'string'|'binary')
+  async _get(key, valueType) {
+    let index = this._hash1(key)
+    const startIndex = index
+    const stepSize = this._hash2(key)
+
+    let currentItem = await this._getItem(index, valueType)
+    while (currentItem) {
+      if (key == currentItem.key) {
+        break
+      }
+
+      index = (index + stepSize) % this._length
+      if (index == startIndex) {
+        return undefined // entire table searched
+      }
+
+      currentItem = await this._getItem(index, valueType)
+    }
+
+    if (currentItem == null) {
+      return undefined
+    }
+
+    if (currentItem.statusMarker == OCCUPIED) {
+      return currentItem.value
+    }
+
+    return undefined
   }
 
   /**
@@ -504,33 +576,31 @@ class DiskHashTable {
    * ```
    */
   async get(key) {
-    let index = this._hash1(key)
-    const startIndex = index
-    const stepSize = this._hash2(key)
+    return this._get(key, 'string')
+  }
 
-    let currentItem = await this._getItem(index)
-    while (currentItem) {
-      if (key == currentItem.key) {
-        break
-      }
-
-      index = (index + stepSize) % this._length
-      if (index == startIndex) {
-        return undefined // entire table searched
-      }
-
-      currentItem = await this._getItem(index)
-    }
-
-    if (currentItem == null) {
-      return undefined
-    }
-
-    if (currentItem.statusMarker == OCCUPIED) {
-      return currentItem.value
-    }
-
-    return undefined
+  /**
+   * @name getBinary
+   *
+   * @docs
+   * ```coffeescript [specscript]
+   * getBinary(key string) -> value Promise<Buffer>
+   * ```
+   *
+   * Gets a binary value by key from the disk hash table.
+   *
+   * Arguments:
+   *   * `key` - `string` - the key corresponding to the value.
+   *
+   * Return:
+   *   * `value` - `Buffer` - the binary value corresponding to the key.
+   *
+   * ```javascript
+   * const buffer = await ht.getBinary('my-buffer')
+   * ```
+   */
+  async getBinary(key) {
+    return this._get(key, 'binary')
   }
 
   /**

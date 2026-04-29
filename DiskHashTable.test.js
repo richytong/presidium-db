@@ -133,7 +133,7 @@ const test1_3 = new Test('DiskHashTable', async function integration1_3() {
   await ht1024.set('yellow', '#FFFF00')
   await ht1024.set('black', '#000000')
 
-  assert.equal(await ht1024.get('black'), '#000000')
+  assert.equal(await ht1024.get('maroon'), '#800000')
   assert.equal(await ht1024.get('yellow'), '#FFFF00')
   assert.equal(await ht1024.get('black'), '#000000')
 
@@ -144,7 +144,7 @@ const test1_3 = new Test('DiskHashTable', async function integration1_3() {
 
   assert.equal(ht1024._length, 1024)
 
-  assert.equal(await ht1024.get('black'), '#000000')
+  assert.equal(await ht1024.get('maroon'), '#800000')
   assert.equal(await ht1024.get('yellow'), '#FFFF00')
   assert.equal(await ht1024.get('black'), '#000000')
 
@@ -152,7 +152,7 @@ const test1_3 = new Test('DiskHashTable', async function integration1_3() {
 
   await ht1024.clear()
 
-  assert.strictEqual(await ht1024.get('black'), undefined)
+  assert.strictEqual(await ht1024.get('maroon'), undefined)
   assert.strictEqual(await ht1024.get('yellow'), undefined)
   assert.strictEqual(await ht1024.get('black'), undefined)
 
@@ -293,6 +293,142 @@ const test1_5 = new Test('DiskHashTable', async function integration1_5() {
   ht10.close()
 }).case()
 
+const test2_0 = new Test('DiskHashTable', async function integration2_0() {
+  const ht1024 = new DiskHashTable({
+    storagePath: `${__dirname}/DiskHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskHashTable_test_data/1024_header`,
+    initialLength: 1024,
+  })
+  await ht1024.destroy()
+  await ht1024.init()
+
+  assert.equal(ht1024._length, 1024)
+
+  assert.strictEqual(ht1024.count(), 0)
+
+  await ht1024.setBinary('maroon', Buffer.from('#800000'))
+  await ht1024.setBinary('yellow', Buffer.from('#FFFF00'))
+  await ht1024.setBinary('black', Buffer.from('#000000'))
+
+  assert(Buffer.from('#800000').equals(await ht1024.getBinary('maroon')))
+  assert(Buffer.from('#FFFF00').equals(await ht1024.getBinary('yellow')))
+  assert(Buffer.from('#000000').equals(await ht1024.getBinary('black')))
+
+  assert.strictEqual(ht1024.count(), 3)
+
+  await ht1024.close()
+  await ht1024.init()
+
+  assert.equal(ht1024._length, 1024)
+
+  assert(Buffer.from('#800000').equals(await ht1024.getBinary('maroon')))
+  assert(Buffer.from('#FFFF00').equals(await ht1024.getBinary('yellow')))
+  assert(Buffer.from('#000000').equals(await ht1024.getBinary('black')))
+
+  assert.strictEqual(ht1024.count(), 3)
+
+  await ht1024.clear()
+
+  assert.strictEqual(await ht1024.getBinary('maroon'), undefined)
+  assert.strictEqual(await ht1024.getBinary('yellow'), undefined)
+  assert.strictEqual(await ht1024.getBinary('black'), undefined)
+
+  assert.strictEqual(ht1024.count(), 0)
+  assert.strictEqual(ht1024._deletedCount, 0)
+
+  ht1024.close()
+}).case()
+
+const test2_1 = new Test('DiskHashTable', async function integration2_1() {
+  const ht10 = new DiskHashTable({
+    storagePath: `${__dirname}/DiskHashTable_test_data/10`,
+    headerPath: `${__dirname}/DiskHashTable_test_data/10_header`,
+    initialLength: 10,
+    resizeRatio: 0.8,
+    resizeFactor: 2,
+  })
+  await ht10.destroy()
+  await ht10.init()
+
+  assert.equal(ht10._count, 0)
+  assert.equal(ht10._length, 10)
+
+  await ht10.setBinary('1', Buffer.from('value1'))
+  await ht10.setBinary('2', Buffer.from('value2'))
+  await ht10.setBinary('3', Buffer.from('value3'))
+
+  assert.equal(ht10._count, 3)
+  assert.equal(ht10._length, 10)
+
+  await ht10.setBinary('4', Buffer.from('value4'))
+  await ht10.setBinary('5', Buffer.from('value5'))
+  await ht10.setBinary('6', Buffer.from('value6'))
+
+  assert.equal(ht10._count, 6)
+  assert.equal(ht10._length, 10)
+
+  await ht10.setBinary('7', Buffer.from('value7'))
+
+  assert.equal(ht10._count, 7)
+  assert.equal(ht10._length, 10)
+
+  await ht10.setBinary('8', Buffer.from('value8'))
+
+  assert.equal(ht10._count, 8)
+  assert.equal(ht10._length, 10)
+
+  await ht10.setBinary('9', Buffer.from('value9'))
+
+  assert.equal(ht10._count, 9)
+  assert.equal(ht10._length, 20)
+
+  await ht10.setBinary('10', Buffer.from('value10'))
+
+  assert.equal(ht10._count, 10)
+  assert.equal(ht10._length, 20)
+
+  await ht10.setBinary('11', Buffer.from('value11'))
+  await ht10.setBinary('12', Buffer.from('value12'))
+  await ht10.setBinary('13', Buffer.from('value13'))
+  await ht10.setBinary('14', Buffer.from('value14'))
+  await ht10.setBinary('15', Buffer.from('value15'))
+  await ht10.setBinary('16', Buffer.from('value16'))
+
+  assert.equal(ht10._count, 16)
+  assert.equal(ht10._length, 20)
+
+  await ht10.setBinary('17', Buffer.from('value17'))
+
+  assert.equal(ht10._count, 17)
+  assert.equal(ht10._length, 40)
+
+  await ht10.setBinary('18', Buffer.from('value18'))
+  await ht10.setBinary('19', Buffer.from('value19'))
+  await ht10.setBinary('20', Buffer.from('value20'))
+  await ht10.setBinary('21', Buffer.from('value21'))
+  await ht10.setBinary('22', Buffer.from('value22'))
+  await ht10.setBinary('23', Buffer.from('value23'))
+  await ht10.setBinary('24', Buffer.from('value24'))
+  await ht10.setBinary('25', Buffer.from('value25'))
+  await ht10.setBinary('26', Buffer.from('value26'))
+  await ht10.setBinary('27', Buffer.from('value27'))
+  await ht10.setBinary('28', Buffer.from('value28'))
+  await ht10.setBinary('29', Buffer.from('value29'))
+  await ht10.setBinary('30', Buffer.from('value30'))
+  await ht10.setBinary('31', Buffer.from('value31'))
+  await ht10.setBinary('32', Buffer.from('value32'))
+
+  assert.equal(ht10._count, 32)
+  assert.equal(ht10._length, 40)
+
+  await ht10.setBinary('33', Buffer.from('value33'))
+
+  assert.equal(ht10._count, 33)
+  assert.equal(ht10._length, 80)
+
+  ht10.close()
+}).case()
+
 const test = Test.all([
   test1,
   test1_1,
@@ -300,6 +436,8 @@ const test = Test.all([
   test1_3,
   test1_4,
   test1_5,
+  test2_0,
+  test2_1,
 ])
 
 if (process.argv[1] == __filename) {
