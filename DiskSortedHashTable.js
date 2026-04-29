@@ -5119,6 +5119,268 @@ class DiskSortedHashTable {
     return undefined
   }
 
+  // _findBTreeNodeItemGTE(
+  //   sortValue string|number,
+  //   btreeNodeItems Array<{
+  //     index: number,
+  //     sortValue: string|number,
+  //     btreeLeftChildNodeRightmostItemIndex: number,
+  //     btreeRightChildNodeRightmostItemIndex: number,
+  //     btreeLeftItemIndex: number,
+  //   }>,
+  //   btreeRootNodeRightmostItem: {
+  //     index: number,
+  //     sortValue: string|number,
+  //     btreeLeftChildNodeRightmostItemIndex: number,
+  //     btreeRightChildNodeRightmostItemIndex: number,
+  //     btreeLeftItemIndex: number,
+  //   },
+  //   btreeParentNodeItem {
+  //     index: number,
+  //     sortValue: string|number,
+  //     btreeLeftChildNodeRightmostItemIndex: number,
+  //     btreeRightChildNodeRightmostItemIndex: number,
+  //     btreeLeftItemIndex: number,
+  //   },
+  //   foundItem {
+  //     index: number,
+  //     sortValue: string|number,
+  //     btreeLeftChildNodeRightmostItemIndex: number,
+  //     btreeRightChildNodeRightmostItemIndex: number,
+  //     btreeLeftItemIndex: number,
+  //   }
+  // )
+  async _findBTreeNodeItemGTE(
+    sortValue,
+    btreeNodeItems,
+    btreeRootNodeRightmostItem,
+    btreeParentNodeItem,
+    foundItem
+  ) {
+
+    // first item GTE sortValue
+    // rightmost item equal to sortValue
+
+    let i = 0
+
+    while (i < btreeNodeItems.length) {
+      const item = btreeNodeItems[i]
+      if (convert(item.sortValue, this.sortValueType) >= sortValue) {
+        foundItem = item
+        break
+      }
+      i += 1
+    }
+
+    while (i < btreeNodeItems.length) {
+      const item = btreeNodeItems[i]
+      if (item.sortValue == sortValue) {
+        foundItem = item
+      }
+      i += 1
+    }
+
+    if (
+      btreeNodeItems[0].btreeRightChildNodeRightmostItemIndex == -1
+      || btreeNodeItems[0].btreeLeftChildNodeRightmostItemIndex == -1
+    ) { // leaf node
+      return foundItem
+    }
+
+
+    i = btreeNodeItems.length - 1
+
+    while (i >= 0 && convert(btreeNodeItems[i].sortValue, this.sortValueType) > sortValue) {
+      i -= 1
+    }
+    i += 1 // if i === 0, sortValue is less than all items' sortValues in btreeNodeItems, insert item at very left
+           // if i === btreeNodeItems.length, sortValue is greater than all items' sortValues in btreeNodeItems, insert item at very right
+           // if i > 0, sortValue is less than btreeNodeItems[i].sortValue, insert item in middle
+
+    if (i === 0) { // move to left child
+
+      let btreeChildNodeItemsParentNodeItem
+      let btreeChildNodeItemsLeftParentNodeItem
+      let btreeChildNodeItemsRightParentNodeItem = btreeNodeItems[i]
+
+      btreeChildNodeItemsParentNodeItem = btreeChildNodeItemsRightParentNodeItem
+
+      const btreeChildNodeRightmostItem = await this._getBTreeItem(
+        btreeChildNodeItemsParentNodeItem.btreeLeftChildNodeRightmostItemIndex
+      )
+      let btreeChildNodeItems = await this._getBTreeNodeItems(btreeChildNodeRightmostItem)
+
+      return this._findBTreeNodeItemGTE(
+        sortValue,
+        btreeChildNodeItems,
+        btreeRootNodeRightmostItem,
+        btreeChildNodeItemsParentNodeItem,
+        foundItem
+      )
+    }
+
+    // move to right child
+
+    let btreeChildNodeItemsParentNodeItem
+    let btreeChildNodeItemsLeftParentNodeItem
+    let btreeChildNodeItemsRightParentNodeItem
+
+    if (i === btreeNodeItems.length) { // sortValue is greater than all items' sortValues in btreeNodeItems
+      btreeChildNodeItemsLeftParentNodeItem = btreeNodeItems[i - 1]
+      btreeChildNodeItemsRightParentNodeItem = undefined
+    }
+    else { // (i > 0) sortValue is less than btreeNodeItems[i].sortValue, insert item in middle
+      btreeChildNodeItemsLeftParentNodeItem = btreeNodeItems[i - 1]
+      btreeChildNodeItemsRightParentNodeItem = btreeNodeItems[i]
+      // i === (btreeNodeItems.length - 1) ? undefined : btreeNodeItems[i + 1]
+    }
+    btreeChildNodeItemsParentNodeItem = btreeChildNodeItemsLeftParentNodeItem
+
+    const btreeChildNodeRightmostItem = await this._getBTreeItem(
+      btreeChildNodeItemsParentNodeItem.btreeRightChildNodeRightmostItemIndex
+    )
+    let btreeChildNodeItems = await this._getBTreeNodeItems(btreeChildNodeRightmostItem)
+
+    return this._findBTreeNodeItemGTE(
+      sortValue,
+      btreeChildNodeItems,
+      btreeRootNodeRightmostItem,
+      btreeChildNodeItemsParentNodeItem,
+      foundItem
+    )
+  }
+
+  // _findBTreeNodeItemLTE(
+  //   sortValue string|number,
+  //   btreeNodeItems Array<{
+  //     index: number,
+  //     sortValue: string|number,
+  //     btreeLeftChildNodeRightmostItemIndex: number,
+  //     btreeRightChildNodeRightmostItemIndex: number,
+  //     btreeLeftItemIndex: number,
+  //   }>,
+  //   btreeRootNodeRightmostItem: {
+  //     index: number,
+  //     sortValue: string|number,
+  //     btreeLeftChildNodeRightmostItemIndex: number,
+  //     btreeRightChildNodeRightmostItemIndex: number,
+  //     btreeLeftItemIndex: number,
+  //   },
+  //   btreeParentNodeItem {
+  //     index: number,
+  //     sortValue: string|number,
+  //     btreeLeftChildNodeRightmostItemIndex: number,
+  //     btreeRightChildNodeRightmostItemIndex: number,
+  //     btreeLeftItemIndex: number,
+  //   },
+  //   foundItem {
+  //     index: number,
+  //     sortValue: string|number,
+  //     btreeLeftChildNodeRightmostItemIndex: number,
+  //     btreeRightChildNodeRightmostItemIndex: number,
+  //     btreeLeftItemIndex: number,
+  //   }
+  // )
+  async _findBTreeNodeItemLTE(
+    sortValue,
+    btreeNodeItems,
+    btreeRootNodeRightmostItem,
+    btreeParentNodeItem,
+    foundItem
+  ) {
+
+    // first item LTE sortValue
+    // leftmost item equal to sortValue
+
+    let i = btreeNodeItems.length - 1
+
+    while (i >= 0) {
+      const item = btreeNodeItems[i]
+      if (convert(item.sortValue, this.sortValueType) <= sortValue) {
+        foundItem = item
+        break
+      }
+      i -= 1
+    }
+
+    while (i >= 0) {
+      const item = btreeNodeItems[i]
+      if (item.sortValue == sortValue) {
+        foundItem = item
+      }
+      i -= 1
+    }
+
+    if (
+      btreeNodeItems[0].btreeRightChildNodeRightmostItemIndex == -1
+      || btreeNodeItems[0].btreeLeftChildNodeRightmostItemIndex == -1
+    ) { // leaf node
+      return foundItem
+    }
+
+
+    i = btreeNodeItems.length - 1
+
+    while (i >= 0 && convert(btreeNodeItems[i].sortValue, this.sortValueType) > sortValue) {
+      i -= 1
+    }
+    i += 1 // if i === 0, sortValue is less than all items' sortValues in btreeNodeItems, insert item at very left
+           // if i === btreeNodeItems.length, sortValue is greater than all items' sortValues in btreeNodeItems, insert item at very right
+           // if i > 0, sortValue is less than btreeNodeItems[i].sortValue, insert item in middle
+
+    if (i === 0) { // move to left child
+
+      let btreeChildNodeItemsParentNodeItem
+      let btreeChildNodeItemsLeftParentNodeItem
+      let btreeChildNodeItemsRightParentNodeItem = btreeNodeItems[i]
+
+      btreeChildNodeItemsParentNodeItem = btreeChildNodeItemsRightParentNodeItem
+
+      const btreeChildNodeRightmostItem = await this._getBTreeItem(
+        btreeChildNodeItemsParentNodeItem.btreeLeftChildNodeRightmostItemIndex
+      )
+      let btreeChildNodeItems = await this._getBTreeNodeItems(btreeChildNodeRightmostItem)
+
+      return this._findBTreeNodeItemLTE(
+        sortValue,
+        btreeChildNodeItems,
+        btreeRootNodeRightmostItem,
+        btreeChildNodeItemsParentNodeItem,
+        foundItem
+      )
+    }
+
+    // move to right child
+
+    let btreeChildNodeItemsParentNodeItem
+    let btreeChildNodeItemsLeftParentNodeItem
+    let btreeChildNodeItemsRightParentNodeItem
+
+    if (i === btreeNodeItems.length) { // sortValue is greater than all items' sortValues in btreeNodeItems
+      btreeChildNodeItemsLeftParentNodeItem = btreeNodeItems[i - 1]
+      btreeChildNodeItemsRightParentNodeItem = undefined
+    }
+    else { // (i > 0) sortValue is less than btreeNodeItems[i].sortValue, insert item in middle
+      btreeChildNodeItemsLeftParentNodeItem = btreeNodeItems[i - 1]
+      btreeChildNodeItemsRightParentNodeItem = btreeNodeItems[i]
+      // i === (btreeNodeItems.length - 1) ? undefined : btreeNodeItems[i + 1]
+    }
+    btreeChildNodeItemsParentNodeItem = btreeChildNodeItemsLeftParentNodeItem
+
+    const btreeChildNodeRightmostItem = await this._getBTreeItem(
+      btreeChildNodeItemsParentNodeItem.btreeRightChildNodeRightmostItemIndex
+    )
+    let btreeChildNodeItems = await this._getBTreeNodeItems(btreeChildNodeRightmostItem)
+
+    return this._findBTreeNodeItemLTE(
+      sortValue,
+      btreeChildNodeItems,
+      btreeRootNodeRightmostItem,
+      btreeChildNodeItemsParentNodeItem,
+      foundItem
+    )
+  }
+
   // _forwardItemsIterator() -> values AsyncGenerator<string>
   async * _forwardItemsIterator() {
     let currentForwardItem = await this._getForwardStartItem()
@@ -5134,15 +5396,29 @@ class DiskSortedHashTable {
    * @docs
    * ```coffeescript [specscript]
    * forwardIterator() -> values AsyncGenerator<string>
+   *
+   * forwardIterator(options {
+   *   exclusiveStartKey: string,
+   *   startingSortValue: string|number,
+   *   endingSortValue: string|number,
+   * }) -> values AsyncGenerator<string>
    * ```
    *
-   * Returns a iterator of all items in the disk hash table sorted by sort-value. Items are yielded in ascending order.
+   * Returns a iterator of all items in the disk sorted hash table sorted by sort-value. Items are yielded in ascending order.
+   *
+   * If a starting sort-value and ending sort-value are provided, the iterator returns only items with sort-values between the starting and ending sort-values, including items with sort-values equal to the starting and ending sort-values. If only a starting sort-value is provided, the iterator returns all items with sort values greater than or equal to the starting sort-value. If only an ending sort-value is provided, the iterator returns all items with sort values less than or equal to the ending sort-value.
+   *
+   * If an exclusive start key is provided, the iterator returns items with sort-values greater than the sort value of the item at the exclusive start key. The exclusive start key takes precedence over the starting sort-value.
    *
    * Arguments:
-   *   * (none)
+   *   * (none) - retrieves all items in the disk sorted hash table.
+   *   * `options`
+   *     * `exclusiveStartKey` - `string` - the key after which to start iterating.
+   *     * `startingSortValue` - `string|number` - the sort value from which to start iterating.
+   *     * `endingSortValue` - `string|number` - the sort value at which to stop iterating.
    *
    * Return:
-   *   * `values` - `AsyncGenerator<string>` - an async iterator of the values of all items in the disk hash table sorted by sort-value in ascending order.
+   *   * `values` - `AsyncGenerator<string>` - an async iterator of the values of all items in the disk sorted hash table sorted by sort-value in ascending order.
    *
    * ```javascript
    * await ht.set('key1', 'value1', 1)
@@ -5154,13 +5430,60 @@ class DiskSortedHashTable {
    *                      // value2
    *                      // value3
    * }
+   *
+   * for await (const value of ht.forwardIterator({ startingSortValue: 2, endingSortValue: 3 })) {
+   *   console.log(value) // value2
+   *                      // value3
+   * }
+   *
+   * for await (const value of ht.forwardIterator({ exclusiveStartKey: 'key1' })) {
+   *   console.log(value) // value2
+   *                      // value3
+   * }
+   *
+   * for await (const value of ht.forwardIterator({ exclusiveStartKey: 'key1', endingSortValue: 2 })) {
+   *   console.log(value) // value2
+   * }
    * ```
    */
-  async * forwardIterator() {
-    let currentForwardItem = await this._getForwardStartItem()
-    while (currentForwardItem) {
-      yield currentForwardItem.value
-      currentForwardItem = await this._getItem(currentForwardItem.forwardIndex)
+  async * forwardIterator(options = {}) {
+    const {
+      exclusiveStartKey,
+      startingSortValue,
+      endingSortValue,
+    } = options
+
+    let currentForwardItem
+    if (exclusiveStartKey) {
+      const exclusiveStartIndex = this._hash1(exclusiveStartKey)
+      const exclusiveStartItem = await this._getItem(exclusiveStartIndex)
+      if (exclusiveStartItem == REMOVED) {
+        currentForwardItem = undefined
+      }
+      currentForwardItem = await this._getItem(exclusiveStartItem.forwardIndex)
+    } else if (startingSortValue != null) {
+      const btreeRootNodeRightmostItem = await this._getBTreeRootNodeRightmostItem()
+      const btreeRootNodeItems = await this._getBTreeNodeItems(btreeRootNodeRightmostItem)
+      currentForwardItem = await this._findBTreeNodeItemGTE(
+        startingSortValue, btreeRootNodeItems, btreeRootNodeRightmostItem
+      )
+    } else {
+      currentForwardItem = await this._getForwardStartItem()
+    }
+
+    if (endingSortValue != null) {
+      while (currentForwardItem) {
+        if (convert(currentForwardItem.sortValue, this.sortValueType) > endingSortValue) {
+          break
+        }
+        yield currentForwardItem.value
+        currentForwardItem = await this._getItem(currentForwardItem.forwardIndex)
+      }
+    } else {
+      while (currentForwardItem) {
+        yield currentForwardItem.value
+        currentForwardItem = await this._getItem(currentForwardItem.forwardIndex)
+      }
     }
   }
 
@@ -5170,15 +5493,29 @@ class DiskSortedHashTable {
    * @docs
    * ```coffeescript [specscript]
    * reverseIterator() -> values AsyncGenerator<string>
+   *
+   * reverseIterator(options {
+   *   exclusiveStartKey: string,
+   *   startingSortValue: string|number,
+   *   endingSortValue: string|number,
+   * }) -> values AsyncGenerator<string>
    * ```
    *
-   * Returns a iterator of all items in the disk hash table sorted by sort-value. Items are yielded in descending order.
+   * Returns a iterator of all items in the disk sorted hash table sorted by sort-value. Items are yielded in descending order.
+   *
+   * If a starting sort-value and ending sort-value are provided, the iterator returns only items with sort-values between the starting and ending sort-values, including items with sort-values equal to the starting and ending sort-values. If only a starting sort-value is provided, the iterator returns items with sort values less than or equal to the starting sort-value.
+   *
+   * If an exclusive start key is provided, the iterator returns items with sort-values less than the sort value of the item at the exclusive start key. The exclusive start key takes precedence over the starting sort-value.
    *
    * Arguments:
-   *   * (none)
+   *   * (none) - retrieves all items in the disk sorted hash table.
+   *   * `options`
+   *     * `exclusiveStartKey` - `string` - the key after which to start iterating.
+   *     * `startingSortValue` - `string|number` - the sort value from which to start iterating.
+   *     * `endingSortValue` - `string|number` - the sort value at which to stop iterating.
    *
    * Return:
-   *   * `values` - `AsyncGenerator<string>` - an async iterator of the values of all items in the disk hash table sorted by sort-value in descending order.
+   *   * `values` - `AsyncGenerator<string>` - an async iterator of the values of all items in the disk sorted hash table sorted by sort-value in descending order.
    *
    * ```javascript
    * await ht.set('key1', 'value1', 1)
@@ -5190,13 +5527,60 @@ class DiskSortedHashTable {
    *                      // value2
    *                      // value1
    * }
+   *
+   * for await (const value of ht.reverseIterator({ startingSortValue: 2, endingSortValue: 1 })) {
+   *   console.log(value) // value2
+   *                      // value1
+   * }
+   *
+   * for await (const value of ht.reverseIterator({ exclusiveStartKey: 'key3' })) {
+   *   console.log(value) // value2
+   *                      // value1
+   * }
+   *
+   * for await (const value of ht.reverseIterator({ exclusiveStartKey: 'key3', endingSortValue: 2 })) {
+   *   console.log(value) // value2
+   * }
    * ```
    */
-  async * reverseIterator() {
-    let currentReverseItem = await this._getReverseStartItem()
-    while (currentReverseItem) {
-      yield currentReverseItem.value
-      currentReverseItem = await this._getItem(currentReverseItem.reverseIndex)
+  async * reverseIterator(options = {}) {
+    const {
+      exclusiveStartKey,
+      startingSortValue,
+      endingSortValue,
+    } = options
+
+    let currentForwardItem
+    if (exclusiveStartKey) {
+      const exclusiveStartIndex = this._hash1(exclusiveStartKey)
+      const exclusiveStartItem = await this._getItem(exclusiveStartIndex)
+      if (exclusiveStartItem == REMOVED) {
+        currentForwardItem = undefined
+      }
+      currentForwardItem = await this._getItem(exclusiveStartItem.reverseIndex)
+    } else if (startingSortValue != null) {
+      const btreeRootNodeRightmostItem = await this._getBTreeRootNodeRightmostItem()
+      const btreeRootNodeItems = await this._getBTreeNodeItems(btreeRootNodeRightmostItem)
+      currentForwardItem = await this._findBTreeNodeItemLTE(
+        startingSortValue, btreeRootNodeItems, btreeRootNodeRightmostItem
+      )
+    } else {
+      currentForwardItem = await this._getReverseStartItem()
+    }
+
+    if (endingSortValue != null) {
+      while (currentForwardItem) {
+        if (convert(currentForwardItem.sortValue, this.sortValueType) < endingSortValue) {
+          break
+        }
+        yield currentForwardItem.value
+        currentForwardItem = await this._getItem(currentForwardItem.reverseIndex)
+      }
+    } else {
+      while (currentForwardItem) {
+        yield currentForwardItem.value
+        currentForwardItem = await this._getItem(currentForwardItem.reverseIndex)
+      }
     }
   }
 
