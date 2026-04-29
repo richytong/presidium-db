@@ -9,8 +9,6 @@ const fs = require('fs')
 const preallocate = require('./_internal/preallocate')
 const convert = require('./_internal/convert')
 
-const DATA_SLICE_SIZE = 512 * 1024
-
 const ENCODING = 'utf8'
 
 const EMPTY = 0
@@ -28,6 +26,7 @@ const REMOVED = 2
  *   storagePath: string,
  *   headerPath: string,
  *   initialLength: number,
+ *   itemSize: number,
  *   sortValueType: 'string'|'number',
  *   resizeRatio: number,
  *   resizeFactor: number,
@@ -42,6 +41,7 @@ const REMOVED = 2
  *     * `storagePath` - `string` - the path to the file used to store the disk sorted hash table data.
  *     * `headerPath` - `string` - the path to the file used to store header information about the disk sorted hash table.
  *     * `initialLength` - `number` - the initial length of the disk sorted hash table. Defaults to 1024.
+ *     * `itemSize` - `number` - the size in bytes of each item stored on disk. Minimum value 1024. Defaults to 524288.
  *     * `sortValueType` - `'string'|'number'` - the type of the disk sorted hash table sort-values.
  *     * `resizeRatio` - `number` - the ratio of number of items to table length at which to resize the disk sorted hash table. Minimum value 0 (no resize), maximum value 1. Defaults to 0.
  *     * `resizeFactor` - `number` - the factor that is multiplied with the disk sorted hash table's current length to determine the new table length on a resize.
@@ -59,15 +59,13 @@ const REMOVED = 2
  *   storagePath: '/path/to/storage-file',
  *   headerPath: '/path/to/header-file',
  *   initialLength: 1024,
+ *   itemSize: 512 * 1024,
  *   sortValueType: 'number',
  *   resizeRatio: 0.5,
  *   resizeFactor: 1000,
  *   degree: 2,
  * })
  * ```
- *
- * Limits:
- *   * 511 KiB for key, value, and sortValue.
  *
  * Supported platforms:
  *   * `linux64`
@@ -94,6 +92,7 @@ class DiskSortedHashTable {
     this.storagePath = options.storagePath
     this.headerPath = options.headerPath
     this.initialLength = options.initialLength ?? 1024
+    this.itemSize = options.itemSize ?? 512 * 1024
     this.sortValueType = options.sortValueType
     this._length = null
     this._count = null
@@ -175,7 +174,7 @@ class DiskSortedHashTable {
     this._deletedCount = deletedCount
 
     await preallocate(this.headerPath, 24)
-    await preallocate(this.storagePath, DATA_SLICE_SIZE * length)
+    await preallocate(this.storagePath, this.itemSize * length)
   }
 
   /**
@@ -346,14 +345,14 @@ class DiskSortedHashTable {
 
   // _read(index number) -> readBuffer Promise<Buffer>
   async _read(index) {
-    const position = index * DATA_SLICE_SIZE
-    const readBuffer = Buffer.alloc(DATA_SLICE_SIZE)
+    const position = index * this.itemSize
+    const readBuffer = Buffer.alloc(this.itemSize)
 
     await this.storageFd.read({
       buffer: readBuffer,
       offset: 0,
       position,
-      length: DATA_SLICE_SIZE,
+      length: this.itemSize,
     })
 
     const btreeLeftItemIndex = readBuffer.readInt32BE(29)
@@ -407,7 +406,7 @@ class DiskSortedHashTable {
   async _writeBTreeLeftChildNodeRightmostItemIndex(
     btreeNodeItemIndex, btreeLeftChildNodeRightmostItemIndex
   ) {
-    const position = (btreeNodeItemIndex * DATA_SLICE_SIZE) + 21
+    const position = (btreeNodeItemIndex * this.itemSize) + 21
     const buffer = Buffer.alloc(4)
     buffer.writeInt32BE(btreeLeftChildNodeRightmostItemIndex, 0)
 
@@ -425,7 +424,7 @@ class DiskSortedHashTable {
   async _writeBTreeRightChildNodeRightmostItemIndex(
     btreeNodeItemIndex, btreeRightChildNodeRightmostItemIndex
   ) {
-    const position = (btreeNodeItemIndex * DATA_SLICE_SIZE) + 25
+    const position = (btreeNodeItemIndex * this.itemSize) + 25
     const buffer = Buffer.alloc(4)
     buffer.writeInt32BE(btreeRightChildNodeRightmostItemIndex, 0)
 
@@ -443,7 +442,7 @@ class DiskSortedHashTable {
   async _writeBTreeLeftItemIndex(
     btreeNodeItemIndex, btreeLeftItemIndex
   ) {
-    const position = (btreeNodeItemIndex * DATA_SLICE_SIZE) + 29
+    const position = (btreeNodeItemIndex * this.itemSize) + 29
     const buffer = Buffer.alloc(4)
     buffer.writeInt32BE(btreeLeftItemIndex, 0)
 
@@ -4284,7 +4283,7 @@ class DiskSortedHashTable {
 
   // _setStatusMarker(index number, marker number) -> Promise<>
   async _setStatusMarker(index, marker) {
-    const position = index * DATA_SLICE_SIZE
+    const position = index * this.itemSize
     const buffer = Buffer.alloc(1)
     buffer.writeUInt8(marker, 0)
 
@@ -4438,7 +4437,7 @@ class DiskSortedHashTable {
 
   // _updateForwardIndex(index number, forwardIndex number) -> Promise<>
   async _updateForwardIndex(index, forwardIndex) {
-    const position = (index * DATA_SLICE_SIZE) + 13
+    const position = (index * this.itemSize) + 13
     const buffer = Buffer.alloc(4)
     buffer.writeInt32BE(forwardIndex, 0)
 
@@ -4451,7 +4450,7 @@ class DiskSortedHashTable {
 
   // _updateReverseIndex(index number, reverseIndex number) -> Promise<>
   async _updateReverseIndex(index, reverseIndex) {
-    const position = (index * DATA_SLICE_SIZE) + 17
+    const position = (index * this.itemSize) + 17
     const buffer = Buffer.alloc(4)
     buffer.writeInt32BE(reverseIndex, 0)
 
@@ -4718,8 +4717,8 @@ class DiskSortedHashTable {
       reverseIndex = leftItem.index
     }
 
-    const position = index * DATA_SLICE_SIZE
-    const buffer = Buffer.alloc(DATA_SLICE_SIZE)
+    const position = index * this.itemSize
+    const buffer = Buffer.alloc(this.itemSize)
     const sortValueString = typeof sortValue == 'string' ? sortValue : sortValue.toString()
 
 
@@ -4946,8 +4945,8 @@ class DiskSortedHashTable {
 
     }
 
-    const position = index * DATA_SLICE_SIZE
-    const buffer = Buffer.alloc(DATA_SLICE_SIZE)
+    const position = index * this.itemSize
+    const buffer = Buffer.alloc(this.itemSize)
     const sortValueString = typeof sortValue == 'string' ? sortValue : sortValue.toString()
 
     const statusMarker = 1
