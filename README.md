@@ -22,7 +22,7 @@ const DiskHashTable = require('presidium-db/DiskHashTable')
 const DiskSortedHashTable = require('presidium-db/DiskSortedHashTable')
 ```
 
-## Store data on disk as a hash table
+## [Store data on disk as a hash table](https://presidium.services/docs/DiskHashTable)
 ```javascript
 const DiskHashTable = require('presidium-db/DiskHashTable')
 
@@ -41,7 +41,7 @@ console.log(myValue) // 'my-value'
 await ht.delete('my-key')
 ```
 
-## Store data on disk as a sorted hash table
+## [Store data on disk as a sorted hash table](https://presidium.services/docs/DiskSortedHashTable)
 ```javascript
 const DiskSortedHashTable = require('presidium-db/DiskSortedHashTable')
 
