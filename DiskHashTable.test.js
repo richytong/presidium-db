@@ -308,7 +308,7 @@ const test2_0 = new Test('DiskHashTable', async function integration2_0() {
 
   await ht1024.setBinary('maroon', Buffer.from('#800000'))
   await ht1024.setBinary('yellow', Buffer.from('#FFFF00'))
-  await ht1024.setBinary('black', Buffer.from('#000000'))
+  await ht1024.setBinary('black', new Uint8Array(Buffer.from('#000000')))
 
   assert(Buffer.from('#800000').equals(await ht1024.getBinary('maroon')))
   assert(Buffer.from('#FFFF00').equals(await ht1024.getBinary('yellow')))
