@@ -67,6 +67,16 @@ for await (const value of sortedHt.reverseIterator()) {
                      // second-value
                      // first-value
 }
+
+for await (const value of sortedHt.forwardIterator({ startingSortValue: 2, endingSortValue: 3 })) {
+  console.log(value) // second-value
+                     // third-value
+}
+
+for await (const value of sortedHt.reverseIterator({ startingSortValue: 2, endingSortValue: 1 })) {
+  console.log(value) // second-value
+                     // first-value
+}
 ```
 
 ## License
