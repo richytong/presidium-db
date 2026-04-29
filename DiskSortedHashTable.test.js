@@ -5833,6 +5833,134 @@ const test17_7_2 = new Test('DiskSortedHashTable', async function integration17_
   ht.close()
 }).case()
 
+const test18 = new Test('DiskSortedHashTable', async function integration18() {
+  const randomNumbers = require('./test/randomNumbers127_1.json')
+  const sortedNumbers = [...randomNumbers].sort((a, b) => a - b)
+  assert.equal(sortedNumbers.length, 127)
+
+  const ht = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/127`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/127_header`,
+    initialLength: 127 * 8,
+    sortValueType: 'number',
+    resizeRatio: 0,
+    degree: 2,
+  })
+  await ht.destroy()
+  await ht.init()
+
+  const values = []
+  let n = 1
+  while (n < 128) {
+    const start = performance.now()
+    await ht.set(`key${n}`, `value${n}`, n)
+    console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms`)
+    values.push(`value${n}`)
+    n += 1
+  }
+
+  const btreeRootNode = await ht._constructBTree({ unique: false })
+  assertBalanced(btreeRootNode)
+  assertMinHeight(btreeRootNode, calculateMinBTreeHeight(127, 2))
+  assertMaxHeight(btreeRootNode, calculateMaxBTreeHeight(127, 2))
+  assertMinKeysPerNode(btreeRootNode, 1)
+  assertMaxKeysPerNode(btreeRootNode, 3)
+  assertInternalNodesIntegrity(btreeRootNode)
+  assert.equal(ht.count(), 127)
+
+  values.sort((a, b) => Number(a.replace('value', '') - Number(b.replace('value', ''))))
+  assert.deepEqual(values, sortedNumbers.map(n => `value${n}`))
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator()) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values)
+  }
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator({ startingSortValue: 11, endingSortValue: 117 })) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values.slice(10, -10))
+  }
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator({ exclusiveStartKey: 'key10', endingSortValue: 117 })) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values.slice(10, -10))
+  }
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator({ startingSortValue: 117 })) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values.slice(-11))
+  }
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator({ endingSortValue: 11 })) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values.slice(0, 11))
+  }
+
+  {
+    const items = traverseInOrder(btreeRootNode)
+    assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
+  }
+
+  const valuesReverse = [...values].reverse()
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator()) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, valuesReverse)
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator({ startingSortValue: 117, endingSortValue: 11 })) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, valuesReverse.slice(10, -10))
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator({ exclusiveStartKey: 'key118', endingSortValue: 11 })) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, valuesReverse.slice(10, -10))
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator({ startingSortValue: 11 })) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, valuesReverse.slice(-11))
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator({ endingSortValue: 117 })) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, valuesReverse.slice(0, 11))
+  }
+
+  ht.close()
+}).case()
+
 const test_root_min_keys = new Test('DiskSortedHashTable', async function integration_root_min_keys() {
   const ht = new DiskSortedHashTable({
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1023`,
@@ -6342,6 +6470,7 @@ const test = Test.all([
   test17_7_0,
   test17_7_1,
   test17_7_2,
+  test18,
   test_root_min_keys,
   test28,
   test29,
@@ -6351,7 +6480,7 @@ const test = Test.all([
 
 if (process.argv[1] == __filename) {
   // test()
-  test31()
+  test18()
 }
 
 module.exports = test
