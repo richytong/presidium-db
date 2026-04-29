@@ -471,7 +471,7 @@ class DiskHashTable {
    *
    * @docs
    * ```coffeescript [specscript]
-   * set(key string, value string) -> Promise<>
+   * set(key string, value string|Buffer|Uint8Array) -> Promise<>
    * ```
    *
    * Sets and stores a value by key in the disk hash table.
@@ -485,43 +485,15 @@ class DiskHashTable {
    *
    * ```javascript
    * await ht.set('my-key', 'my-value')
+   *
+   * await ht.set('my-buffer', Buffer.from('binary'))
    * ```
    */
   async set(key, value) {
     if (this.resizeRatio > 0 && ((this._count + this._deletedCount) / this._length) >= this.resizeRatio) {
       await this._resize()
     }
-    await this._set(key, value, 'string')
-  }
-
-  /**
-   * @name setBinary
-   *
-   * @docs
-   * ```coffeescript [specscript]
-   * setBinary(key string, value Buffer|Uint8Array) -> Promise<>
-   * ```
-   *
-   * Sets and stores a binary value by key in the disk hash table.
-   *
-   * Arguments:
-   *   * `key` - `string` - the key to set.
-   *   * `value` - `Buffer|Uint8Array` - the binary value to set corresponding to the key.
-   *
-   * Return:
-   *   * Empty promise.
-   *
-   * ```javascript
-   * const buffer = Buffer.from('my-buffer')
-   *
-   * await ht.set('my-key', buffer)
-   * ```
-   */
-  async setBinary(key, value) {
-    if (this.resizeRatio > 0 && ((this._count + this._deletedCount) / this._length) >= this.resizeRatio) {
-      await this._resize()
-    }
-    await this._set(key, value, 'binary')
+    await this._set(key, value)
   }
 
   // _get(key string, valueType 'string'|'binary')
