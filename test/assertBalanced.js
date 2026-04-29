@@ -1,14 +1,16 @@
 const assert = require('assert')
+const traverse = require('../_internal/traverse')
 
-// assertBalanced(ht DiskSortedHashTable) -> Promise<>
-async function assertBalanced(ht) {
+// assertBalanced(btreeRootNode object) -> Promise<>
+function assertBalanced(btreeRootNode) {
   const leafHeights = []
-  await ht._constructBTree({
-    unique: false,
+
+  traverse(btreeRootNode, {
     onLeaf({ height }) {
       leafHeights.push(height)
-    }
+    },
   })
+
   try {
     assert.deepEqual(leafHeights, Array(leafHeights.length).fill(leafHeights[0]))
   } catch (_error) {

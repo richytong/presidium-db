@@ -1,7 +1,8 @@
-// assertMinKeysPerNode(ht DiskSortedHashTable, minKeysPerNode number) -> Promise<>
-async function assertMinKeysPerNode(ht, minKeysPerNode) {
-  await ht._constructBTree({
-    unique: false,
+const traverse = require('../_internal/traverse')
+
+// assertMinKeysPerNode(btreeRootNode object, minKeysPerNode number) -> Promise<>
+function assertMinKeysPerNode(btreeRootNode, minKeysPerNode) {
+  traverse(btreeRootNode, {
     onNode({ node }) {
       if (node.items.length < minKeysPerNode) {
         if (node.root) {
