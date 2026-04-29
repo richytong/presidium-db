@@ -345,9 +345,7 @@ class DiskHashTable {
         13 + keyByteLength,
         13 + keyByteLength + valueByteLength
       )
-      const value = valueType == 'binary'
-        ? valueBuffer
-        : valueBuffer.toString(ENCODING)
+      const value = valueType == 'binary' ? valueBuffer : valueBuffer.toString(ENCODING)
 
       return { statusMarker, index, nextIndex, key, value }
     }
@@ -562,7 +560,7 @@ class DiskHashTable {
    * Gets a binary value by key from the disk hash table.
    *
    * Arguments:
-   *   * `key` - `string` - the key corresponding to the value.
+   *   * `key` - `string` - the key corresponding to the binary value.
    *
    * Return:
    *   * `value` - `Buffer` - the binary value corresponding to the key.
