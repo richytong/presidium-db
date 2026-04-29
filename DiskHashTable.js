@@ -9,8 +9,6 @@ const fs = require('fs')
 const preallocate = require('./_internal/preallocate')
 const crypto = require('crypto')
 
-const DATA_SLICE_SIZE = 512 * 1024
-
 const ENCODING = 'utf8'
 
 const EMPTY = 0
@@ -25,9 +23,10 @@ const REMOVED = 2
  * @docs
  * ```coffeescript [specscript]
  * new DiskHashTable(options {
- *   initialLength: number,
  *   storagePath: string,
  *   headerPath: string,
+ *   initialLength: number,
+ *   itemSize: number,
  *   resizeRatio: number,
  *   resizeFactor: number,
  * }) -> ht DiskHashTable
@@ -37,9 +36,10 @@ const REMOVED = 2
  *
  * Arguments:
  *   * `options`
- *     * `initialLength` - `number` - the initial length of the disk hash table. Defaults to 1024.
  *     * `storagePath` - `string` - the path to the file used to store the disk hash table data.
  *     * `headerPath` - `string` - the path to the file used to store header information about the disk hash table.
+ *     * `initialLength` - `number` - the initial length of the disk hash table. Defaults to 1024.
+ *     * `itemSize` - `number` - the size in bytes of each item stored on disk. Minimum value 1024. Defaults to 524288.
  *     * `resizeRatio` - `number` - the ratio of number of items to table length at which to resize the disk hash table. Minimum value 0 (no resize), maximum value 1. Defaults to 0.
  *     * `resizeFactor` - `number` - the factor that is multiplied with the disk hash table's current length to determine the new table length on a resize.
  *
@@ -48,16 +48,14 @@ const REMOVED = 2
  *
  * ```javascript
  * const ht = new DiskHashTable({
- *   initialLength: 1024,
  *   storagePath: '/path/to/storage-file',
  *   headerPath: '/path/to/header-file',
+ *   initialLength: 1024,
+ *   itemSize: 512 * 1024,
  *   resizeRatio: 0.7,
  *   resizeFactor: 4,
  * })
  * ```
- *
- * Limits:
- *   * 511 KiB for key, and value.
  *
  * Supported platforms:
  *   * `linux64`
@@ -78,12 +76,13 @@ const REMOVED = 2
  */
 class DiskHashTable {
   constructor(options) {
-    this.initialLength = options.initialLength ?? 1024
     this._length = null
     this._count = null
     this._deletedCount = null
     this.storagePath = options.storagePath
     this.headerPath = options.headerPath
+    this.initialLength = options.initialLength ?? 1024
+    this.itemSize = options.itemSize ?? 512 * 1024
     this.storageFd = null
     this.headerFd = null
     this.resizeRatio = options.resizeRatio ?? 0
@@ -161,7 +160,7 @@ class DiskHashTable {
     this._headIndex = headIndex
 
     await preallocate(this.headerPath, 16)
-    await preallocate(this.storagePath, DATA_SLICE_SIZE * length)
+    await preallocate(this.storagePath, this.itemSize * length)
   }
 
   /**
@@ -314,14 +313,14 @@ class DiskHashTable {
 
   // _read(index number) -> readBuffer Promise<Buffer>
   async _read(index) {
-    const position = index * DATA_SLICE_SIZE
-    const readBuffer = Buffer.alloc(DATA_SLICE_SIZE)
+    const position = index * this.itemSize
+    const readBuffer = Buffer.alloc(this.itemSize)
 
     await this.storageFd.read({
       buffer: readBuffer,
       offset: 0,
       position,
-      length: DATA_SLICE_SIZE,
+      length: this.itemSize,
     })
 
     return readBuffer
@@ -354,7 +353,7 @@ class DiskHashTable {
 
   // _setStatusMarker(index number, marker number) -> Promise<>
   async _setStatusMarker(index, marker) {
-    const position = index * DATA_SLICE_SIZE
+    const position = index * this.itemSize
     const buffer = Buffer.alloc(1)
     buffer.writeUInt8(marker, 0)
 
@@ -430,8 +429,8 @@ class DiskHashTable {
       }
     }
 
-    const position = index * DATA_SLICE_SIZE
-    const buffer = Buffer.alloc(DATA_SLICE_SIZE)
+    const position = index * this.itemSize
+    const buffer = Buffer.alloc(this.itemSize)
 
     // 8 bits / 1 byte for status marker: 0 empty / 1 occupied / 2 deleted
     // 32 bits / 4 bytes for key size
