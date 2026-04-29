@@ -5457,10 +5457,11 @@ class DiskSortedHashTable {
     if (exclusiveStartKey) {
       const exclusiveStartIndex = this._hash1(exclusiveStartKey)
       const exclusiveStartItem = await this._getItem(exclusiveStartIndex)
-      if (exclusiveStartItem == REMOVED) {
+      if (exclusiveStartItem == null || exclusiveStartItem.statusMarker == REMOVED) {
         currentForwardItem = undefined
+      } else {
+        currentForwardItem = await this._getItem(exclusiveStartItem.forwardIndex)
       }
-      currentForwardItem = await this._getItem(exclusiveStartItem.forwardIndex)
     } else if (startingSortValue != null) {
       const btreeRootNodeRightmostItem = await this._getBTreeRootNodeRightmostItem()
       const btreeRootNodeItems = await this._getBTreeNodeItems(btreeRootNodeRightmostItem)
@@ -5554,10 +5555,11 @@ class DiskSortedHashTable {
     if (exclusiveStartKey) {
       const exclusiveStartIndex = this._hash1(exclusiveStartKey)
       const exclusiveStartItem = await this._getItem(exclusiveStartIndex)
-      if (exclusiveStartItem == REMOVED) {
+      if (exclusiveStartItem == null || exclusiveStartItem.statusMarker == REMOVED) {
         currentForwardItem = undefined
+      } else {
+        currentForwardItem = await this._getItem(exclusiveStartItem.reverseIndex)
       }
-      currentForwardItem = await this._getItem(exclusiveStartItem.reverseIndex)
     } else if (startingSortValue != null) {
       const btreeRootNodeRightmostItem = await this._getBTreeRootNodeRightmostItem()
       const btreeRootNodeItems = await this._getBTreeNodeItems(btreeRootNodeRightmostItem)
