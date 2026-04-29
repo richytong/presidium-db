@@ -5159,7 +5159,7 @@ class DiskSortedHashTable {
   ) {
 
     // first item GTE sortValue
-    // rightmost item equal to sortValue
+    // leftmost item equal to sortValue
 
     let i = 0
 
@@ -5168,14 +5168,6 @@ class DiskSortedHashTable {
       if (convert(item.sortValue, this.sortValueType) >= sortValue) {
         foundItem = item
         break
-      }
-      i += 1
-    }
-
-    while (i < btreeNodeItems.length) {
-      const item = btreeNodeItems[i]
-      if (item.sortValue == sortValue) {
-        foundItem = item
       }
       i += 1
     }
@@ -5190,7 +5182,7 @@ class DiskSortedHashTable {
 
     i = btreeNodeItems.length - 1
 
-    while (i >= 0 && convert(btreeNodeItems[i].sortValue, this.sortValueType) > sortValue) {
+    while (i >= 0 && convert(btreeNodeItems[i].sortValue, this.sortValueType) >= sortValue) {
       i -= 1
     }
     i += 1 // if i === 0, sortValue is less than all items' sortValues in btreeNodeItems, insert item at very left
@@ -5290,7 +5282,7 @@ class DiskSortedHashTable {
   ) {
 
     // first item LTE sortValue
-    // leftmost item equal to sortValue
+    // rightmost item equal to sortValue
 
     let i = btreeNodeItems.length - 1
 
@@ -5299,14 +5291,6 @@ class DiskSortedHashTable {
       if (convert(item.sortValue, this.sortValueType) <= sortValue) {
         foundItem = item
         break
-      }
-      i -= 1
-    }
-
-    while (i >= 0) {
-      const item = btreeNodeItems[i]
-      if (item.sortValue == sortValue) {
-        foundItem = item
       }
       i -= 1
     }
