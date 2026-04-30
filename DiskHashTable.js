@@ -554,7 +554,7 @@ class DiskHashTable {
    *
    * @docs
    * ```coffeescript [specscript]
-   * getBinary(key string) -> value Promise<Buffer>
+   * getBinary(key string) -> binaryValue Promise<Buffer>
    * ```
    *
    * Gets a binary value by key from the disk hash table.
