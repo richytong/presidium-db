@@ -5277,9 +5277,9 @@ class DiskSortedHashTable {
    *     * `exclusiveStartKey` - `string` - the key after which to start iterating.
    *     * `startingSortValue` - `string|number` - the sort value from which to start iterating.
    *     * `endingSortValue` - `string|number` - the sort value at which to stop iterating.
-   *     * `valueType` - `'string'|'binary'` - the type of value that the iterator yields. Defaults to `string`.
-   *       * `string` - iterator yields `string` values.
-   *       * `binary` - iterator yields `Buffer` values.
+   *     * `valueType` - `'string'|'binary'` - the type of value that the iterator yields. Defaults to `'string'`.
+   *       * `'string'` - iterator yields `string` values.
+   *       * `'binary'` - iterator yields `Buffer` values.
    *
    * Return:
    *   * `values` - `AsyncGenerator<string|Buffer>` - an async iterator of the values of all items in the disk sorted hash table sorted by sort-value in ascending order.
@@ -5380,7 +5380,7 @@ class DiskSortedHashTable {
    *     * `exclusiveStartKey` - `string` - the key after which to start iterating.
    *     * `startingSortValue` - `string|number` - the sort value from which to start iterating.
    *     * `endingSortValue` - `string|number` - the sort value at which to stop iterating.
-   *     * `valueType` - `'string'|'binary'` - the type of value that the iterator yields. Defaults to `string`.
+   *     * `valueType` - `'string'|'binary'` - the type of value that the iterator yields. Defaults to `'string'`.
    *       * `string` - iterator yields `string` values.
    *       * `binary` - iterator yields `Buffer` values.
    *
