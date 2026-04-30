@@ -756,14 +756,14 @@ class DiskHashTable {
    * Returns an iterator of all items in the disk hash table. Items are yielded by reverse insertion order.
    *
    * Arguments:
-   *   * (none) - retrieves all items in the disk sorted hash table.
+   *   * (none) - retrieves all items in the disk hash table.
    *   * `options`
    *     * `valueType` - `'string'|'binary'` - the type of value that the iterator yields. Defaults to `'string'`.
    *       * `'string'` - iterator yields `string` values.
    *       * `'binary'` - iterator yields `Buffer` values.
    *
    * Return:
-   *   * `values` - `AsyncGenerator<string|Buffer>` - an async iterator of the values of all items in the disk sorted hash table sorted by reverse insertion order.
+   *   * `values` - `AsyncGenerator<string|Buffer>` - an async iterator of the values of all items in the disk hash table sorted by reverse insertion order.
    *
    * ```javascript
    * await ht.set('key1', 'value1')
