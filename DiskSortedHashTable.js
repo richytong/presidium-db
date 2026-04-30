@@ -1144,8 +1144,6 @@ class DiskSortedHashTable {
 
       if (grandparentLeftSiblingNodeItems?.length > (this.degree - 1)) { // grandparent left sibling node over minimum
 
-        console.log(`grandparent left sibling node over minimum (grandparent ${grandparentNodeItem.sortValue}, grandparent node ${grandparentNodeItems.map(item => item.sortValue)}, left great grandparent ${leftGreatGrandparentNodeItem?.sortValue}, right great grandparent ${rightGreatGrandparentNodeItem?.sortValue}, grandparent left sibling node ${grandparentLeftSiblingNodeItems.map(item => item.sortValue)}, parent node ${parentNodeItems.map(item => item.sortValue)}, rotated parent node ${rotatedParentNodeItem?.sortValue})`)
-
         // left great grandparent becomes grandparent
         // grandparent left sibling node rightmost item becomes left great grandparent
 
@@ -1325,8 +1323,6 @@ class DiskSortedHashTable {
 
       } else if (grandparentRightSiblingNodeItems?.length > (this.degree - 1)) { // grandparent right sibling node over minimum
 
-        console.log(`grandparent right sibling node over minimum (grandparent ${grandparentNodeItem.sortValue}, grandparent node ${grandparentNodeItems.map(item => item.sortValue)}, left great grandparent ${leftGreatGrandparentNodeItem?.sortValue}, right great grandparent ${rightGreatGrandparentNodeItem?.sortValue}, grandparent right sibling node ${grandparentRightSiblingNodeItems.map(item => item.sortValue)}, parent node ${parentNodeItems.map(item => item.sortValue)}, rotated parent node ${rotatedParentNodeItem?.sortValue})`)
-
         // right great grandparent becomes grandparent
         // grandparent right sibling leftmost item becomes right great grandparent
 
@@ -1458,8 +1454,6 @@ class DiskSortedHashTable {
         }
 
       } else if (grandparentLeftSiblingNodeItems?.length === (this.degree - 1)) { // grandparent left sibling node at minimum
-
-        console.log(`grandparent left sibling node at minimum (grandparent ${grandparentNodeItem.sortValue}, grandparent node ${grandparentNodeItems.map(item => item.sortValue)}, left great grandparent ${leftGreatGrandparentNodeItem?.sortValue}, right great grandparent ${rightGreatGrandparentNodeItem?.sortValue}, grandparent left sibling node ${grandparentLeftSiblingNodeItems.map(item => item.sortValue)}, parent node ${parentNodeItems.map(item => item.sortValue)}, rotated parent node ${rotatedParentNodeItem?.sortValue})`)
 
         // left great grandparent becomes grandparent
 
@@ -1617,8 +1611,6 @@ class DiskSortedHashTable {
 
       } else if (grandparentRightSiblingNodeItems?.length === (this.degree - 1)) { // grandparent right sibling node at minimum
 
-        console.log(`grandparent right sibling node at minimum (grandparent ${grandparentNodeItem.sortValue}, grandparent node ${grandparentNodeItems.map(item => item.sortValue)}, left great grandparent ${leftGreatGrandparentNodeItem?.sortValue}, right great grandparent ${rightGreatGrandparentNodeItem?.sortValue}, grandparent right sibling node ${grandparentRightSiblingNodeItems.map(item => item.sortValue)}, parent node ${parentNodeItems.map(item => item.sortValue)}, rotated parent node ${rotatedParentNodeItem?.sortValue})`)
-
         // right great grandparent becomes grandparent
 
         if (greatGrandparentNodeItem.rightItem) {
@@ -1740,8 +1732,6 @@ class DiskSortedHashTable {
 
 
     } else { // grandparent node over minimum after grandparent rotation
-
-      console.log(`grandparent node over minimum after grandparent rotation (grandparent ${grandparentNodeItem.sortValue}, grandparent node ${grandparentNodeItems.map(item => item.sortValue)}, great grandparent ${greatGrandparentNodeItem.sortValue})`)
 
       if (rotatedChildNodeItem && grandparentNodeItem.rightItem == null) {
 
@@ -1897,8 +1887,6 @@ class DiskSortedHashTable {
 
     if (leftSiblingNodeItems.length > (this.degree - 1)) { // left sibling node has more than the minimum number of items
 
-      console.log('left sibling node has more than the minimum number of items')
-
       // left parent becomes new leaf node item
       await this._writeBTreeLeftChildNodeRightmostItemIndex(
         leftParentNodeItem.index, -1
@@ -2046,8 +2034,6 @@ class DiskSortedHashTable {
 
     } else if (rightSiblingNodeItems.length > (this.degree - 1)) { // right sibling node has more than the minimum number of items
 
-      console.log('right sibling node has more than the minimum number of items')
-
       // right parent becomes new leaf node item
       await this._writeBTreeLeftChildNodeRightmostItemIndex(
         rightParentNodeItem.index, -1
@@ -2155,8 +2141,6 @@ class DiskSortedHashTable {
 
     } else if (leftSiblingNodeItems.length === (this.degree - 1) && rightSiblingNodeItems.length === (this.degree - 1)) { // left and right sibling nodes at minimum
 
-      console.log(`left and right sibling nodes at minimum (leftParent ${leftParentNodeItem.sortValue}, rightParent ${rightParentNodeItem.sortValue}, parent node ${btreeParentNodeItems.map(item => item.sortValue)}, left sibling node ${leftSiblingNodeItems.map(item => item.sortValue)}, right sibling node ${rightSiblingNodeItems.map(item => item.sortValue)})`)
-
       // left parent becomes new leaf node item
       await this._writeBTreeLeftChildNodeRightmostItemIndex(
         leftParentNodeItem.index, -1
@@ -2242,8 +2226,6 @@ class DiskSortedHashTable {
           // root stays the same
 
         } else if (btreeParentLeftSiblingNodeItems?.length > (this.degree - 1)) { // parent left sibling node over minimum
-
-          console.log(`parent left sibling node over minimum (parent left sibling node ${btreeParentLeftSiblingNodeItems.map(item => item.sortValue)})`)
 
           let grandparentNodeItem
           if (btreeParentNodeItem.btreeParentNodeItem.isRightChildPointer) {
@@ -2372,8 +2354,6 @@ class DiskSortedHashTable {
 
         } else if (btreeParentRightSiblingNodeItems?.length > (this.degree - 1)) { // parent right sibling node over minimum
 
-          console.log('parent right sibling node over minimum')
-
           let grandparentNodeItem
           if (btreeParentNodeItem.btreeParentNodeItem.isLeftChildPointer) {
             grandparentNodeItem = btreeParentNodeItem.btreeParentNodeItem
@@ -2463,8 +2443,6 @@ class DiskSortedHashTable {
           }
 
         } else if (btreeParentLeftSiblingNodeItems?.length === (this.degree - 1)) { // parent left sibling at minimum
-
-          console.log(`parent left sibling at minimum (leftParent ${leftParentNodeItem.sortValue}, rightParent ${rightParentNodeItem.sortValue}, parent node ${btreeParentNodeItems.map(item => item.sortValue)})`)
 
           let grandparentNodeItem
           if (btreeParentNodeItem.btreeParentNodeItem.isRightChildPointer) {
@@ -2577,8 +2555,6 @@ class DiskSortedHashTable {
 
         } else if (btreeParentRightSiblingNodeItems?.length === (this.degree - 1)) { // parent right sibling at minimum (no left sibling)
 
-          console.log('parent right sibling at minimum (no left sibling)')
-
           let grandparentNodeItem
           if (btreeParentNodeItem.btreeParentNodeItem.isLeftChildPointer) {
             grandparentNodeItem = btreeParentNodeItem.btreeParentNodeItem
@@ -2656,8 +2632,6 @@ class DiskSortedHashTable {
 
     } else if (leftSiblingNodeItems.length === 0 && rightSiblingNodeItems.length === (this.degree - 1)) { // no left sibling node, right sibling node at minimum
 
-      console.log('no left sibling node, right sibling node at minimum')
-
       // right parent becomes leaf
       await this._writeBTreeLeftChildNodeRightmostItemIndex(
         rightParentNodeItem.index, -1
@@ -2712,8 +2686,6 @@ class DiskSortedHashTable {
           }
 
         } else if (btreeParentLeftSiblingNodeItems?.length > (this.degree - 1)) { // parent left sibling node over minimum
-
-          console.log('parent left sibling node over minimum')
 
           let grandparentNodeItem
           if (btreeParentNodeItem.btreeParentNodeItem.isRightChildPointer) {
@@ -2829,8 +2801,6 @@ class DiskSortedHashTable {
 
         } else if (btreeParentRightSiblingNodeItems?.length > (this.degree - 1)) { // parent right sibling node over minimum
 
-          console.log('parent right sibling node over minimum')
-
           let grandparentNodeItem
           if (btreeParentNodeItem.btreeParentNodeItem.isLeftChildPointer) {
             grandparentNodeItem = btreeParentNodeItem.btreeParentNodeItem
@@ -2933,8 +2903,6 @@ class DiskSortedHashTable {
 
         } else if (btreeParentLeftSiblingNodeItems?.length === (this.degree - 1)) { // parent left sibling at minimum
 
-          console.log('parent left sibling at minimum')
-
           let grandparentNodeItem
           if (btreeParentNodeItem.btreeParentNodeItem.isRightChildPointer) {
             grandparentNodeItem = btreeParentNodeItem.btreeParentNodeItem
@@ -3034,8 +3002,6 @@ class DiskSortedHashTable {
 
         } else if (btreeParentRightSiblingNodeItems?.length === (this.degree - 1)) { // parent right sibling at minimum (no left sibling)
 
-          console.log('parent right sibling at minimum (no left sibling)')
-
           let grandparentNodeItem
           if (btreeParentNodeItem.btreeParentNodeItem.isLeftChildPointer) {
             grandparentNodeItem = btreeParentNodeItem.btreeParentNodeItem
@@ -3114,8 +3080,6 @@ class DiskSortedHashTable {
       }
 
     } else if (rightSiblingNodeItems.length === 0 && leftSiblingNodeItems.length === (this.degree - 1)) { // no right sibling node, left sibling node at minimum
-
-      console.log('no right sibling node, left sibling node at minimum')
 
       // left parent becomes leaf
       await this._writeBTreeLeftChildNodeRightmostItemIndex(
@@ -3224,8 +3188,6 @@ class DiskSortedHashTable {
 
         if (btreeParentNodeItem.btreeParentNodeItem == null) { // no grandparent
 
-          console.log('no grandparent')
-
           if (leftParentNodeItem.leftItem) {
             // point root
             await this._writeBTreeRootRightmostItemIndex(
@@ -3244,8 +3206,6 @@ class DiskSortedHashTable {
           }
 
         } else if (btreeParentLeftSiblingNodeItems?.length > (this.degree - 1)) { // parent left sibling node over minimum
-
-          console.log('parent left sibling node over minimum')
 
           let grandparentNodeItem
           if (btreeParentNodeItem.btreeParentNodeItem.isRightChildPointer) {
@@ -3356,8 +3316,6 @@ class DiskSortedHashTable {
           }
 
         } else if (btreeParentRightSiblingNodeItems?.length > (this.degree - 1)) { // parent right sibling node over minimum
-
-          console.log('parent right sibling node over minimum')
 
           let grandparentNodeItem
           if (btreeParentNodeItem.btreeParentNodeItem.isLeftChildPointer) {
@@ -3474,8 +3432,6 @@ class DiskSortedHashTable {
 
         } else if (btreeParentLeftSiblingNodeItems?.length === (this.degree - 1)) { // parent left sibling at minimum
 
-          console.log('parent left sibling at minimum')
-
           let grandparentNodeItem
           if (btreeParentNodeItem.btreeParentNodeItem.isRightChildPointer) {
             grandparentNodeItem = btreeParentNodeItem.btreeParentNodeItem
@@ -3583,8 +3539,6 @@ class DiskSortedHashTable {
           }
 
         } else if (btreeParentRightSiblingNodeItems?.length === (this.degree - 1)) { // parent right sibling at minimum (no left sibling)
-
-          console.log('parent right sibling at minimum (no left sibling)')
 
           let grandparentNodeItem
           if (btreeParentNodeItem.btreeParentNodeItem.isLeftChildPointer) {
