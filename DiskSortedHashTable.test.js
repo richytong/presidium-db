@@ -410,6 +410,28 @@ const test1_5 = new Test('DiskSortedHashTable', async function integration1_5() 
   assert(Buffer.from('#FFFF00_').equals(await ht1024.getBinary('yellow')))
   assert(Buffer.from('#000000_').equals(await ht1024.getBinary('black')))
 
+  {
+    const forwardValues = []
+    for await (const value of ht1024.forwardIterator({ valueType: 'binary' })) {
+      forwardValues.push(value)
+    }
+    assert.equal(forwardValues.length, 3)
+    assert(Buffer.from('#800000_').equals(forwardValues[0]))
+    assert(Buffer.from('#FFFF00_').equals(forwardValues[1]))
+    assert(Buffer.from('#000000_').equals(forwardValues[2]))
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht1024.reverseIterator({ valueType: 'binary' })) {
+      reverseValues.push(value)
+    }
+    assert.equal(reverseValues.length, 3)
+    assert(Buffer.from('#000000_').equals(reverseValues[0]))
+    assert(Buffer.from('#FFFF00_').equals(reverseValues[1]))
+    assert(Buffer.from('#800000_').equals(reverseValues[2]))
+  }
+
   assert.strictEqual(ht1024.count(), 3)
 
   await ht1024.clear()
