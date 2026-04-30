@@ -5265,7 +5265,7 @@ class DiskSortedHashTable {
    * }) -> values AsyncGenerator<string|Buffer>
    * ```
    *
-   * Returns a iterator of all items in the disk sorted hash table sorted by sort-value. Items are yielded in ascending order.
+   * Returns an iterator of all items in the disk sorted hash table sorted by sort-value. Items are yielded in ascending order.
    *
    * If a starting sort-value and ending sort-value are provided, the iterator returns only items with sort-values between the starting and ending sort-values, including items with sort-values equal to the starting and ending sort-values. If only a starting sort-value is provided, the iterator returns all items with sort values greater than or equal to the starting sort-value. If only an ending sort-value is provided, the iterator returns all items with sort values less than or equal to the ending sort-value.
    *
@@ -5368,7 +5368,7 @@ class DiskSortedHashTable {
    * }) -> values AsyncGenerator<string|Buffer>
    * ```
    *
-   * Returns a iterator of all items in the disk sorted hash table sorted by sort-value. Items are yielded in descending order.
+   * Returns an iterator of all items in the disk sorted hash table sorted by sort-value. Items are yielded in descending order.
    *
    * If a starting sort-value and ending sort-value are provided, the iterator returns only items with sort-values between the starting and ending sort-values, including items with sort-values equal to the starting and ending sort-values. If only a starting sort-value is provided, the iterator returns items with sort values less than or equal to the starting sort-value.
    *
