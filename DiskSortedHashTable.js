@@ -346,6 +346,42 @@ class DiskSortedHashTable {
     }
   }
 
+  // _readKeyAndSortValue(index number, keyByteLength number, sortValueByteLength number) -> [key string, sortValue number|string]
+  async _readKeyAndSortValue(index, keyByteLength, sortValueByteLength) {
+    const position = (index * this.itemSize) + 33
+    const readBuffer = Buffer.alloc(keyByteLength + sortValueByteLength)
+
+    await this.storageFd.read({
+      buffer: readBuffer,
+      offset: 0,
+      position,
+      length: keyByteLength + sortValueByteLength,
+    })
+
+    const keyBuffer = readBuffer.subarray(0, keyByteLength)
+    const key = keyBuffer.toString(ENCODING)
+
+    const sortValueBuffer = readBuffer.subarray(keyByteLength, keyByteLength + sortValueByteLength)
+    const sortValue = convert(sortValueBuffer.toString(ENCODING), this.sortValueType)
+
+    return [key, sortValue]
+  }
+
+  // _readHead(index number) -> readBuffer Promise<Buffer>
+  async _readHead(index) {
+    const position = index * this.itemSize
+    const readBuffer = Buffer.alloc(33)
+
+    await this.storageFd.read({
+      buffer: readBuffer,
+      offset: 0,
+      position,
+      length: 33,
+    })
+
+    return readBuffer
+  }
+
   // _read(index number) -> readBuffer Promise<Buffer>
   async _read(index) {
     const position = index * this.itemSize
@@ -357,8 +393,6 @@ class DiskSortedHashTable {
       position,
       length: this.itemSize,
     })
-
-    const btreeLeftItemIndex = readBuffer.readInt32BE(29)
 
     return readBuffer
   }
@@ -484,8 +518,15 @@ class DiskSortedHashTable {
     if (index == -1) {
       return undefined
     }
-    const readBuffer = await this._read(index)
-    return this._parseBTreeItem(readBuffer, index)
+
+    const headReadBuffer = await this._readHead(index)
+    const item = this._parseBTreeItemHead(headReadBuffer, index)
+    const [key, sortValue] = await this._readKeyAndSortValue(index, item.keyByteLength, item.sortValueByteLength)
+
+    item.key = key
+    item.sortValue = sortValue
+
+    return item
   }
 
   // _getBTreeNodeItems(btreeRightmostItem { index: number, btreeLeftItemIndex: number }) -> Promise<number>
@@ -538,8 +579,7 @@ class DiskSortedHashTable {
     btreeChildNodeItems,
     btreeLeftParentNodeItem,
     btreeRightParentNodeItem,
-    btreeRootNodeRightmostItem,
-    { sortValue }
+    btreeRootNodeRightmostItem
   ) {
 
     // Maximum number of items per b-tree node: `(2 * degree) - 1`
@@ -617,7 +657,7 @@ class DiskSortedHashTable {
   //   btreeLeftItemIndex: number,
   // }) -> Promise<>
   async _splitBTreeChildNodeLeft(
-    btreeChildNodeItems, btreeRightParentNodeItem, { sortValue }
+    btreeChildNodeItems, btreeRightParentNodeItem
   ) {
 
     const btreeLeftChildNodeItems = btreeChildNodeItems.slice(0, this.degree - 1)
@@ -662,7 +702,7 @@ class DiskSortedHashTable {
   //   btreeRightChildNodeRightmostItemIndex: number,
   //   btreeLeftItemIndex: number,
   // }>) -> Promise<>
-  async _splitBTreeRootNode(btreeRootNodeItems, { sortValue }) {
+  async _splitBTreeRootNode(btreeRootNodeItems) {
     const btreeLeftChildNodeItems = btreeRootNodeItems.slice(0, this.degree - 1)
     const btreeMiddleItem = btreeRootNodeItems[this.degree - 1]
     const btreeRightChildNodeItems = btreeRootNodeItems.slice(this.degree)
@@ -732,7 +772,7 @@ class DiskSortedHashTable {
 
     let i = btreeNodeItems.length - 1
 
-    while (i >= 0 && convert(btreeNodeItems[i].sortValue, this.sortValueType) > sortValue) {
+    while (i >= 0 && btreeNodeItems[i].sortValue > sortValue) {
       i -= 1
     }
     i += 1 // if i === 0, sortValue is less than all items' sortValues in btreeNodeItems, insert item at very left
@@ -868,11 +908,8 @@ class DiskSortedHashTable {
       let btreeChildNodeItems = await this._getBTreeNodeItems(btreeChildNodeRightmostItem)
 
       if (btreeChildNodeItems.length == ((2 * this.degree) - 1)) { // current b-tree node at maximum number of items
-        const [btreeLeftNodeItems, btreeNewParentNodeItem, btreeRightNodeItems] = await this._splitBTreeChildNodeLeft(
-          btreeChildNodeItems,
-          btreeChildNodeItemsRightParentNodeItem,
-          { sortValue }
-        )
+        const [btreeLeftNodeItems, btreeNewParentNodeItem, btreeRightNodeItems] =
+          await this._splitBTreeChildNodeLeft(btreeChildNodeItems, btreeChildNodeItemsRightParentNodeItem)
 
         await this._writeBTreeLeftChildNodeRightmostItemIndex(
           btreeChildNodeItemsRightParentNodeItem.index,
@@ -885,7 +922,7 @@ class DiskSortedHashTable {
         btreeChildNodeItemsParentNodeItem = btreeNewParentNodeItem
         btreeChildNodeItemsParentNodeItem.btreeParentNodeItem = btreeParentNodeItem
 
-        if (convert(sortValue, this.sortValueType) > btreeNewParentNodeItem.sortValue) { // move to right child
+        if (sortValue > btreeNewParentNodeItem.sortValue) { // move to right child
           btreeChildNodeItems = btreeRightNodeItems
           btreeChildNodeItemsParentNodeItem.isRightChildPointer = true
           btreeChildNodeItemsLeftParentNodeItem = btreeChildNodeItemsParentNodeItem
@@ -951,8 +988,7 @@ class DiskSortedHashTable {
         btreeChildNodeItems,
         btreeChildNodeItemsLeftParentNodeItem,
         btreeChildNodeItemsRightParentNodeItem,
-        btreeRootNodeRightmostItem,
-        { sortValue }
+        btreeRootNodeRightmostItem
       )
 
       if (i === btreeNodeItems.length) { // update parent nodes with new child rightmost item
@@ -1020,7 +1056,7 @@ class DiskSortedHashTable {
       // (old right) (new left)  (old left)                                    (new left)  (old left)
       // (old right) (new right) (old left)                                    (new right) (old left)
 
-      if (convert(sortValue, this.sortValueType) > btreeNewParentNodeItem.sortValue) { // move to right child
+      if (sortValue > btreeNewParentNodeItem.sortValue) { // move to right child
         btreeChildNodeItems = btreeRightNodeItems
         btreeChildNodeItemsParentNodeItem.isRightChildPointer = true
         btreeChildNodeItemsLeftParentNodeItem = btreeChildNodeItemsParentNodeItem
@@ -4100,7 +4136,7 @@ class DiskSortedHashTable {
     }
 
     i = btreeNodeItems.length - 1
-    while (i >= 0 && convert(btreeNodeItems[i].sortValue, this.sortValueType) > btreeItem.sortValue) {
+    while (i >= 0 && btreeNodeItems[i].sortValue > btreeItem.sortValue) {
       i -= 1
     }
 
@@ -4251,6 +4287,43 @@ class DiskSortedHashTable {
     })
   }
 
+  // _parseBTreeItemHead(headReadBuffer Buffer, index number) -> {
+  //   statusMarker: 0|1|2,
+  //   index: number,
+  //   sortValue: string|number,
+  //   btreeLeftChildNodeRightmostItemIndex: number,
+  //   btreeRightChildNodeRightmostItemIndex: number,
+  //   btreeLeftItemIndex: number,
+  // }
+  _parseBTreeItemHead(headReadBuffer, index) {
+    const item = {}
+    item.index = index
+
+    const statusMarker = headReadBuffer.readUInt8(0)
+    item.statusMarker = statusMarker
+
+    const forwardIndex = headReadBuffer.readInt32BE(13)
+    const reverseIndex = headReadBuffer.readInt32BE(17)
+    item.forwardIndex = forwardIndex
+    item.reverseIndex = reverseIndex
+
+    const btreeLeftChildNodeRightmostItemIndex = headReadBuffer.readInt32BE(21)
+    const btreeRightChildNodeRightmostItemIndex = headReadBuffer.readInt32BE(25)
+    const btreeLeftItemIndex = headReadBuffer.readInt32BE(29)
+
+    item.btreeLeftChildNodeRightmostItemIndex = btreeLeftChildNodeRightmostItemIndex
+    item.btreeRightChildNodeRightmostItemIndex = btreeRightChildNodeRightmostItemIndex
+    item.btreeLeftItemIndex = btreeLeftItemIndex
+
+    const keyByteLength = headReadBuffer.readUInt32BE(1)
+    item.keyByteLength = keyByteLength
+
+    const sortValueByteLength = headReadBuffer.readUInt32BE(5)
+    item.sortValueByteLength = sortValueByteLength
+
+    return item
+  }
+
   // _parseBTreeItem(readBuffer Buffer, index number) -> {
   //   statusMarker: 0|1|2,
   //   index: number,
@@ -4289,7 +4362,7 @@ class DiskSortedHashTable {
       33 + keyByteLength,
       33 + keyByteLength + sortValueByteLength
     )
-    const sortValue = sortValueBuffer.toString(ENCODING)
+    const sortValue = convert(sortValueBuffer.toString(ENCODING), this.sortValueType)
     item.sortValue = sortValue
 
     const valueByteLength = readBuffer.readUInt32BE(9)
@@ -4341,7 +4414,7 @@ class DiskSortedHashTable {
       33 + keyByteLength,
       33 + keyByteLength + sortValueByteLength
     )
-    const sortValue = sortValueBuffer.toString(ENCODING)
+    const sortValue = convert(sortValueBuffer.toString(ENCODING), this.sortValueType)
     item.sortValue = sortValue
 
     const valueByteLength = readBuffer.readUInt32BE(9)
@@ -4497,7 +4570,7 @@ class DiskSortedHashTable {
       await this._writeBTreeRootRightmostItemIndex(index)
     }
     else if (btreeRootNodeItems.length == ((2 * this.degree) - 1)) { // current b-tree node at maximum number of items
-      const btreeRootNodeItem = await this._splitBTreeRootNode(btreeRootNodeItems, { sortValue })
+      const btreeRootNodeItem = await this._splitBTreeRootNode(btreeRootNodeItems)
       const insertResult = await this._insertBTreeNodeItem(
         index,
         sortValue,
@@ -4729,7 +4802,7 @@ class DiskSortedHashTable {
           btreeLeftItemIndex = -1
         }
         else if (btreeRootNodeItems.length == ((2 * this.degree) - 1)) { // current b-tree node at maximum number of items
-          const btreeRootNodeItem = await this._splitBTreeRootNode(btreeRootNodeItems, { sortValue })
+          const btreeRootNodeItem = await this._splitBTreeRootNode(btreeRootNodeItems)
           const insertResult = await this._insertBTreeNodeItem(
             index,
             sortValue,
@@ -4853,6 +4926,8 @@ class DiskSortedHashTable {
 
   // _set(key string, value string, sortValue number|string) -> Promise<>
   async _set(key, value, sortValue) {
+    sortValue = convert(sortValue, this.sortValueType)
+
     let index = this._hash1(key)
 
     const startIndex = index
@@ -5044,7 +5119,7 @@ class DiskSortedHashTable {
 
     while (i < btreeNodeItems.length) {
       const item = btreeNodeItems[i]
-      if (convert(item.sortValue, this.sortValueType) >= sortValue) {
+      if (item.sortValue >= sortValue) {
         foundItem = item
         break
       }
@@ -5061,7 +5136,7 @@ class DiskSortedHashTable {
 
     i = btreeNodeItems.length - 1
 
-    while (i >= 0 && convert(btreeNodeItems[i].sortValue, this.sortValueType) >= sortValue) {
+    while (i >= 0 && btreeNodeItems[i].sortValue >= sortValue) {
       i -= 1
     }
     i += 1 // if i === 0, sortValue is less than all items' sortValues in btreeNodeItems, insert item at very left
@@ -5167,7 +5242,7 @@ class DiskSortedHashTable {
 
     while (i >= 0) {
       const item = btreeNodeItems[i]
-      if (convert(item.sortValue, this.sortValueType) <= sortValue) {
+      if (item.sortValue <= sortValue) {
         foundItem = item
         break
       }
@@ -5184,7 +5259,7 @@ class DiskSortedHashTable {
 
     i = btreeNodeItems.length - 1
 
-    while (i >= 0 && convert(btreeNodeItems[i].sortValue, this.sortValueType) > sortValue) {
+    while (i >= 0 && btreeNodeItems[i].sortValue > sortValue) {
       i -= 1
     }
     i += 1 // if i === 0, sortValue is less than all items' sortValues in btreeNodeItems, insert item at very left
@@ -5314,7 +5389,7 @@ class DiskSortedHashTable {
    * ```
    */
   async * forwardIterator(options = {}) {
-    const {
+    let {
       exclusiveStartKey,
       startingSortValue,
       endingSortValue,
@@ -5331,18 +5406,23 @@ class DiskSortedHashTable {
         currentForwardItem = await this._getItem(exclusiveStartItem.forwardIndex, valueType)
       }
     } else if (startingSortValue != null) {
+      startingSortValue = convert(startingSortValue, this.sortValueType)
+
       const btreeRootNodeRightmostItem = await this._getBTreeRootNodeRightmostItem()
       const btreeRootNodeItems = await this._getBTreeNodeItems(btreeRootNodeRightmostItem)
-      currentForwardItem = await this._findBTreeNodeItemGTE(
+      const foundBTreeItem = await this._findBTreeNodeItemGTE(
         startingSortValue, btreeRootNodeItems, btreeRootNodeRightmostItem
       )
+      currentForwardItem = await this._getItem(foundBTreeItem.index, valueType)
     } else {
       currentForwardItem = await this._getForwardStartItem(valueType)
     }
 
     if (endingSortValue != null) {
+      endingSortValue = convert(endingSortValue, this.sortValueType)
+
       while (currentForwardItem) {
-        if (convert(currentForwardItem.sortValue, this.sortValueType) > endingSortValue) {
+        if (currentForwardItem.sortValue > endingSortValue) {
           break
         }
         yield currentForwardItem.value
@@ -5417,7 +5497,7 @@ class DiskSortedHashTable {
    * ```
    */
   async * reverseIterator(options = {}) {
-    const {
+    let {
       exclusiveStartKey,
       startingSortValue,
       endingSortValue,
@@ -5434,18 +5514,23 @@ class DiskSortedHashTable {
         currentForwardItem = await this._getItem(exclusiveStartItem.reverseIndex, valueType)
       }
     } else if (startingSortValue != null) {
+      startingSortValue = convert(startingSortValue, this.sortValueType)
+
       const btreeRootNodeRightmostItem = await this._getBTreeRootNodeRightmostItem()
       const btreeRootNodeItems = await this._getBTreeNodeItems(btreeRootNodeRightmostItem)
-      currentForwardItem = await this._findBTreeNodeItemLTE(
+      const foundBTreeItem = await this._findBTreeNodeItemLTE(
         startingSortValue, btreeRootNodeItems, btreeRootNodeRightmostItem
       )
+      currentForwardItem = await this._getItem(foundBTreeItem.index, valueType)
     } else {
       currentForwardItem = await this._getReverseStartItem(valueType)
     }
 
     if (endingSortValue != null) {
+      endingSortValue = convert(endingSortValue, this.sortValueType)
+
       while (currentForwardItem) {
-        if (convert(currentForwardItem.sortValue, this.sortValueType) < endingSortValue) {
+        if (currentForwardItem.sortValue < endingSortValue) {
           break
         }
         yield currentForwardItem.value
