@@ -187,6 +187,17 @@ const test1_4 = new Test('DiskHashTable', async function integration1_4() {
   }
 
   {
+    const values = []
+    for await (const value of ht1024.iterator({ valueType: 'binary' })) {
+      values.push(value)
+    }
+    assert.equal(values.length, 3)
+    assert(Buffer.from('#000000').equals(values[0]))
+    assert(Buffer.from('#FFFF00').equals(values[1]))
+    assert(Buffer.from('#800000').equals(values[2]))
+  }
+
+  {
     const items = []
     for await (const item of ht1024._itemsIterator()) {
       items.push(item)
