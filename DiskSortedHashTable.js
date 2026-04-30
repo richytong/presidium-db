@@ -71,7 +71,7 @@ const REMOVED = 2
  *   * `linux64`
  *
  * ## Maximum length of the disk sorted hash table
- * The maximum length of the disk sorted hash table or maximum number of items that can be stored in the disk sorted hash table is 2,147,483,647.
+ * The maximum length of the disk sorted hash table is 2,147,483,647.
  *
  * ## Resizing the disk sorted hash table
  * When an item is inserted into the disk sorted hash table via [set](/docs/DiskSortedHashTable#set), the current capacity ratio of the table is calculated as the sum of the table's count and deleted count divided by the table's length. If the current capacity ratio exceeds the `resizeRatio` (and the `resizeRatio` is not 0), a resize of the table occurs.

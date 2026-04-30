@@ -61,7 +61,7 @@ const REMOVED = 2
  *   * `linux64`
  *
  * ## Maximum length of the disk hash table
- * The maximum length of the disk hash table or maximum number of items that can be stored in the disk hash table is 2,147,483,647.
+ * The maximum length of the disk hash table is 2,147,483,647.
  *
  * ## Resizing the disk hash table
  * When an item is inserted into the disk hash table via [set](/docs/DiskHashTable#set), the current capacity ratio of the table is calculated as the sum of the table's count and deleted count divided by the table's length. If the current capacity ratio exceeds the `resizeRatio` (and the `resizeRatio` is not 0), a resize of the table occurs.
