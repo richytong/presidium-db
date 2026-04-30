@@ -1,3 +1,5 @@
+const getNodeItems = require('./getNodeItems')
+
 // constructBTree(ht DiskSortedHashTable, options { unique: boolean, onNode: function, onLeaf: function })
 // constructBTree(ht DiskSortedHashTable, options { unique: boolean, onNode: function, onLeaf: function }, btreeNode object, memo object) -> Promise<>
 async function constructBTree(ht, options, btreeNode = {}, memo = {}) {
@@ -12,7 +14,7 @@ async function constructBTree(ht, options, btreeNode = {}, memo = {}) {
     const btreeRootNodeRightmostItem = await ht._getBTreeRootNodeRightmostItem()
     const btreeRootNodeItems = btreeRootNodeRightmostItem == null
       ? []
-      : await ht._getBTreeNodeItems(btreeRootNodeRightmostItem)
+      : await getNodeItems(ht, btreeRootNodeRightmostItem)
 
     isLeaf = btreeRootNodeItems.length === 0 || (
       btreeRootNodeItems.every(item => item.btreeLeftChildNodeRightmostItemIndex == -1)
@@ -46,8 +48,8 @@ async function constructBTree(ht, options, btreeNode = {}, memo = {}) {
     const rightConditional = item.btreeRightChildNodeRightmostItemIndex > -1
 
     if (leftConditional) {
-      const btreeLeftChildNodeRightmostItem = await ht._getBTreeItem(item.btreeLeftChildNodeRightmostItemIndex)
-      const btreeLeftChildNodeItems = await ht._getBTreeNodeItems(btreeLeftChildNodeRightmostItem)
+      const btreeLeftChildNodeRightmostItem = await ht._getItem(item.btreeLeftChildNodeRightmostItemIndex)
+      const btreeLeftChildNodeItems = await getNodeItems(ht, btreeLeftChildNodeRightmostItem)
 
       btreeNode[item.key].leftChild = { items: btreeLeftChildNodeItems }
       btreeNode[item.key].leftChild.keys = btreeLeftChildNodeItems.map(item => item.key)
@@ -68,8 +70,8 @@ async function constructBTree(ht, options, btreeNode = {}, memo = {}) {
     }
 
     if (rightConditional) {
-      const btreeRightChildNodeRightmostItem = await ht._getBTreeItem(item.btreeRightChildNodeRightmostItemIndex)
-      const btreeRightChildNodeItems = await ht._getBTreeNodeItems(btreeRightChildNodeRightmostItem)
+      const btreeRightChildNodeRightmostItem = await ht._getItem(item.btreeRightChildNodeRightmostItemIndex)
+      const btreeRightChildNodeItems = await getNodeItems(ht, btreeRightChildNodeRightmostItem)
 
       btreeNode[item.key].rightChild = { items: btreeRightChildNodeItems }
       btreeNode[item.key].rightChild.keys = btreeRightChildNodeItems.map(item => item.key)

@@ -346,25 +346,21 @@ class DiskSortedHashTable {
     }
   }
 
-  // _readKeyAndSortValue(index number, keyByteLength number, sortValueByteLength number) -> [key string, sortValue number|string]
-  async _readKeyAndSortValue(index, keyByteLength, sortValueByteLength) {
-    const position = (index * this.itemSize) + 33
-    const readBuffer = Buffer.alloc(keyByteLength + sortValueByteLength)
+  // _readSortValue(index number, keyByteLength number, sortValueByteLength number) -> sortValue number|string
+  async _readSortValue(index, keyByteLength, sortValueByteLength) {
+    const position = (index * this.itemSize) + 33 + keyByteLength
+    const sortValueBuffer = Buffer.alloc(sortValueByteLength)
 
     await this.storageFd.read({
-      buffer: readBuffer,
+      buffer: sortValueBuffer,
       offset: 0,
       position,
-      length: keyByteLength + sortValueByteLength,
+      length: sortValueByteLength,
     })
 
-    const keyBuffer = readBuffer.subarray(0, keyByteLength)
-    const key = keyBuffer.toString(ENCODING)
-
-    const sortValueBuffer = readBuffer.subarray(keyByteLength, keyByteLength + sortValueByteLength)
     const sortValue = convert(sortValueBuffer.toString(ENCODING), this.sortValueType)
 
-    return [key, sortValue]
+    return sortValue
   }
 
   // _readHead(index number) -> readBuffer Promise<Buffer>
@@ -521,9 +517,8 @@ class DiskSortedHashTable {
 
     const headReadBuffer = await this._readHead(index)
     const item = this._parseBTreeItemHead(headReadBuffer, index)
-    const [key, sortValue] = await this._readKeyAndSortValue(index, item.keyByteLength, item.sortValueByteLength)
+    const sortValue = await this._readSortValue(index, item.keyByteLength, item.sortValueByteLength)
 
-    item.key = key
     item.sortValue = sortValue
 
     return item
@@ -4082,7 +4077,6 @@ class DiskSortedHashTable {
                 curNodeItem.btreeParentNodeItem.statusMarker = predecessor.statusMarker
                 curNodeItem.btreeParentNodeItem.forwardIndex = predecessor.forwardIndex
                 curNodeItem.btreeParentNodeItem.reverseIndex = predecessor.reverseIndex
-                curNodeItem.btreeParentNodeItem.key = predecessor.key
                 curNodeItem.btreeParentNodeItem.sortValue = predecessor.sortValue
                 curNodeItem.btreeParentNodeItem.value = predecessor.value
 
