@@ -4346,14 +4346,14 @@ class DiskSortedHashTable {
     return item
   }
 
-  // _parseItem(readBuffer Buffer, index number) -> {
+  // _parseItem(readBuffer Buffer, index number, valueType 'string'|'binary') -> {
   //   index: number,
   //   readBuffer: Buffer,
   //   sortValue: string|number,
   //   key: string,
   //   value: string,
   // }
-  _parseItem(readBuffer, index) {
+  _parseItem(readBuffer, index, valueType = 'binary') {
     const item = {}
     item.index = index
     item.readBuffer = readBuffer
@@ -4392,41 +4392,41 @@ class DiskSortedHashTable {
       33 + keyByteLength + sortValueByteLength,
       33 + keyByteLength + sortValueByteLength + valueByteLength
     )
-    const value = valueBuffer.toString(ENCODING)
+    const value = valueType == 'binary' ? valueBuffer : valueBuffer.toString(ENCODING)
     item.value = value
 
     return item
   }
 
-  // _getForwardStartItem() -> item { index: number, readBuffer: Buffer, sortValue: string|number, value: string }
-  async _getForwardStartItem() {
+  // _getForwardStartItem(valueType 'string'|'binary') -> item { index: number, readBuffer: Buffer, sortValue: string|number, value: string }
+  async _getForwardStartItem(valueType = 'binary') {
     const headerReadBuffer = await this._readHeader()
     const index = headerReadBuffer.readInt32BE(12)
     if (index == -1) {
       return undefined
     }
     const readBuffer = await this._read(index)
-    return this._parseItem(readBuffer, index)
+    return this._parseItem(readBuffer, index, valueType)
   }
 
-  // _getReverseStartItem() -> item { index: number, readBuffer: Buffer, sortValue: string|number, value: string }
-  async _getReverseStartItem() {
+  // _getReverseStartItem(valueType 'string'|'number') -> item { index: number, readBuffer: Buffer, sortValue: string|number, value: string }
+  async _getReverseStartItem(valueType = 'binary') {
     const headerReadBuffer = await this._readHeader()
     const index = headerReadBuffer.readInt32BE(16)
     if (index == -1) {
       return undefined
     }
     const readBuffer = await this._read(index)
-    return this._parseItem(readBuffer, index)
+    return this._parseItem(readBuffer, index, valueType)
   }
 
-  // _getItem(index number) -> item { index: number, readBuffer: Buffer, sortValue: string|number, value: string }
-  async _getItem(index) {
+  // _getItem(index number, valueType 'string'|'binary') -> item { index: number, readBuffer: Buffer, sortValue: string|number, value: string }
+  async _getItem(index, valueType = 'binary') {
     if (index == -1) {
       return undefined
     }
     const readBuffer = await this._read(index)
-    const item = this._parseItem(readBuffer, index)
+    const item = this._parseItem(readBuffer, index, valueType)
 
     if (item.statusMarker == EMPTY) {
       return undefined
@@ -4647,7 +4647,7 @@ class DiskSortedHashTable {
 
   }
 
-  // _insert(key string, value string, sortValue number|string, index number) -> Promise<>
+  // _insert(key string, value string|Buffer|Uint8Array, sortValue number|string, index number) -> Promise<>
   async _insert(key, value, sortValue, index) {
 
     const btreeLeftChildNodeRightmostItemIndex = -1
@@ -4735,6 +4735,7 @@ class DiskSortedHashTable {
     // chunk for key
     // chunk for sort value
     // remainder for value
+
     const statusMarker = 1
     const keyByteLength = Buffer.byteLength(key, ENCODING)
     const sortValueByteLength = Buffer.byteLength(sortValueString, ENCODING)
@@ -4750,7 +4751,14 @@ class DiskSortedHashTable {
     buffer.writeInt32BE(btreeLeftItemIndex, 29)
     buffer.write(key, 33, keyByteLength, ENCODING)
     buffer.write(sortValueString, 33 + keyByteLength, sortValueByteLength, ENCODING)
-    buffer.write(value, 33 + keyByteLength + sortValueByteLength, valueByteLength, ENCODING)
+
+    if (value.constructor == Uint8Array) {
+      Buffer.from(value).copy(buffer, 33 + keyByteLength + sortValueByteLength)
+    } else if (value.constructor == Buffer) {
+      value.copy(buffer, 33 + keyByteLength + sortValueByteLength)
+    } else {
+      buffer.write(value, 33 + keyByteLength + sortValueByteLength, valueByteLength, ENCODING)
+    }
 
     await this.storageFd.write(buffer, {
       offset: 0,
@@ -4759,7 +4767,7 @@ class DiskSortedHashTable {
     })
   }
 
-  // _update(key string, value string, sortValue number|string, index number) -> Promise<>
+  // _update(key string, value string|Buffer|Uint8Array, sortValue number|string, index number) -> Promise<>
   async _update(key, value, sortValue, index) {
     const item = await this._getItem(index)
 
@@ -4964,7 +4972,14 @@ class DiskSortedHashTable {
     buffer.writeInt32BE(btreeLeftItemIndex, 29)
     buffer.write(key, 33, keyByteLength, ENCODING)
     buffer.write(sortValueString, 33 + keyByteLength, sortValueByteLength, ENCODING)
-    buffer.write(value, 33 + keyByteLength + sortValueByteLength, valueByteLength, ENCODING)
+
+    if (value.constructor == Uint8Array) {
+      Buffer.from(value).copy(buffer, 33 + keyByteLength + sortValueByteLength)
+    } else if (value.constructor == Buffer) {
+      value.copy(buffer, 33 + keyByteLength + sortValueByteLength)
+    } else {
+      buffer.write(value, 33 + keyByteLength + sortValueByteLength, valueByteLength, ENCODING)
+    }
 
     await this.storageFd.write(buffer, {
       offset: 0,
@@ -5041,14 +5056,14 @@ class DiskSortedHashTable {
    *
    * @docs
    * ```coffeescript [specscript]
-   * set(key string, value string, sortValue string|number) -> Promise<>
+   * set(key string, value string|Buffer|Uint8Array, sortValue string|number) -> Promise<>
    * ```
    *
    * Sets and stores a value by key and sort-value in the disk sorted hash table.
    *
    * Arguments:
    *   * `key` - `string` - the key to set.
-   *   * `value` - `string` - the value to set corresponding to the key.
+   *   * `value` - `string|Buffer|Uint8Array` - the value to set corresponding to the key.
    *   * `sortValue` - `string|number` - the value by which the item is sorted in the disk sorted hash table.
    *
    * Return:
@@ -5058,6 +5073,8 @@ class DiskSortedHashTable {
    * await sortedHt.set('key1', 'value1', 1)
    * await sortedHt.set('key2', 'value2', 2)
    * await sortedHt.set('key3', 'value3', 3)
+   *
+   * await sortedHt.set('my-buffer', Buffer.from('binary'), 4)
    * ```
    */
   async set(key, value, sortValue) {
@@ -5068,12 +5085,43 @@ class DiskSortedHashTable {
     await this._set(key, value, sortValue)
   }
 
+  // _get(key string, valueType 'string'|'binary')
+  async _get(key, valueType) {
+    let index = this._hash1(key)
+    const startIndex = index
+    const stepSize = this._hash2(key)
+
+    let currentItem = await this._getItem(index, valueType)
+    while (currentItem) {
+      if (key == currentItem.key) {
+        break
+      }
+
+      index = (index + stepSize) % this._length
+      if (index == startIndex) {
+        return undefined // entire table searched
+      }
+
+      currentItem = await this._getItem(index, valueType)
+    }
+
+    if (currentItem == null) {
+      return undefined
+    }
+
+    if (currentItem.statusMarker == OCCUPIED) {
+      return currentItem.value
+    }
+
+    return undefined
+  }
+
   /**
    * @name get
    *
    * @docs
    * ```coffeescript [specscript]
-   * get(key string) -> value Promise<string>
+   * get(key string) -> value Promise<string|Buffer|Uint8Array>
    * ```
    *
    * Gets a value by key from the disk sorted hash table.
@@ -5089,33 +5137,31 @@ class DiskSortedHashTable {
    * ```
    */
   async get(key) {
-    let index = this._hash1(key)
-    const startIndex = index
-    const stepSize = this._hash2(key)
+    return this._get(key, 'string')
+  }
 
-    let currentItem = await this._getItem(index)
-    while (currentItem) {
-      if (key == currentItem.key) {
-        break
-      }
-
-      index = (index + stepSize) % this._length
-      if (index == startIndex) {
-        return undefined // entire table searched
-      }
-
-      currentItem = await this._getItem(index)
-    }
-
-    if (currentItem == null) {
-      return undefined
-    }
-
-    if (currentItem.statusMarker == OCCUPIED) {
-      return currentItem.value
-    }
-
-    return undefined
+  /**
+   * @name getBinary
+   *
+   * @docs
+   * ```coffeescript [specscript]
+   * getBinary(key string) -> binaryValue Promise<Buffer>
+   * ```
+   *
+   * Gets a binary value by key from the disk sorted hash table.
+   *
+   * Arguments:
+   *   * `key` - `string` - the key corresponding to the binary value.
+   *
+   * Return:
+   *   * `binaryValue` - `Buffer` - the binary value corresponding to the key.
+   *
+   * ```javascript
+   * const buffer = await ht.getBinary('my-buffer')
+   * ```
+   */
+  async getBinary(key) {
+    return this._get(key, 'binary')
   }
 
   // _findBTreeNodeItemGTE(
@@ -5384,6 +5430,7 @@ class DiskSortedHashTable {
    *   exclusiveStartKey: string,
    *   startingSortValue: string|number,
    *   endingSortValue: string|number,
+   *   valueType: 'string'|'binary',
    * }) -> values AsyncGenerator<string>
    * ```
    *
@@ -5399,6 +5446,9 @@ class DiskSortedHashTable {
    *     * `exclusiveStartKey` - `string` - the key after which to start iterating.
    *     * `startingSortValue` - `string|number` - the sort value from which to start iterating.
    *     * `endingSortValue` - `string|number` - the sort value at which to stop iterating.
+   *     * `valueType` - `'string'|'binary'` - the type of value that the iterator yields. Defaults to `string`.
+   *       * `string` - iterator yields `string` values.
+   *       * `binary` - iterator yields `Buffer` values.
    *
    * Return:
    *   * `values` - `AsyncGenerator<string>` - an async iterator of the values of all items in the disk sorted hash table sorted by sort-value in ascending order.
@@ -5434,16 +5484,17 @@ class DiskSortedHashTable {
       exclusiveStartKey,
       startingSortValue,
       endingSortValue,
+      valueType = 'string',
     } = options
 
     let currentForwardItem
     if (exclusiveStartKey) {
       const exclusiveStartIndex = this._hash1(exclusiveStartKey)
-      const exclusiveStartItem = await this._getItem(exclusiveStartIndex)
+      const exclusiveStartItem = await this._getItem(exclusiveStartIndex, valueType)
       if (exclusiveStartItem == null || exclusiveStartItem.statusMarker == REMOVED) {
         currentForwardItem = undefined
       } else {
-        currentForwardItem = await this._getItem(exclusiveStartItem.forwardIndex)
+        currentForwardItem = await this._getItem(exclusiveStartItem.forwardIndex, valueType)
       }
     } else if (startingSortValue != null) {
       const btreeRootNodeRightmostItem = await this._getBTreeRootNodeRightmostItem()
@@ -5452,7 +5503,7 @@ class DiskSortedHashTable {
         startingSortValue, btreeRootNodeItems, btreeRootNodeRightmostItem
       )
     } else {
-      currentForwardItem = await this._getForwardStartItem()
+      currentForwardItem = await this._getForwardStartItem(valueType)
     }
 
     if (endingSortValue != null) {
@@ -5461,12 +5512,12 @@ class DiskSortedHashTable {
           break
         }
         yield currentForwardItem.value
-        currentForwardItem = await this._getItem(currentForwardItem.forwardIndex)
+        currentForwardItem = await this._getItem(currentForwardItem.forwardIndex, valueType)
       }
     } else {
       while (currentForwardItem) {
         yield currentForwardItem.value
-        currentForwardItem = await this._getItem(currentForwardItem.forwardIndex)
+        currentForwardItem = await this._getItem(currentForwardItem.forwardIndex, valueType)
       }
     }
   }
@@ -5482,7 +5533,8 @@ class DiskSortedHashTable {
    *   exclusiveStartKey: string,
    *   startingSortValue: string|number,
    *   endingSortValue: string|number,
-   * }) -> values AsyncGenerator<string>
+   *   valueType: 'string'|'binary',
+   * }) -> values AsyncGenerator<string|Buffer>
    * ```
    *
    * Returns a iterator of all items in the disk sorted hash table sorted by sort-value. Items are yielded in descending order.
@@ -5497,6 +5549,9 @@ class DiskSortedHashTable {
    *     * `exclusiveStartKey` - `string` - the key after which to start iterating.
    *     * `startingSortValue` - `string|number` - the sort value from which to start iterating.
    *     * `endingSortValue` - `string|number` - the sort value at which to stop iterating.
+   *     * `valueType` - `'string'|'binary'` - the type of value that the iterator yields. Defaults to `string`.
+   *       * `string` - iterator yields `string` values.
+   *       * `binary` - iterator yields `Buffer` values.
    *
    * Return:
    *   * `values` - `AsyncGenerator<string>` - an async iterator of the values of all items in the disk sorted hash table sorted by sort-value in descending order.
@@ -5532,16 +5587,17 @@ class DiskSortedHashTable {
       exclusiveStartKey,
       startingSortValue,
       endingSortValue,
+      valueType = 'string',
     } = options
 
     let currentForwardItem
     if (exclusiveStartKey) {
       const exclusiveStartIndex = this._hash1(exclusiveStartKey)
-      const exclusiveStartItem = await this._getItem(exclusiveStartIndex)
+      const exclusiveStartItem = await this._getItem(exclusiveStartIndex, valueType)
       if (exclusiveStartItem == null || exclusiveStartItem.statusMarker == REMOVED) {
         currentForwardItem = undefined
       } else {
-        currentForwardItem = await this._getItem(exclusiveStartItem.reverseIndex)
+        currentForwardItem = await this._getItem(exclusiveStartItem.reverseIndex, valueType)
       }
     } else if (startingSortValue != null) {
       const btreeRootNodeRightmostItem = await this._getBTreeRootNodeRightmostItem()
@@ -5550,7 +5606,7 @@ class DiskSortedHashTable {
         startingSortValue, btreeRootNodeItems, btreeRootNodeRightmostItem
       )
     } else {
-      currentForwardItem = await this._getReverseStartItem()
+      currentForwardItem = await this._getReverseStartItem(valueType)
     }
 
     if (endingSortValue != null) {
@@ -5559,12 +5615,12 @@ class DiskSortedHashTable {
           break
         }
         yield currentForwardItem.value
-        currentForwardItem = await this._getItem(currentForwardItem.reverseIndex)
+        currentForwardItem = await this._getItem(currentForwardItem.reverseIndex, valueType)
       }
     } else {
       while (currentForwardItem) {
         yield currentForwardItem.value
-        currentForwardItem = await this._getItem(currentForwardItem.reverseIndex)
+        currentForwardItem = await this._getItem(currentForwardItem.reverseIndex, valueType)
       }
     }
   }
