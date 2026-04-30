@@ -72,7 +72,7 @@ const REMOVED = 2
  * Once all of the items have been added into the temporary storage file, the temporary storage file is moved to the location of the old storage file to be used as the new storage file.
  *
  * ## Allocation of disk space
- * The disk hash table initially preallocates a block of memory on disk of `(512 * initialLength)` KiB for database operations. When the disk hash table is resized, the block of memory on disk is reallocated to a new size of `(512 * initialLength * numberOfResizes * resizeFactor)` KiB.
+ * The disk hash table initially preallocates a block of memory on disk of `(itemSize * initialLength)` bytes for database operations. When the disk hash table is resized, the block of memory on disk is reallocated to a new size of `(itemSize * initialLength * numberOfResizes * resizeFactor)` bytes.
  */
 class DiskHashTable {
   constructor(options) {
