@@ -38,7 +38,7 @@ const REMOVED = 2
  *   * `options`
  *     * `storagePath` - `string` - the path to the file used to store the disk hash table data.
  *     * `headerPath` - `string` - the path to the file used to store header information about the disk hash table.
- *     * `initialLength` - `number` - the initial length of the disk hash table. Minimum value 1024, maximum value 4294967295. Defaults to 1024.
+ *     * `initialLength` - `number` - the initial length of the disk hash table. Minimum value 1024, maximum value 2147483647. Defaults to 1024.
  *     * `itemSize` - `number` - the size in bytes of each item stored on disk. Minimum value 1024. Defaults to 524288.
  *     * `resizeRatio` - `number` - the ratio of number of items to table length at which to resize the disk hash table. Minimum value 0 (no resize), maximum value 1. Defaults to 0.
  *     * `resizeFactor` - `number` - the factor that is multiplied with the disk hash table's current length to determine the new table length on a resize.
