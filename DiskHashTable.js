@@ -747,6 +747,10 @@ class DiskHashTable {
    * @docs
    * ```coffeescript [specscript]
    * iterator() -> values AsyncGenerator<string>
+   *
+   * iterator(options {
+   *   valueType: 'string'|'binary',
+   * }) -> values AsyncGenerator<string|Buffer>
    * ```
    *
    * Returns an iterator of all items in the disk hash table. Items are yielded by reverse insertion order.
@@ -763,12 +767,14 @@ class DiskHashTable {
    * }
    * ```
    */
-  async * iterator() {
+  async * iterator(options = {}) {
+    const { valueType = 'string' } = options
+
     const headIndex = await this._getHeadIndex()
-    let item = await this._getItem(headIndex)
+    let item = await this._getItem(headIndex, valueType)
     while (item) {
       yield item.value
-      item = await this._getItem(item.nextIndex)
+      item = await this._getItem(item.nextIndex, valueType)
     }
   }
 
