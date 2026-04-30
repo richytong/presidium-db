@@ -4952,7 +4952,7 @@ class DiskSortedHashTable {
    *
    * @docs
    * ```coffeescript [specscript]
-   * get(key string) -> value Promise<string|Buffer|Uint8Array>
+   * get(key string) -> value Promise<string>
    * ```
    *
    * Gets a value by key from the disk sorted hash table.
