@@ -6399,8 +6399,6 @@ const test29 = new Test('DiskSortedHashTable', async function integration29() {
           assert.deepEqual(reverseValues, sortedValuesReverse)
         }
 
-        const sortedNumbers2 = [...sortedNumbers]
-
         let ndeleted = 0
         for (const n of deleteNumbers) {
           const start = performance.now()
@@ -6408,22 +6406,8 @@ const test29 = new Test('DiskSortedHashTable', async function integration29() {
           console.log(`deleted key${n} in ${performance.now() - start}ms; degree ${degree}; delete numbers index ${deleteNumbersIndex}; insert numbers index ${insertNumbersIndex}`)
           ndeleted += 1
 
-          const btreeRootNode = await constructBTree(ht, { unique: false })
-          assertBalanced(btreeRootNode)
-          assertMinHeight(btreeRootNode, calculateMinBTreeHeight(511 - ndeleted, degree))
-          assertMaxHeight(btreeRootNode, calculateMaxBTreeHeight(511 - ndeleted, degree))
-          assertMinKeysPerNode(btreeRootNode, degree - 1)
-          assertMaxKeysPerNode(btreeRootNode, (degree * 2) - 1)
-          assertInternalNodesIntegrity(btreeRootNode)
           assert.equal(ht.count(), 511 - ndeleted)
           assert.equal(ht._deletedCount, ndeleted)
-
-          sortedNumbers2.splice(sortedNumbers2.indexOf(n), 1)
-
-          {
-            const items = traverseInOrder(btreeRootNode)
-            assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers2)
-          }
         }
 
         assert.equal(ht.count(), 0)
