@@ -563,7 +563,7 @@ class DiskHashTable {
    *   * `key` - `string` - the key corresponding to the binary value.
    *
    * Return:
-   *   * `value` - `Buffer` - the binary value corresponding to the key.
+   *   * `binaryValue` - `Buffer` - the binary value corresponding to the key.
    *
    * ```javascript
    * const buffer = await ht.getBinary('my-buffer')
