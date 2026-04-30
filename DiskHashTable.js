@@ -476,7 +476,7 @@ class DiskHashTable {
    *
    * Arguments:
    *   * `key` - `string` - the key to set.
-   *   * `value` - `string` - the value to set corresponding to the key.
+   *   * `value` - `string|Buffer|Uint8Array` - the value to set corresponding to the key.
    *
    * Return:
    *   * Empty promise.
