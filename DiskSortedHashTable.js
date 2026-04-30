@@ -5262,7 +5262,7 @@ class DiskSortedHashTable {
    *   startingSortValue: string|number,
    *   endingSortValue: string|number,
    *   valueType: 'string'|'binary',
-   * }) -> values AsyncGenerator<string>
+   * }) -> values AsyncGenerator<string|Buffer>
    * ```
    *
    * Returns a iterator of all items in the disk sorted hash table sorted by sort-value. Items are yielded in ascending order.
@@ -5282,7 +5282,7 @@ class DiskSortedHashTable {
    *       * `binary` - iterator yields `Buffer` values.
    *
    * Return:
-   *   * `values` - `AsyncGenerator<string>` - an async iterator of the values of all items in the disk sorted hash table sorted by sort-value in ascending order.
+   *   * `values` - `AsyncGenerator<string|Buffer>` - an async iterator of the values of all items in the disk sorted hash table sorted by sort-value in ascending order.
    *
    * ```javascript
    * await ht.set('key1', 'value1', 1)
@@ -5358,7 +5358,7 @@ class DiskSortedHashTable {
    *
    * @docs
    * ```coffeescript [specscript]
-   * reverseIterator() -> values AsyncGenerator<string>
+   * reverseIterator() -> values AsyncGenerator<string|Buffer>
    *
    * reverseIterator(options {
    *   exclusiveStartKey: string,
@@ -5385,7 +5385,7 @@ class DiskSortedHashTable {
    *       * `binary` - iterator yields `Buffer` values.
    *
    * Return:
-   *   * `values` - `AsyncGenerator<string>` - an async iterator of the values of all items in the disk sorted hash table sorted by sort-value in descending order.
+   *   * `values` - `AsyncGenerator<string|Buffer>` - an async iterator of the values of all items in the disk sorted hash table sorted by sort-value in descending order.
    *
    * ```javascript
    * await ht.set('key1', 'value1', 1)
