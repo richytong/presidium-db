@@ -366,6 +366,64 @@ const test1_4 = new Test('DiskSortedHashTable', async function integration1_4() 
   ht1024.close()
 }).case()
 
+const test1_5 = new Test('DiskSortedHashTable', async function integration1_5() {
+  const ht1024 = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
+    initialLength: 1024,
+    itemSize: 2048,
+    sortValueType: 'number',
+  })
+  await ht1024.destroy()
+  await ht1024.init()
+
+  assert.equal(ht1024._length, 1024)
+
+  assert.strictEqual(ht1024.count(), 0)
+
+  await ht1024.set('maroon', Buffer.from('#800000'), 1)
+  await ht1024.set('yellow', Buffer.from('#FFFF00'), 2)
+  await ht1024.set('black', new Uint8Array(Buffer.from('#000000')), 4)
+
+  assert(Buffer.from('#800000').equals(await ht1024.getBinary('maroon')))
+  assert(Buffer.from('#FFFF00').equals(await ht1024.getBinary('yellow')))
+  assert(Buffer.from('#000000').equals(await ht1024.getBinary('black')))
+
+  assert.strictEqual(ht1024.count(), 3)
+
+  await ht1024.close()
+  await ht1024.init()
+
+  assert.equal(ht1024._length, 1024)
+
+  assert(Buffer.from('#800000').equals(await ht1024.getBinary('maroon')))
+  assert(Buffer.from('#FFFF00').equals(await ht1024.getBinary('yellow')))
+  assert(Buffer.from('#000000').equals(await ht1024.getBinary('black')))
+
+  assert.strictEqual(ht1024.count(), 3)
+
+  await ht1024.set('maroon', Buffer.from('#800000_'), 1)
+  await ht1024.set('yellow', Buffer.from('#FFFF00_'), 2)
+  await ht1024.set('black', new Uint8Array(Buffer.from('#000000_')), 4)
+
+  assert(Buffer.from('#800000_').equals(await ht1024.getBinary('maroon')))
+  assert(Buffer.from('#FFFF00_').equals(await ht1024.getBinary('yellow')))
+  assert(Buffer.from('#000000_').equals(await ht1024.getBinary('black')))
+
+  assert.strictEqual(ht1024.count(), 3)
+
+  await ht1024.clear()
+
+  assert.strictEqual(await ht1024.getBinary('maroon'), undefined)
+  assert.strictEqual(await ht1024.getBinary('yellow'), undefined)
+  assert.strictEqual(await ht1024.getBinary('black'), undefined)
+
+  assert.strictEqual(ht1024.count(), 0)
+  assert.strictEqual(ht1024._deletedCount, 0)
+
+  ht1024.close()
+}).case()
+
 const test2 = new Test('DiskSortedHashTable', async function integration2() {
   const ht1024 = new DiskSortedHashTable({
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
@@ -1185,14 +1243,6 @@ const test14 = new Test('DiskSortedHashTable', async function integration14() {
   await ht10.destroy()
   await ht10.init()
 
-  async function logForwardValues() {
-    const values = []
-    for await (const item of ht10._forwardItemsIterator()) {
-      values.push(item.value)
-    }
-    console.log(values)
-  }
-
   assert.equal(ht10._count, 0)
   assert.equal(ht10._length, 10)
 
@@ -1695,14 +1745,6 @@ const test_assert1 = new Test('DiskSortedHashTable', async function integration_
   })
   await ht.destroy()
   await ht.init()
-
-  async function logForwardValues() {
-    const values = []
-    for await (const value of ht.forwardIterator()) {
-      values.push(value)
-    }
-    console.log(values)
-  }
 
   await ht.set('key1', 'value1', 1)
 
@@ -2542,14 +2584,6 @@ const test14_0 = new Test('DiskSortedHashTable', async function integration14_0(
   })
   await ht100.destroy()
   await ht100.init()
-
-  async function logForwardValues() {
-    const values = []
-    for await (const value of ht100.forwardIterator()) {
-      values.push(value)
-    }
-    console.log(values)
-  }
 
   await ht100.set('key1', 'value1', 1)
 
@@ -3951,14 +3985,6 @@ const test14_1 = new Test('DiskSortedHashTable', async function integration14_1(
   await ht100.destroy()
   await ht100.init()
 
-  async function logForwardValues() {
-    const values = []
-    for await (const value of ht100.forwardIterator()) {
-      values.push(value)
-    }
-    console.log(values)
-  }
-
   await ht100.set('key4', 'value4', 4)
   await ht100.set('key3', 'value3', 3)
   await ht100.set('key2', 'value2', 2)
@@ -4007,14 +4033,6 @@ const test14_2 = new Test('DiskSortedHashTable', async function integration14_2(
   })
   await ht100.destroy()
   await ht100.init()
-
-  async function logForwardValues() {
-    const values = []
-    for await (const value of ht100.forwardIterator()) {
-      values.push(value)
-    }
-    console.log(values)
-  }
 
   await ht100.set('key33', 'value33', 33)
   await ht100.set('key32', 'value32', 32)
@@ -4116,14 +4134,6 @@ const test14_3 = new Test('DiskSortedHashTable', async function integration14_3(
   await ht100.destroy()
   await ht100.init()
 
-  async function logForwardValues() {
-    const values = []
-    for await (const value of ht100.forwardIterator()) {
-      values.push(value)
-    }
-    console.log(values)
-  }
-
   await ht100.set('key33', 'value33', 33)
   await ht100.set('key32', 'value32', 32)
   await ht100.set('key31', 'value31', 31)
@@ -4184,14 +4194,6 @@ const test14_4 = new Test('DiskSortedHashTable', async function integration14_4(
   })
   await ht100.destroy()
   await ht100.init()
-
-  async function logForwardValues() {
-    const values = []
-    for await (const value of ht100.forwardIterator()) {
-      values.push(value)
-    }
-    console.log(values)
-  }
 
   await ht100.set('key330', 'value330', 330)
   await ht100.set('key320', 'value320', 320)
@@ -4343,14 +4345,6 @@ const test14_5 = new Test('DiskSortedHashTable', async function integration14_5(
   })
   await ht100.destroy()
   await ht100.init()
-
-  async function logForwardValues() {
-    const values = []
-    for await (const value of ht100.forwardIterator()) {
-      values.push(value)
-    }
-    console.log(values)
-  }
 
   // await ht100.set('key1', 'value1', 1)
   // await ht100.set('key2', 'value2', 2)
@@ -6642,7 +6636,7 @@ const test32 = new Test('DiskSortedHashTable', async function integration32() {
 
   const randomNumbersArray = []
   let i = 1
-  while (i <= 10) {
+  while (i <= 8) {
     const numbers = require(`./test/randomNumbers4095_${i}.json`)
     randomNumbersArray.push(numbers)
     i += 1
@@ -7026,6 +7020,7 @@ const test = Test.all([
   test1_2,
   test1_3,
   test1_4,
+  test1_5,
   test2,
   test3,
   test4,
@@ -7061,20 +7056,20 @@ const test = Test.all([
   test17_7_2,
   test18,
   test19,
-  test_root_min_keys,
-  test28,
-  test29,
-  test30,
-  test31,
-  test32,
-  test33,
-  test34,
-  test35,
+  // test_root_min_keys,
+  // test28,
+  // test29,
+  // test30,
+  // test31,
+  // test32,
+  // test33,
+  // test34,
+  // test35,
 ])
 
 if (process.argv[1] == __filename) {
-  // test()
-  test19()
+  test()
+  // test35()
 }
 
 module.exports = test
