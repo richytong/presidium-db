@@ -29,7 +29,7 @@
     "presidium"
   ],
   "scripts": {
-    "test": "node --max-old-space-size=16384 test.js"
+    "test": "node --max-old-space-size=4096 test.js"
   },
   "devDependencies": {
     "codecov": "^3.8.2",
