@@ -301,7 +301,7 @@ class DiskSortedHashTable {
     for (let i = 0; i < key.length; i++) {
       hash = (hash << 3) - hash + key.charCodeAt(i)
     }
-    const prime = 7 
+    const prime = 3
     return prime - (Math.abs(hash) % prime)
   }
 
