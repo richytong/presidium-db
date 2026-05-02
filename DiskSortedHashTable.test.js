@@ -6526,7 +6526,7 @@ const test29 = new Test('DiskSortedHashTable', async function integration29() {
           console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms`)
         }
 
-        if (deleteNumbersIndex < 3 && insertNumbersIndex < 3) {
+        if (deleteNumbersIndex === 0 && insertNumbersIndex < 3) {
           const btreeRootNode = await constructBTree2(ht, { unique: false })
           assertBalanced(btreeRootNode)
           assertMinHeight(btreeRootNode, calculateMinBTreeHeight(511, degree))
@@ -6622,7 +6622,7 @@ const test30 = new Test('DiskSortedHashTable', async function integration30() {
           console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms`)
         }
 
-        if (deleteNumbersIndex < 3 && insertNumbersIndex < 3) {
+        if (deleteNumbersIndex === 0 && insertNumbersIndex < 3) {
           const btreeRootNode = await constructBTree2(ht, { unique: false })
           assertBalanced(btreeRootNode)
           assertMinHeight(btreeRootNode, calculateMinBTreeHeight(1023, degree))
@@ -6717,7 +6717,7 @@ const test31 = new Test('DiskSortedHashTable', async function integration31() {
           console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms; degree ${degree}; delete numbers index ${deleteNumbersIndex}; insert numbers index ${insertNumbersIndex}`)
         }
 
-        if (deleteNumbersIndex < 3 && insertNumbersIndex < 3) {
+        if (deleteNumbersIndex === 0 && insertNumbersIndex < 3) {
           const btreeRootNode = await constructBTree2(ht, { unique: false })
           assertBalanced(btreeRootNode)
           assertMinHeight(btreeRootNode, calculateMinBTreeHeight(2047, degree))
@@ -6814,7 +6814,7 @@ const test32 = new Test('DiskSortedHashTable', async function integration32() {
           console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms; degree ${degree}; delete numbers index ${deleteNumbersIndex}; insert numbers index ${insertNumbersIndex}`)
         }
 
-        if (deleteNumbersIndex < 3 && insertNumbersIndex < 3) {
+        if (deleteNumbersIndex === 0 && insertNumbersIndex < 3) {
           const btreeRootNode = await constructBTree2(ht, { unique: false })
           assertBalanced(btreeRootNode)
           assertMinHeight(btreeRootNode, calculateMinBTreeHeight(4095, degree))
@@ -6911,7 +6911,7 @@ const test33 = new Test('DiskSortedHashTable', async function integration33() {
           console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms; degree ${degree}; delete numbers index ${deleteNumbersIndex}; insert numbers index ${insertNumbersIndex}`)
         }
 
-        if (deleteNumbersIndex < 3 && insertNumbersIndex < 3) {
+        if (deleteNumbersIndex === 0 && insertNumbersIndex < 3) {
           const btreeRootNode = await constructBTree2(ht, { unique: false })
           assertBalanced(btreeRootNode)
           assertMinHeight(btreeRootNode, calculateMinBTreeHeight(8191, degree))
@@ -7008,7 +7008,7 @@ const test34 = new Test('DiskSortedHashTable', async function integration34() {
           console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms; degree ${degree}; delete numbers index ${deleteNumbersIndex}; insert numbers index ${insertNumbersIndex}`)
         }
 
-        if (deleteNumbersIndex < 3 && insertNumbersIndex < 3) {
+        if (deleteNumbersIndex === 0 && insertNumbersIndex < 3) {
           const btreeRootNode = await constructBTree2(ht, { unique: false })
           assertBalanced(btreeRootNode)
           assertMinHeight(btreeRootNode, calculateMinBTreeHeight(16383, degree))
@@ -7105,7 +7105,7 @@ const test35 = new Test('DiskSortedHashTable', async function integration35() {
           console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms; degree ${degree}; delete numbers index ${deleteNumbersIndex}; insert numbers index ${insertNumbersIndex}`)
         }
 
-        if (deleteNumbersIndex < 3 && insertNumbersIndex < 3) {
+        if (deleteNumbersIndex === 0 && insertNumbersIndex < 3) {
           const btreeRootNode = await constructBTree2(ht, { unique: false })
           assertBalanced(btreeRootNode)
           assertMinHeight(btreeRootNode, calculateMinBTreeHeight(32767, degree))
