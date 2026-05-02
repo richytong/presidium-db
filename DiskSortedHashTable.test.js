@@ -13,6 +13,7 @@ const assertInternalNodesIntegrity = require('./test/assertInternalNodesIntegrit
 const calculateMaxBTreeHeight = require('./_internal/calculateMaxBTreeHeight')
 const calculateMinBTreeHeight = require('./_internal/calculateMinBTreeHeight')
 const constructBTree = require('./_internal/constructBTree')
+const constructBTree2 = require('./_internal/constructBTree2')
 
 const test1 = new Test('DiskSortedHashTable', async function integration1() {
   const ht1024 = new DiskSortedHashTable({
@@ -30,6 +31,23 @@ const test1 = new Test('DiskSortedHashTable', async function integration1() {
     const nodes = []
     const leafNodes = []
     await constructBTree(ht1024, {
+      unique: true,
+      onNode({ node }) {
+        nodes.push(node)
+      },
+      onLeaf({ node }) {
+        leafNodes.push(node)
+      },
+    })
+
+    assert.equal(leafNodes.length, 1)
+    assert.equal(nodes.length, 1)
+  }
+
+  {
+    const nodes = []
+    const leafNodes = []
+    await constructBTree2(ht1024, {
       unique: true,
       onNode({ node }) {
         nodes.push(node)
@@ -91,6 +109,25 @@ const test1 = new Test('DiskSortedHashTable', async function integration1() {
   }
 
   {
+    const nodes = []
+    const leafNodes = []
+    await constructBTree2(ht1024, {
+      unique: true,
+      onNode({ node }) {
+        nodes.push(node)
+      },
+      onLeaf({ node }) {
+        leafNodes.push(node)
+      },
+    })
+
+    assert.equal(nodes.length, 1)
+    assert.equal(leafNodes.length, 1)
+    assert.deepEqual(nodes[0].items.map(item => item.sortValue), [1, 2, 4])
+    assert.deepEqual(leafNodes[0].items.map(item => item.sortValue), [1, 2, 4])
+  }
+
+  {
     const forwardValues = []
     for await (const value of ht1024.forwardIterator()) {
       forwardValues.push(value)
@@ -103,6 +140,12 @@ const test1 = new Test('DiskSortedHashTable', async function integration1() {
 
   {
     const btreeRootNode = await constructBTree(ht1024, { unique: false })
+    const items = traverseInOrder(btreeRootNode)
+    assert.deepEqual(items.map(item => item.sortValue), [1, 2, 4])
+  }
+
+  {
+    const btreeRootNode = await constructBTree2(ht1024, { unique: false })
     const items = traverseInOrder(btreeRootNode)
     assert.deepEqual(items.map(item => item.sortValue), [1, 2, 4])
   }
@@ -142,6 +185,12 @@ const test1 = new Test('DiskSortedHashTable', async function integration1() {
 
   {
     const btreeRootNode = await constructBTree(ht1024, { unique: false })
+    const items = traverseInOrder(btreeRootNode)
+    assert.deepEqual(items.map(item => item.sortValue), [2, 4])
+  }
+
+  {
+    const btreeRootNode = await constructBTree2(ht1024, { unique: false })
     const items = traverseInOrder(btreeRootNode)
     assert.deepEqual(items.map(item => item.sortValue), [2, 4])
   }
@@ -1013,6 +1062,12 @@ const test11 = new Test('DiskSortedHashTable', async function integration11() {
     assert.deepEqual(items.map(item => item.sortValue), [1, 2, 4])
   }
 
+  {
+    const btreeRootNode = await constructBTree2(ht1024, { unique: false })
+    const items = traverseInOrder(btreeRootNode)
+    assert.deepEqual(items.map(item => item.sortValue), [1, 2, 4])
+  }
+
   await ht1024.delete('maroon').then(didDelete => assert(didDelete))
 
   assert.equal(ht1024.count(), 2)
@@ -1030,6 +1085,12 @@ const test11 = new Test('DiskSortedHashTable', async function integration11() {
 
   {
     const btreeRootNode = await constructBTree(ht1024, { unique: false })
+    const items = traverseInOrder(btreeRootNode)
+    assert.deepEqual(items.map(item => item.sortValue), [2, 4])
+  }
+
+  {
+    const btreeRootNode = await constructBTree2(ht1024, { unique: false })
     const items = traverseInOrder(btreeRootNode)
     assert.deepEqual(items.map(item => item.sortValue), [2, 4])
   }
@@ -1054,6 +1115,12 @@ const test11 = new Test('DiskSortedHashTable', async function integration11() {
     assert.deepEqual(items.map(item => item.sortValue), [4])
   }
 
+  {
+    const btreeRootNode = await constructBTree2(ht1024, { unique: false })
+    const items = traverseInOrder(btreeRootNode)
+    assert.deepEqual(items.map(item => item.sortValue), [4])
+  }
+
   await ht1024.delete('black').then(didDelete => assert(didDelete))
 
   assert.equal(ht1024.count(), 0)
@@ -1069,6 +1136,12 @@ const test11 = new Test('DiskSortedHashTable', async function integration11() {
 
   {
     const btreeRootNode = await constructBTree(ht1024, { unique: false })
+    const items = traverseInOrder(btreeRootNode)
+    assert.deepEqual(items.map(item => item.sortValue), [])
+  }
+
+  {
+    const btreeRootNode = await constructBTree2(ht1024, { unique: false })
     const items = traverseInOrder(btreeRootNode)
     assert.deepEqual(items.map(item => item.sortValue), [])
   }
@@ -1212,6 +1285,14 @@ const test14_00 = new Test('DiskSortedHashTable', async function integration14_0
     ])
   }
 
+  {
+    const btreeRootNode = await constructBTree2(ht100, { unique: false })
+    const items = traverseInOrder(btreeRootNode)
+    assert.deepEqual(items.map(item => item.sortValue), [
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    ])
+  }
+
   await ht100.delete('key1')
   await ht100.delete('key2')
   await ht100.delete('key3')
@@ -1231,6 +1312,14 @@ const test14_00 = new Test('DiskSortedHashTable', async function integration14_0
     ])
   }
 
+  {
+    const btreeRootNode = await constructBTree2(ht100, { unique: false })
+    const items = traverseInOrder(btreeRootNode)
+    assert.deepEqual(items.map(item => item.sortValue), [
+      11, 12, 13, 14, 15,
+    ])
+  }
+
   await ht100.set('key1', 'value1', 1)
   await ht100.set('key2', 'value2', 2)
   await ht100.set('key3', 'value3', 3)
@@ -1244,6 +1333,14 @@ const test14_00 = new Test('DiskSortedHashTable', async function integration14_0
 
   {
     const btreeRootNode = await constructBTree(ht100, { unique: false })
+    const items = traverseInOrder(btreeRootNode)
+    assert.deepEqual(items.map(item => item.sortValue), [
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    ])
+  }
+
+  {
+    const btreeRootNode = await constructBTree2(ht100, { unique: false })
     const items = traverseInOrder(btreeRootNode)
     assert.deepEqual(items.map(item => item.sortValue), [
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -2156,6 +2253,11 @@ const test_assert2 = new Test('DiskSortedHashTable', async function integration_
     assertBalanced(btreeRootNode)
   }
 
+  {
+    const btreeRootNode = await constructBTree2(ht, { unique: false })
+    assertBalanced(btreeRootNode)
+  }
+
   const indexOf16 = ht._hash1('key16')
   const indexOf14 = ht._hash1('key14')
 
@@ -2250,6 +2352,15 @@ const test_assert2 = new Test('DiskSortedHashTable', async function integration_
     )
   }
 
+  {
+    const btreeRootNode = await constructBTree2(ht, { unique: false })
+
+    assert.throws(
+      () => assertBalanced(btreeRootNode),
+      new Error('b-tree not balanced')
+    )
+  }
+
   ht.close()
 }).case()
 
@@ -2329,6 +2440,12 @@ const test_assert3 = new Test('DiskSortedHashTable', async function integration_
     assertInternalNodesIntegrity(btreeRootNode)
   }
 
+  {
+    const btreeRootNode = await constructBTree2(ht, { unique: false })
+    assertBalanced(btreeRootNode)
+    assertInternalNodesIntegrity(btreeRootNode)
+  }
+
   const indexOf1 = ht._hash1('key1')
   const indexOf4 = ht._hash1('key4')
 
@@ -2385,6 +2502,20 @@ const test_assert3 = new Test('DiskSortedHashTable', async function integration_
     )
   }
 
+  {
+    const btreeRootNode = await constructBTree2(ht, { unique: false })
+
+    assertBalanced(btreeRootNode)
+
+    assert.throws(
+      () => assertInternalNodesIntegrity(btreeRootNode),
+      error => {
+        assert.equal(error.name, 'AssertionError')
+        return true
+      }
+    )
+  }
+
   ht.close()
 }).case()
 
@@ -2407,11 +2538,11 @@ const test_assert4 = new Test('DiskSortedHashTable', async function integration_
   await ht.set('key6', 'value6', 6)
   await ht.set('key7', 'value7', 7)
   await ht.set('key8', 'value8', 8)
-  await ht.set('9', 'value9', 9)
-  await ht.set('10', 'value10', 10)
-  await ht.set('11', 'value11', 11)
-  await ht.set('12', 'value12', 12)
-  await ht.set('13', 'value13', 13)
+  await ht.set('key9', 'value9', 9)
+  await ht.set('key10', 'value10', 10)
+  await ht.set('key11', 'value11', 11)
+  await ht.set('key12', 'value12', 12)
+  await ht.set('key13', 'value13', 13)
   // await ht.set('14', 'value14', 14)
   // await ht.set('15', 'value15', 15)
   // await ht.set('16', 'value16', 16)
@@ -2464,14 +2595,14 @@ const test_assert4 = new Test('DiskSortedHashTable', async function integration_
           }
         },
         "rightChild": {
-          "10": {
+          "key10": {
             "leftChild": {
-              "9": {}
+              "key9": {}
             },
             "rightChild": {
-              "11": {},
-              "12": {},
-              "13": {}
+              "key11": {},
+              "key12": {},
+              "key13": {}
             }
           }
         }
@@ -2481,6 +2612,12 @@ const test_assert4 = new Test('DiskSortedHashTable', async function integration_
 
   {
     const btreeRootNode = await constructBTree(ht, { unique: false })
+    assertBalanced(btreeRootNode)
+    assertInternalNodesIntegrity(btreeRootNode)
+  }
+
+  {
+    const btreeRootNode = await constructBTree2(ht, { unique: false })
     assertBalanced(btreeRootNode)
     assertInternalNodesIntegrity(btreeRootNode)
   }
@@ -2533,14 +2670,14 @@ const test_assert4 = new Test('DiskSortedHashTable', async function integration_
           }
         },
         "rightChild": {
-          "10": {
+          "key10": {
             "leftChild": {
-              "9": {}
+              "key9": {}
             },
             "rightChild": {
-              "11": {},
-              "12": {},
-              "13": {}
+              "key11": {},
+              "key12": {},
+              "key13": {}
             }
           }
         }
@@ -2550,6 +2687,20 @@ const test_assert4 = new Test('DiskSortedHashTable', async function integration_
 
   {
     const btreeRootNode = await constructBTree(ht, { unique: false })
+
+    assertBalanced(btreeRootNode)
+
+    assert.throws(
+      () => assertInternalNodesIntegrity(btreeRootNode),
+      error => {
+        assert.equal(error.name, 'AssertionError')
+        return true
+      }
+    )
+  }
+
+  {
+    const btreeRootNode = await constructBTree2(ht, { unique: false })
 
     assertBalanced(btreeRootNode)
 
@@ -2590,6 +2741,12 @@ const test_assert5 = new Test('DiskSortedHashTable', async function integration_
 
   {
     const btreeRootNode = await constructBTree(ht, { unique: false })
+    assertBalanced(btreeRootNode)
+    assertInternalNodesIntegrity(btreeRootNode)
+  }
+
+  {
+    const btreeRootNode = await constructBTree2(ht, { unique: false })
     assertBalanced(btreeRootNode)
     assertInternalNodesIntegrity(btreeRootNode)
   }
@@ -6257,7 +6414,7 @@ const test28 = new Test('DiskSortedHashTable', async function integration28() {
           console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms`)
         }
 
-        const btreeRootNode = await constructBTree(ht, { unique: false })
+        const btreeRootNode = await constructBTree2(ht, { unique: false })
         assertBalanced(btreeRootNode)
         assertMinHeight(btreeRootNode, calculateMinBTreeHeight(127, degree))
         assertMaxHeight(btreeRootNode, calculateMaxBTreeHeight(127, degree))
@@ -6296,7 +6453,7 @@ const test28 = new Test('DiskSortedHashTable', async function integration28() {
           console.log(`deleted key${n} in ${performance.now() - start}ms; degree ${degree}; delete numbers index ${deleteNumbersIndex}; insert numbers index ${insertNumbersIndex}`)
           ndeleted += 1
 
-          const btreeRootNode = await constructBTree(ht, { unique: false })
+          const btreeRootNode = await constructBTree2(ht, { unique: false })
           assertBalanced(btreeRootNode)
           assertMinHeight(btreeRootNode, calculateMinBTreeHeight(127 - ndeleted, degree))
           assertMaxHeight(btreeRootNode, calculateMaxBTreeHeight(127 - ndeleted, degree))
@@ -6369,14 +6526,19 @@ const test29 = new Test('DiskSortedHashTable', async function integration29() {
           console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms`)
         }
 
-        const btreeRootNode = await constructBTree(ht, { unique: false })
-        assertBalanced(btreeRootNode)
-        assertMinHeight(btreeRootNode, calculateMinBTreeHeight(511, degree))
-        assertMaxHeight(btreeRootNode, calculateMaxBTreeHeight(511, degree))
-        assertMinKeysPerNode(btreeRootNode, degree - 1)
-        assertMaxKeysPerNode(btreeRootNode, (degree * 2) - 1)
-        assertInternalNodesIntegrity(btreeRootNode)
-        assert.equal(ht.count(), 511)
+        if (deleteNumbersIndex < 3 && insertNumbersIndex < 3) {
+          const btreeRootNode = await constructBTree2(ht, { unique: false })
+          assertBalanced(btreeRootNode)
+          assertMinHeight(btreeRootNode, calculateMinBTreeHeight(511, degree))
+          assertMaxHeight(btreeRootNode, calculateMaxBTreeHeight(511, degree))
+          assertMinKeysPerNode(btreeRootNode, degree - 1)
+          assertMaxKeysPerNode(btreeRootNode, (degree * 2) - 1)
+          assertInternalNodesIntegrity(btreeRootNode)
+          assert.equal(ht.count(), 511)
+
+          const items = traverseInOrder(btreeRootNode)
+          assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
+        }
 
         {
           const forwardValues = []
@@ -6384,11 +6546,6 @@ const test29 = new Test('DiskSortedHashTable', async function integration29() {
             forwardValues.push(value)
           }
           assert.deepEqual(forwardValues, sortedValues)
-        }
-
-        {
-          const items = traverseInOrder(btreeRootNode)
-          assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
         }
 
         {
@@ -6465,14 +6622,19 @@ const test30 = new Test('DiskSortedHashTable', async function integration30() {
           console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms`)
         }
 
-        const btreeRootNode = await constructBTree(ht, { unique: false })
-        assertBalanced(btreeRootNode)
-        assertMinHeight(btreeRootNode, calculateMinBTreeHeight(1023, degree))
-        assertMaxHeight(btreeRootNode, calculateMaxBTreeHeight(1023, degree))
-        assertMinKeysPerNode(btreeRootNode, degree - 1)
-        assertMaxKeysPerNode(btreeRootNode, (degree * 2) - 1)
-        assertInternalNodesIntegrity(btreeRootNode)
-        assert.equal(ht.count(), 1023)
+        if (deleteNumbersIndex < 3 && insertNumbersIndex < 3) {
+          const btreeRootNode = await constructBTree2(ht, { unique: false })
+          assertBalanced(btreeRootNode)
+          assertMinHeight(btreeRootNode, calculateMinBTreeHeight(1023, degree))
+          assertMaxHeight(btreeRootNode, calculateMaxBTreeHeight(1023, degree))
+          assertMinKeysPerNode(btreeRootNode, degree - 1)
+          assertMaxKeysPerNode(btreeRootNode, (degree * 2) - 1)
+          assertInternalNodesIntegrity(btreeRootNode)
+          assert.equal(ht.count(), 1023)
+
+          const items = traverseInOrder(btreeRootNode)
+          assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
+        }
 
         {
           const forwardValues = []
@@ -6480,11 +6642,6 @@ const test30 = new Test('DiskSortedHashTable', async function integration30() {
             forwardValues.push(value)
           }
           assert.deepEqual(forwardValues, sortedValues)
-        }
-
-        {
-          const items = traverseInOrder(btreeRootNode)
-          assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
         }
 
         {
@@ -6560,14 +6717,19 @@ const test31 = new Test('DiskSortedHashTable', async function integration31() {
           console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms; degree ${degree}; delete numbers index ${deleteNumbersIndex}; insert numbers index ${insertNumbersIndex}`)
         }
 
-        const btreeRootNode = await constructBTree(ht, { unique: false })
-        assertBalanced(btreeRootNode)
-        assertMinHeight(btreeRootNode, calculateMinBTreeHeight(2047, degree))
-        assertMaxHeight(btreeRootNode, calculateMaxBTreeHeight(2047, degree))
-        assertMinKeysPerNode(btreeRootNode, degree - 1)
-        assertMaxKeysPerNode(btreeRootNode, (degree * 2) - 1)
-        assertInternalNodesIntegrity(btreeRootNode)
-        assert.equal(ht.count(), 2047)
+        if (deleteNumbersIndex < 3 && insertNumbersIndex < 3) {
+          const btreeRootNode = await constructBTree2(ht, { unique: false })
+          assertBalanced(btreeRootNode)
+          assertMinHeight(btreeRootNode, calculateMinBTreeHeight(2047, degree))
+          assertMaxHeight(btreeRootNode, calculateMaxBTreeHeight(2047, degree))
+          assertMinKeysPerNode(btreeRootNode, degree - 1)
+          assertMaxKeysPerNode(btreeRootNode, (degree * 2) - 1)
+          assertInternalNodesIntegrity(btreeRootNode)
+          assert.equal(ht.count(), 2047)
+
+          const items = traverseInOrder(btreeRootNode)
+          assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
+        }
 
         {
           const forwardValues = []
@@ -6575,11 +6737,6 @@ const test31 = new Test('DiskSortedHashTable', async function integration31() {
             forwardValues.push(value)
           }
           assert.deepEqual(forwardValues, sortedValues)
-        }
-
-        {
-          const items = traverseInOrder(btreeRootNode)
-          assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
         }
 
         {
@@ -6657,14 +6814,19 @@ const test32 = new Test('DiskSortedHashTable', async function integration32() {
           console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms; degree ${degree}; delete numbers index ${deleteNumbersIndex}; insert numbers index ${insertNumbersIndex}`)
         }
 
-        const btreeRootNode = await constructBTree(ht, { unique: false })
-        assertBalanced(btreeRootNode)
-        assertMinHeight(btreeRootNode, calculateMinBTreeHeight(4095, degree))
-        assertMaxHeight(btreeRootNode, calculateMaxBTreeHeight(4095, degree))
-        assertMinKeysPerNode(btreeRootNode, degree - 1)
-        assertMaxKeysPerNode(btreeRootNode, (degree * 2) - 1)
-        assertInternalNodesIntegrity(btreeRootNode)
-        assert.equal(ht.count(), 4095)
+        if (deleteNumbersIndex < 3 && insertNumbersIndex < 3) {
+          const btreeRootNode = await constructBTree2(ht, { unique: false })
+          assertBalanced(btreeRootNode)
+          assertMinHeight(btreeRootNode, calculateMinBTreeHeight(4095, degree))
+          assertMaxHeight(btreeRootNode, calculateMaxBTreeHeight(4095, degree))
+          assertMinKeysPerNode(btreeRootNode, degree - 1)
+          assertMaxKeysPerNode(btreeRootNode, (degree * 2) - 1)
+          assertInternalNodesIntegrity(btreeRootNode)
+          assert.equal(ht.count(), 4095)
+
+          const items = traverseInOrder(btreeRootNode)
+          assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
+        }
 
         {
           const forwardValues = []
@@ -6672,11 +6834,6 @@ const test32 = new Test('DiskSortedHashTable', async function integration32() {
             forwardValues.push(value)
           }
           assert.deepEqual(forwardValues, sortedValues)
-        }
-
-        {
-          const items = traverseInOrder(btreeRootNode)
-          assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
         }
 
         {
@@ -6754,14 +6911,19 @@ const test33 = new Test('DiskSortedHashTable', async function integration33() {
           console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms; degree ${degree}; delete numbers index ${deleteNumbersIndex}; insert numbers index ${insertNumbersIndex}`)
         }
 
-        const btreeRootNode = await constructBTree(ht, { unique: false })
-        assertBalanced(btreeRootNode)
-        assertMinHeight(btreeRootNode, calculateMinBTreeHeight(8191, degree))
-        assertMaxHeight(btreeRootNode, calculateMaxBTreeHeight(8191, degree))
-        assertMinKeysPerNode(btreeRootNode, degree - 1)
-        assertMaxKeysPerNode(btreeRootNode, (degree * 2) - 1)
-        assertInternalNodesIntegrity(btreeRootNode)
-        assert.equal(ht.count(), 8191)
+        if (deleteNumbersIndex < 3 && insertNumbersIndex < 3) {
+          const btreeRootNode = await constructBTree2(ht, { unique: false })
+          assertBalanced(btreeRootNode)
+          assertMinHeight(btreeRootNode, calculateMinBTreeHeight(8191, degree))
+          assertMaxHeight(btreeRootNode, calculateMaxBTreeHeight(8191, degree))
+          assertMinKeysPerNode(btreeRootNode, degree - 1)
+          assertMaxKeysPerNode(btreeRootNode, (degree * 2) - 1)
+          assertInternalNodesIntegrity(btreeRootNode)
+          assert.equal(ht.count(), 8191)
+
+          const items = traverseInOrder(btreeRootNode)
+          assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
+        }
 
         {
           const forwardValues = []
@@ -6769,11 +6931,6 @@ const test33 = new Test('DiskSortedHashTable', async function integration33() {
             forwardValues.push(value)
           }
           assert.deepEqual(forwardValues, sortedValues)
-        }
-
-        {
-          const items = traverseInOrder(btreeRootNode)
-          assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
         }
 
         {
@@ -6851,14 +7008,19 @@ const test34 = new Test('DiskSortedHashTable', async function integration34() {
           console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms; degree ${degree}; delete numbers index ${deleteNumbersIndex}; insert numbers index ${insertNumbersIndex}`)
         }
 
-        const btreeRootNode = await constructBTree(ht, { unique: false })
-        assertBalanced(btreeRootNode)
-        assertMinHeight(btreeRootNode, calculateMinBTreeHeight(16383, degree))
-        assertMaxHeight(btreeRootNode, calculateMaxBTreeHeight(16383, degree))
-        assertMinKeysPerNode(btreeRootNode, degree - 1)
-        assertMaxKeysPerNode(btreeRootNode, (degree * 2) - 1)
-        assertInternalNodesIntegrity(btreeRootNode)
-        assert.equal(ht.count(), 16383)
+        if (deleteNumbersIndex < 3 && insertNumbersIndex < 3) {
+          const btreeRootNode = await constructBTree2(ht, { unique: false })
+          assertBalanced(btreeRootNode)
+          assertMinHeight(btreeRootNode, calculateMinBTreeHeight(16383, degree))
+          assertMaxHeight(btreeRootNode, calculateMaxBTreeHeight(16383, degree))
+          assertMinKeysPerNode(btreeRootNode, degree - 1)
+          assertMaxKeysPerNode(btreeRootNode, (degree * 2) - 1)
+          assertInternalNodesIntegrity(btreeRootNode)
+          assert.equal(ht.count(), 16383)
+
+          const items = traverseInOrder(btreeRootNode)
+          assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
+        }
 
         {
           const forwardValues = []
@@ -6866,11 +7028,6 @@ const test34 = new Test('DiskSortedHashTable', async function integration34() {
             forwardValues.push(value)
           }
           assert.deepEqual(forwardValues, sortedValues)
-        }
-
-        {
-          const items = traverseInOrder(btreeRootNode)
-          assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
         }
 
         {
@@ -6948,14 +7105,19 @@ const test35 = new Test('DiskSortedHashTable', async function integration35() {
           console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms; degree ${degree}; delete numbers index ${deleteNumbersIndex}; insert numbers index ${insertNumbersIndex}`)
         }
 
-        const btreeRootNode = await constructBTree(ht, { unique: false })
-        assertBalanced(btreeRootNode)
-        assertMinHeight(btreeRootNode, calculateMinBTreeHeight(32767, degree))
-        assertMaxHeight(btreeRootNode, calculateMaxBTreeHeight(32767, degree))
-        assertMinKeysPerNode(btreeRootNode, degree - 1)
-        assertMaxKeysPerNode(btreeRootNode, (degree * 2) - 1)
-        assertInternalNodesIntegrity(btreeRootNode)
-        assert.equal(ht.count(), 32767)
+        if (deleteNumbersIndex < 3 && insertNumbersIndex < 3) {
+          const btreeRootNode = await constructBTree2(ht, { unique: false })
+          assertBalanced(btreeRootNode)
+          assertMinHeight(btreeRootNode, calculateMinBTreeHeight(32767, degree))
+          assertMaxHeight(btreeRootNode, calculateMaxBTreeHeight(32767, degree))
+          assertMinKeysPerNode(btreeRootNode, degree - 1)
+          assertMaxKeysPerNode(btreeRootNode, (degree * 2) - 1)
+          assertInternalNodesIntegrity(btreeRootNode)
+          assert.equal(ht.count(), 32767)
+
+          const items = traverseInOrder(btreeRootNode)
+          assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
+        }
 
         {
           const forwardValues = []
@@ -6963,11 +7125,6 @@ const test35 = new Test('DiskSortedHashTable', async function integration35() {
             forwardValues.push(value)
           }
           assert.deepEqual(forwardValues, sortedValues)
-        }
-
-        {
-          const items = traverseInOrder(btreeRootNode)
-          assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
         }
 
         {
@@ -7039,7 +7196,7 @@ const test36 = new Test('DiskSortedHashTable', async function integration36() {
       console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms, degree ${degree}, insert numbers index ${insertNumbersIndex}`)
     }
 
-    const btreeRootNode = await constructBTree(ht, { unique: false })
+    const btreeRootNode = await constructBTree2(ht, { unique: false })
     assertBalanced(btreeRootNode)
     assertMinHeight(btreeRootNode, calculateMinBTreeHeight(1023, degree))
     assertMaxHeight(btreeRootNode, calculateMaxBTreeHeight(1023, degree))

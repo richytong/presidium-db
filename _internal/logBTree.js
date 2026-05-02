@@ -1,6 +1,8 @@
+const constructBTree = require('./constructBTree')
+
 // logBTree(ht DiskSortedHashTable, unique boolean) -> Promise<>
 async function logBTree(ht, unique = false) {
-  const btreeRootNode = await ht._constructBTree({ unique })
+  const btreeRootNode = await constructBTree(ht, { unique })
 
   console.log(JSON.stringify(btreeRootNode, (key, value) => {
     if (key == 'items' || key == 'keys') {
