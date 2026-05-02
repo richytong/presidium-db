@@ -63,6 +63,9 @@ const REMOVED = 2
  * ## Maximum length of the disk hash table
  * The maximum length of the disk hash table is 2,147,483,647.
  *
+ * ## Allocation of disk space
+ * The disk hash table initially preallocates a block of memory on disk of `(itemSize * initialLength)` bytes as the storage file and a 16-byte block of memory as the header file for database operations. When the disk hash table is resized, the block of memory on disk is reallocated to a new size of `(itemSize * initialLength * numberOfResizes * resizeFactor)` bytes.
+ *
  * ## Resizing the disk hash table
  * When an item is inserted into the disk hash table via [set](/docs/DiskHashTable#set), the current capacity ratio of the table is calculated as the sum of the table's count and deleted count divided by the table's length. If the current capacity ratio exceeds the `resizeRatio` (and the `resizeRatio` is not 0), a resize of the table occurs.
  *
@@ -74,8 +77,6 @@ const REMOVED = 2
  *
  * Once all of the items have been added into the temporary storage file, the temporary storage file is moved to the location of the old storage file to be used as the new storage file.
  *
- * ## Allocation of disk space
- * The disk hash table initially preallocates a block of memory on disk of `(itemSize * initialLength)` bytes for database operations. When the disk hash table is resized, the block of memory on disk is reallocated to a new size of `(itemSize * initialLength * numberOfResizes * resizeFactor)` bytes.
  */
 class DiskHashTable {
   constructor(options) {

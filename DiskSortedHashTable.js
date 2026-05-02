@@ -73,6 +73,9 @@ const REMOVED = 2
  * ## Maximum length of the disk sorted hash table
  * The maximum length of the disk sorted hash table is 2,147,483,647.
  *
+ * ## Allocation of disk space
+ * The disk sorted hash table initially preallocates a block of memory on disk of `(itemSize * initialLength)` bytes as the storage file and a 24-byte block of memory as the header file for database operations. When the disk sorted hash table is resized, the block of memory on disk is reallocated to a new size of `(itemSize * initialLength * numberOfResizes * resizeFactor)` bytes.
+ *
  * ## Resizing the disk sorted hash table
  * When an item is inserted into the disk sorted hash table via [set](/docs/DiskSortedHashTable#set), the current capacity ratio of the table is calculated as the sum of the table's count and deleted count divided by the table's length. If the current capacity ratio exceeds the `resizeRatio` (and the `resizeRatio` is not 0), a resize of the table occurs.
  *
@@ -87,8 +90,6 @@ const REMOVED = 2
  * ## Optimizing the disk sorted hash table b-tree
  * The value of `degree` determines the structure of the internal b-tree used by the disk sorted hash table. A higher value for `degree` results in a shorter b-tree and more items per b-tree node, while a lower value results in a taller b-tree and fewer items per b-tree node. The default value of 2 is a safe choice for most use cases.
  *
- * ## Allocation of disk space
- * The disk sorted hash table initially preallocates a block of memory on disk of `(itemSize * initialLength)` bytes for database operations. When the disk sorted hash table is resized, the block of memory on disk is reallocated to a new size of `(itemSize * initialLength * numberOfResizes * resizeFactor)` bytes.
  */
 class DiskSortedHashTable {
   constructor(options) {
