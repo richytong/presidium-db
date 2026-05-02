@@ -189,7 +189,7 @@ class DiskSortedHashTable {
    * clear() -> Promise<>
    * ```
    *
-   * Clears all data from the disk sorted hash table.
+   * Clears all data from the disk sorted hash table. Reallocates the header and storage files.
    *
    * Arguments:
    *   * (none)
@@ -232,6 +232,9 @@ class DiskSortedHashTable {
 
     const deletedCount = headerReadBuffer.readUInt32BE(8)
     this._deletedCount = deletedCount
+
+    await preallocate(this.headerPath, 24)
+    await preallocate(this.storagePath, this.itemSize * length)
   }
 
   /**

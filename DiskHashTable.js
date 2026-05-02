@@ -175,7 +175,7 @@ class DiskHashTable {
    * clear() -> Promise<>
    * ```
    *
-   * Clears all data from the disk hash table.
+   * Clears all data from the disk hash table. Reallocates the header and storage files.
    *
    * Arguments:
    *   * (none)
@@ -221,6 +221,9 @@ class DiskHashTable {
 
     const headIndex = headerReadBuffer.readInt32BE(12)
     this._headIndex = headIndex
+
+    await preallocate(this.headerPath, 16)
+    await preallocate(this.storagePath, this.itemSize * length)
   }
 
   /**
