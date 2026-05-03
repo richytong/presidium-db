@@ -350,6 +350,21 @@ class DiskSortedHashTable {
     }
   }
 
+  // _readKey(index number, keyByteLength number) -> key string
+  async _readKey(index, keyByteLength) {
+    const position = (index * this.itemSize) + 33
+    const keyBuffer = Buffer.alloc(keyByteLength)
+
+    await this.storageFd.read({
+      buffer: keyBuffer,
+      offset: 0,
+      position,
+      length: keyByteLength,
+    })
+
+    return keyBuffer.toString(ENCODING)
+  }
+
   // _readSortValue(index number, keyByteLength number, sortValueByteLength number) -> sortValue number|string
   async _readSortValue(index, keyByteLength, sortValueByteLength) {
     const position = (index * this.itemSize) + 33 + keyByteLength
@@ -365,6 +380,21 @@ class DiskSortedHashTable {
     const sortValue = convert(sortValueBuffer.toString(ENCODING), this.sortValueType)
 
     return sortValue
+  }
+
+  // _readBinaryValue(index number, keyByteLength number, sortValueByteLength number, valueByteLength number) -> key string
+  async _readBinaryValue(index, keyByteLength, sortValueByteLength, valueByteLength) {
+    const position = (index * this.itemSize) + 33 + keyByteLength + sortValueByteLength
+    const valueBuffer = Buffer.alloc(valueByteLength)
+
+    await this.storageFd.read({
+      buffer: valueBuffer,
+      offset: 0,
+      position,
+      length: valueByteLength,
+    })
+
+    return valueBuffer
   }
 
   // _readHead(index number) -> readBuffer Promise<Buffer>
@@ -507,6 +537,38 @@ class DiskSortedHashTable {
     return this._parseBTreeItem(readBuffer, index)
   }
 
+  // _getHeadItem(index number) -> headItem Promise<{ index: number, forwardIndex: number, reverseIndex: number }>
+  async _getHeadItem(index) {
+    if (index == -1) {
+      return undefined
+    }
+
+    const headReadBuffer = await this._readHead(index)
+    const item = this._parseItemHead(headReadBuffer, index)
+
+    return item
+  }
+
+  // _getKeyItem(index number) -> keyItem Promise<{ index: number, key: string }>
+  async _getKeyItem(index) {
+    if (index == -1) {
+      return undefined
+    }
+
+    const headReadBuffer = await this._readHead(index)
+    const item = this._parseItemHead(headReadBuffer, index)
+
+    if (item.statusMarker == EMPTY) {
+      return undefined
+    }
+
+    const key = await this._readKey(index, item.keyByteLength)
+
+    item.key = key
+
+    return item
+  }
+
   // _getBTreeItem(index number) -> btreeItem Promise<{
   //   index: number,
   //   sortValue: string|number,
@@ -520,7 +582,7 @@ class DiskSortedHashTable {
     }
 
     const headReadBuffer = await this._readHead(index)
-    const item = this._parseBTreeItemHead(headReadBuffer, index)
+    const item = this._parseItemHead(headReadBuffer, index)
     const sortValue = await this._readSortValue(index, item.keyByteLength, item.sortValueByteLength)
 
     item.sortValue = sortValue
@@ -4285,7 +4347,7 @@ class DiskSortedHashTable {
     })
   }
 
-  // _parseBTreeItemHead(headReadBuffer Buffer, index number) -> {
+  // _parseItemHead(headReadBuffer Buffer, index number) -> {
   //   statusMarker: 0|1|2,
   //   index: number,
   //   sortValue: string|number,
@@ -4293,7 +4355,7 @@ class DiskSortedHashTable {
   //   btreeRightChildNodeRightmostItemIndex: number,
   //   btreeLeftItemIndex: number,
   // }
-  _parseBTreeItemHead(headReadBuffer, index) {
+  _parseItemHead(headReadBuffer, index) {
     const item = {}
     item.index = index
 
@@ -4318,6 +4380,9 @@ class DiskSortedHashTable {
 
     const sortValueByteLength = headReadBuffer.readUInt32BE(5)
     item.sortValueByteLength = sortValueByteLength
+
+    const valueByteLength = headReadBuffer.readUInt32BE(9)
+    item.valueByteLength = valueByteLength
 
     return item
   }
@@ -4674,7 +4739,7 @@ class DiskSortedHashTable {
 
   // _update(key string, value string|Buffer|Uint8Array, sortValue number|string, index number) -> Promise<>
   async _update(key, value, sortValue, index) {
-    const item = await this._getItem(index)
+    const item = await this._getHeadItem(index)
 
     let btreeLeftChildNodeRightmostItemIndex = item.btreeLeftChildNodeRightmostItemIndex
     let btreeRightChildNodeRightmostItemIndex = item.btreeRightChildNodeRightmostItemIndex
@@ -4931,7 +4996,7 @@ class DiskSortedHashTable {
     const startIndex = index
     const stepSize = this._hash2(key)
 
-    let currentItem = await this._getItem(index)
+    let currentItem = await this._getKeyItem(index)
     while (currentItem) {
       if (key == currentItem.key) {
         break
@@ -4943,7 +5008,7 @@ class DiskSortedHashTable {
         }
         throw new Error('Hash table is full')
       }
-      currentItem = await this._getItem(index)
+      currentItem = await this._getKeyItem(index)
     }
 
     if (currentItem == null) { // insert
@@ -4998,7 +5063,7 @@ class DiskSortedHashTable {
     const startIndex = index
     const stepSize = this._hash2(key)
 
-    let currentItem = await this._getItem(index, valueType)
+    let currentItem = await this._getKeyItem(index, valueType)
     while (currentItem) {
       if (key == currentItem.key) {
         break
@@ -5009,7 +5074,7 @@ class DiskSortedHashTable {
         return undefined // entire table searched
       }
 
-      currentItem = await this._getItem(index, valueType)
+      currentItem = await this._getKeyItem(index, valueType)
     }
 
     if (currentItem == null) {
@@ -5017,7 +5082,13 @@ class DiskSortedHashTable {
     }
 
     if (currentItem.statusMarker == OCCUPIED) {
-      return currentItem.value
+      const valueBuffer = await this._readBinaryValue(
+        index,
+        currentItem.keyByteLength,
+        currentItem.sortValueByteLength,
+        currentItem.valueByteLength
+      )
+      return valueType == 'binary' ? valueBuffer : valueBuffer.toString(ENCODING)
     }
 
     return undefined
@@ -5397,7 +5468,7 @@ class DiskSortedHashTable {
     let currentForwardItem
     if (exclusiveStartKey) {
       const exclusiveStartIndex = this._hash1(exclusiveStartKey)
-      const exclusiveStartItem = await this._getItem(exclusiveStartIndex, valueType)
+      const exclusiveStartItem = await this._getHeadItem(exclusiveStartIndex)
       if (exclusiveStartItem == null || exclusiveStartItem.statusMarker == REMOVED) {
         currentForwardItem = undefined
       } else {
@@ -5505,7 +5576,7 @@ class DiskSortedHashTable {
     let currentForwardItem
     if (exclusiveStartKey) {
       const exclusiveStartIndex = this._hash1(exclusiveStartKey)
-      const exclusiveStartItem = await this._getItem(exclusiveStartIndex, valueType)
+      const exclusiveStartItem = await this._getHeadItem(exclusiveStartIndex)
       if (exclusiveStartItem == null || exclusiveStartItem.statusMarker == REMOVED) {
         currentForwardItem = undefined
       } else {
@@ -5567,7 +5638,7 @@ class DiskSortedHashTable {
     const startIndex = index
     const stepSize = this._hash2(key)
 
-    let currentItem = await this._getItem(index)
+    let currentItem = await this._getKeyItem(index)
     while (currentItem) {
       if (key == currentItem.key) {
         break
@@ -5578,7 +5649,7 @@ class DiskSortedHashTable {
         return false // entire table searched
       }
 
-      currentItem = await this._getItem(index)
+      currentItem = await this._getKeyItem(index)
     }
 
     if (currentItem == null) {
