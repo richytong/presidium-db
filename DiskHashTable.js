@@ -318,6 +318,21 @@ class DiskHashTable {
     return headerReadBuffer
   }
 
+  // _readHead(index number) -> readBuffer Promise<Buffer>
+  async _readHead(index) {
+    const position = index * this.itemSize
+    const readBuffer = Buffer.alloc(13)
+
+    await this.storageFd.read({
+      buffer: readBuffer,
+      offset: 0,
+      position,
+      length: 13,
+    })
+
+    return readBuffer
+  }
+
   // _read(index number) -> readBuffer Promise<Buffer>
   async _read(index) {
     const position = index * this.itemSize
@@ -331,6 +346,56 @@ class DiskHashTable {
     })
 
     return readBuffer
+  }
+
+  // _readKey(index number, keyByteLength number) -> key string
+  async _readKey(index, keyByteLength) {
+    const position = (index * this.itemSize) + 13
+    const keyBuffer = Buffer.alloc(keyByteLength)
+
+    await this.storageFd.read({
+      buffer: keyBuffer,
+      offset: 0,
+      position,
+      length: keyByteLength,
+    })
+
+    return keyBuffer.toString(ENCODING)
+  }
+
+  // _readBinaryValue(index number, keyByteLength number, valueByteLength number) -> key string
+  async _readBinaryValue(index, keyByteLength, valueByteLength) {
+    const position = (index * this.itemSize) + 13 + keyByteLength
+    const valueBuffer = Buffer.alloc(valueByteLength)
+
+    await this.storageFd.read({
+      buffer: valueBuffer,
+      offset: 0,
+      position,
+      length: valueByteLength,
+    })
+
+    return valueBuffer
+  }
+
+  // _getKeyItem(index number) -> keyItem { index: number, nextIndex: number, keyByteLength: number, valueByteLength: number }
+  async _getKeyItem(index) {
+    if (index == -1) {
+      return undefined
+    }
+
+    const readBuffer = await this._readHead(index)
+    const statusMarker = readBuffer.readUInt8(0)
+    if (statusMarker == OCCUPIED || statusMarker == REMOVED) {
+      const keyByteLength = readBuffer.readUInt32BE(1)
+      const valueByteLength = readBuffer.readUInt32BE(5)
+      const nextIndex = readBuffer.readInt32BE(9)
+      const keyBuffer = readBuffer.subarray(13, keyByteLength + 13)
+      const key = await this._readKey(index, keyByteLength)
+      return { index, statusMarker, nextIndex, keyByteLength, valueByteLength, key }
+    }
+
+    return undefined
   }
 
   // _getItem(index number, valueType 'string'|'binary') -> item { index: number, nextIndex: number, value: string }
@@ -411,7 +476,7 @@ class DiskHashTable {
     const startIndex = index
     const stepSize = this._hash2(key)
 
-    let currentItem = await this._getItem(index)
+    let currentItem = await this._getKeyItem(index)
     while (currentItem) {
       if (key == currentItem.key) {
         break
@@ -422,7 +487,7 @@ class DiskHashTable {
         throw new Error('Disk hash table is full')
       }
 
-      currentItem = await this._getItem(index)
+      currentItem = await this._getKeyItem(index)
     }
 
     let nextIndex
@@ -441,6 +506,7 @@ class DiskHashTable {
     const position = index * this.itemSize
     const buffer = Buffer.alloc(this.itemSize)
 
+    // storage file slice
     // 8 bits / 1 byte for status marker: 0 empty / 1 occupied / 2 deleted
     // 32 bits / 4 bytes for key size
     // 32 bits / 4 bytes for value size
@@ -507,7 +573,7 @@ class DiskHashTable {
     const startIndex = index
     const stepSize = this._hash2(key)
 
-    let currentItem = await this._getItem(index, valueType)
+    let currentItem = await this._getKeyItem(index)
     while (currentItem) {
       if (key == currentItem.key) {
         break
@@ -518,7 +584,7 @@ class DiskHashTable {
         return undefined // entire table searched
       }
 
-      currentItem = await this._getItem(index, valueType)
+      currentItem = await this._getKeyItem(index)
     }
 
     if (currentItem == null) {
@@ -526,7 +592,12 @@ class DiskHashTable {
     }
 
     if (currentItem.statusMarker == OCCUPIED) {
-      return currentItem.value
+      const valueBuffer = await this._readBinaryValue(
+        index,
+        currentItem.keyByteLength,
+        currentItem.valueByteLength
+      )
+      return valueType == 'binary' ? valueBuffer : valueBuffer.toString(ENCODING)
     }
 
     return undefined
@@ -605,7 +676,7 @@ class DiskHashTable {
     const startIndex = index
     const stepSize = this._hash2(key)
 
-    let currentItem = await this._getItem(index)
+    let currentItem = await this._getKeyItem(index)
     while (currentItem) {
       if (key == currentItem.key) {
         break
@@ -616,7 +687,7 @@ class DiskHashTable {
         return false // entire table searched
       }
 
-      currentItem = await this._getItem(index)
+      currentItem = await this._getKeyItem(index)
     }
 
     if (currentItem == null) {
