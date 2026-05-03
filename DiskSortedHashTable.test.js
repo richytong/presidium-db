@@ -6729,25 +6729,26 @@ const test31 = new Test('DiskSortedHashTable', async function integration31() {
 
           const items = traverseInOrder(btreeRootNode)
           assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
-        }
 
-        {
-          const forwardValues = []
-          for await (const value of ht.forwardIterator()) {
-            forwardValues.push(value)
+          {
+            const forwardValues = []
+            for await (const value of ht.forwardIterator()) {
+              forwardValues.push(value)
+            }
+            assert.deepEqual(forwardValues, sortedValues)
           }
-          assert.deepEqual(forwardValues, sortedValues)
-        }
 
-        {
-          const reverseValues = []
-          for await (const value of ht.reverseIterator()) {
-            reverseValues.push(value)
+          {
+            const reverseValues = []
+            for await (const value of ht.reverseIterator()) {
+              reverseValues.push(value)
+            }
+            assert.deepEqual(reverseValues, sortedValuesReverse)
           }
-          assert.deepEqual(reverseValues, sortedValuesReverse)
+
         }
 
-        const sortedNumbers2 = [...sortedNumbers]
+        // const sortedNumbers2 = [...sortedNumbers]
 
         let ndeleted = 0
         for (const n of deleteNumbers) {
@@ -6826,25 +6827,26 @@ const test32 = new Test('DiskSortedHashTable', async function integration32() {
 
           const items = traverseInOrder(btreeRootNode)
           assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
-        }
 
-        {
-          const forwardValues = []
-          for await (const value of ht.forwardIterator()) {
-            forwardValues.push(value)
+          {
+            const forwardValues = []
+            for await (const value of ht.forwardIterator()) {
+              forwardValues.push(value)
+            }
+            assert.deepEqual(forwardValues, sortedValues)
           }
-          assert.deepEqual(forwardValues, sortedValues)
-        }
 
-        {
-          const reverseValues = []
-          for await (const value of ht.reverseIterator()) {
-            reverseValues.push(value)
+          {
+            const reverseValues = []
+            for await (const value of ht.reverseIterator()) {
+              reverseValues.push(value)
+            }
+            assert.deepEqual(reverseValues, sortedValuesReverse)
           }
-          assert.deepEqual(reverseValues, sortedValuesReverse)
+
         }
 
-        const sortedNumbers2 = [...sortedNumbers]
+        // const sortedNumbers2 = [...sortedNumbers]
 
         let ndeleted = 0
         for (const n of deleteNumbers) {
@@ -6923,25 +6925,26 @@ const test33 = new Test('DiskSortedHashTable', async function integration33() {
 
           const items = traverseInOrder(btreeRootNode)
           assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
-        }
 
-        {
-          const forwardValues = []
-          for await (const value of ht.forwardIterator()) {
-            forwardValues.push(value)
+          {
+            const forwardValues = []
+            for await (const value of ht.forwardIterator()) {
+              forwardValues.push(value)
+            }
+            assert.deepEqual(forwardValues, sortedValues)
           }
-          assert.deepEqual(forwardValues, sortedValues)
-        }
 
-        {
-          const reverseValues = []
-          for await (const value of ht.reverseIterator()) {
-            reverseValues.push(value)
+          {
+            const reverseValues = []
+            for await (const value of ht.reverseIterator()) {
+              reverseValues.push(value)
+            }
+            assert.deepEqual(reverseValues, sortedValuesReverse)
           }
-          assert.deepEqual(reverseValues, sortedValuesReverse)
+
         }
 
-        const sortedNumbers2 = [...sortedNumbers]
+        // const sortedNumbers2 = [...sortedNumbers]
 
         let ndeleted = 0
         for (const n of deleteNumbers) {
@@ -7020,25 +7023,26 @@ const test34 = new Test('DiskSortedHashTable', async function integration34() {
 
           const items = traverseInOrder(btreeRootNode)
           assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
-        }
 
-        {
-          const forwardValues = []
-          for await (const value of ht.forwardIterator()) {
-            forwardValues.push(value)
+          {
+            const forwardValues = []
+            for await (const value of ht.forwardIterator()) {
+              forwardValues.push(value)
+            }
+            assert.deepEqual(forwardValues, sortedValues)
           }
-          assert.deepEqual(forwardValues, sortedValues)
-        }
 
-        {
-          const reverseValues = []
-          for await (const value of ht.reverseIterator()) {
-            reverseValues.push(value)
+          {
+            const reverseValues = []
+            for await (const value of ht.reverseIterator()) {
+              reverseValues.push(value)
+            }
+            assert.deepEqual(reverseValues, sortedValuesReverse)
           }
-          assert.deepEqual(reverseValues, sortedValuesReverse)
+
         }
 
-        const sortedNumbers2 = [...sortedNumbers]
+        // const sortedNumbers2 = [...sortedNumbers]
 
         let ndeleted = 0
         for (const n of deleteNumbers) {
@@ -7117,25 +7121,26 @@ const test35 = new Test('DiskSortedHashTable', async function integration35() {
 
           const items = traverseInOrder(btreeRootNode)
           assert.deepEqual(items.map(item => Number(item.sortValue)), sortedNumbers)
-        }
 
-        {
-          const forwardValues = []
-          for await (const value of ht.forwardIterator()) {
-            forwardValues.push(value)
+          {
+            const forwardValues = []
+            for await (const value of ht.forwardIterator()) {
+              forwardValues.push(value)
+            }
+            assert.deepEqual(forwardValues, sortedValues)
           }
-          assert.deepEqual(forwardValues, sortedValues)
-        }
 
-        {
-          const reverseValues = []
-          for await (const value of ht.reverseIterator()) {
-            reverseValues.push(value)
+          {
+            const reverseValues = []
+            for await (const value of ht.reverseIterator()) {
+              reverseValues.push(value)
+            }
+            assert.deepEqual(reverseValues, sortedValuesReverse)
           }
-          assert.deepEqual(reverseValues, sortedValuesReverse)
+
         }
 
-        const sortedNumbers2 = [...sortedNumbers]
+        // const sortedNumbers2 = [...sortedNumbers]
 
         let ndeleted = 0
         for (const n of deleteNumbers) {
