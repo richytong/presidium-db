@@ -280,12 +280,12 @@ class DiskHashTable {
 
   // _hash1(key string) -> number
   _hash1(key) {
-    let index = 0
+    let hash = 0
     const prime = 31
     for (let i = 0; i < key.length; i++) {
-      index = (prime * index + key.charCodeAt(i)) % this._length
+      hash = (prime * hash + key.charCodeAt(i)) % this._length
     }
-    return index
+    return hash
   }
 
   // _hash2(key string) -> number
