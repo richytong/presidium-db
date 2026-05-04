@@ -6719,6 +6719,7 @@ const test28 = new Test('DiskSortedHashTable', async function integration28() {
           assertInternalNodesIntegrity(btreeRootNode)
           assert.equal(ht.count(), 127 - ndeleted)
           assert.equal(ht._deletedCount, ndeleted)
+          assert.strictEqual(await ht.get(`key${n}`), undefined)
 
           sortedNumbers2.splice(sortedNumbers2.indexOf(n), 1)
 
@@ -6782,6 +6783,7 @@ const test28 = new Test('DiskSortedHashTable', async function integration28() {
           assertInternalNodesIntegrity(btreeRootNode)
           assert.equal(ht.count(), 127 - ndeleted)
           assert.equal(ht._deletedCount, ndeleted)
+          assert.strictEqual(await ht.get(`key${n}`), undefined)
 
           sortedNumbers3.splice(sortedNumbers3.indexOf(n), 1)
 
@@ -6921,6 +6923,7 @@ const test29 = new Test('DiskSortedHashTable', async function integration29() {
 
           assert.equal(ht.count(), 511 - ndeleted)
           assert.equal(ht._deletedCount, ndeleted)
+          assert.strictEqual(await ht.get(`key${n}`), undefined)
         }
 
         assert.equal(ht.count(), 0)
@@ -7016,6 +7019,7 @@ const test30 = new Test('DiskSortedHashTable', async function integration30() {
           ndeleted += 1
           assert.equal(ht.count(), 1023 - ndeleted)
           assert.equal(ht._deletedCount, ndeleted)
+          assert.strictEqual(await ht.get(`key${n}`), undefined)
         }
 
         assert.equal(ht.count(), 0)
@@ -7114,6 +7118,7 @@ const test31 = new Test('DiskSortedHashTable', async function integration31() {
           ndeleted += 1
           assert.equal(ht.count(), 2047 - ndeleted)
           assert.equal(ht._deletedCount, ndeleted)
+          assert.strictEqual(await ht.get(`key${n}`), undefined)
         }
 
         assert.equal(ht.count(), 0)
@@ -7212,6 +7217,7 @@ const test32 = new Test('DiskSortedHashTable', async function integration32() {
           ndeleted += 1
           assert.equal(ht.count(), 4095 - ndeleted)
           assert.equal(ht._deletedCount, ndeleted)
+          assert.strictEqual(await ht.get(`key${n}`), undefined)
         }
 
         assert.equal(ht.count(), 0)
@@ -7310,6 +7316,7 @@ const test33 = new Test('DiskSortedHashTable', async function integration33() {
           ndeleted += 1
           assert.equal(ht.count(), 8191 - ndeleted)
           assert.equal(ht._deletedCount, ndeleted)
+          assert.strictEqual(await ht.get(`key${n}`), undefined)
         }
 
         assert.equal(ht.count(), 0)
@@ -7408,6 +7415,7 @@ const test34 = new Test('DiskSortedHashTable', async function integration34() {
           ndeleted += 1
           assert.equal(ht.count(), 16383 - ndeleted)
           assert.equal(ht._deletedCount, ndeleted)
+          assert.strictEqual(await ht.get(`key${n}`), undefined)
         }
 
         assert.equal(ht.count(), 0)
@@ -7506,6 +7514,7 @@ const test35 = new Test('DiskSortedHashTable', async function integration35() {
           ndeleted += 1
           assert.equal(ht.count(), 32767 - ndeleted)
           assert.equal(ht._deletedCount, ndeleted)
+          assert.strictEqual(await ht.get(`key${n}`), undefined)
         }
 
         assert.equal(ht.count(), 0)
@@ -7631,6 +7640,7 @@ const test37 = new Test('DiskSortedHashTable', async function integration37() {
     const start = performance.now()
     await ht.delete(`key${n}`)
     console.log(`deleted key${n} in ${performance.now() - start}ms; degree ${degree}, current count ${ht.count()}`)
+    assert.strictEqual(await ht.get(`key${n}`), undefined)
   }
 
 }).case()
