@@ -29,4 +29,4 @@ async function runBenchmark(degree, size) {
   }
 }
 
-runBenchmark(2, 1_000_000_000)
+runBenchmark(2, 2_000_000_000)

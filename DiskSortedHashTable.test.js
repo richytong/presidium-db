@@ -1,5 +1,6 @@
 const Test = require('thunk-test')
 const assert = require('assert')
+const fs = require('fs')
 const DiskSortedHashTable = require('./DiskSortedHashTable')
 const traverseInOrder = require('./_internal/traverseInOrder')
 const assertBalanced = require('./test/assertBalanced')
@@ -12,6 +13,7 @@ const calculateMaxBTreeHeight = require('./_internal/calculateMaxBTreeHeight')
 const calculateMinBTreeHeight = require('./_internal/calculateMinBTreeHeight')
 const constructBTree = require('./_internal/constructBTree')
 const constructBTree2 = require('./_internal/constructBTree2')
+const randomUniqueNumbersGenerator = require('./_internal/randomUniqueNumbersGenerator')
 
 const test1 = new Test('DiskSortedHashTable', async function integration1() {
   const ht1024 = new DiskSortedHashTable({
@@ -7599,6 +7601,40 @@ const test36 = new Test('DiskSortedHashTable', async function integration36() {
 
 }).case()
 
+const test37 = new Test('DiskSortedHashTable', async function integration37() {
+  const size = 2_000_000_000
+  const degree = 2
+
+  await fs.promises.rm(`${__dirname}/DiskSortedHashTable_test_data`, { recursive: true })
+
+  const ht = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/${size}`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/${size}_header`,
+    initialLength: size * 2,
+    itemSize: 100,
+    sortValueType: 'number',
+    resizeRatio: 0,
+    degree,
+  })
+  await ht.destroy()
+  await ht.init()
+
+  const insertedNumbers = []
+  for (const n of randomUniqueNumbersGenerator(size, size * 2)) {
+    const start = performance.now()
+    await ht.set(`key${n}`, `value${n}`, n)
+    console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms, degree ${degree}, current count ${ht.count()}`)
+    insertedNumbers.push(n)
+  }
+
+  for (const n of insertedNumbers) {
+    const start = performance.now()
+    await ht.delete(`key${n}`)
+    console.log(`deleted key${n} in ${performance.now() - start}ms; degree ${degree}, current count ${ht.count()}`)
+  }
+
+}).case()
+
 const test = Test.all([
   test1,
   test1_1,
@@ -7651,6 +7687,7 @@ const test = Test.all([
   test34,
   test35,
   test36,
+  test37,
 ])
 
 if (process.argv[1] == __filename) {
