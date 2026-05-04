@@ -164,7 +164,7 @@ class DiskHashTable {
     this._headIndex = headIndex
 
     await preallocate(this.headerPath, 32)
-    await preallocate(this.storagePath, this.itemSize * length)
+    await preallocate(this.storagePath, BigInt(this.itemSize) * BigInt(length))
   }
 
   /**
@@ -223,7 +223,7 @@ class DiskHashTable {
     this._headIndex = headIndex
 
     await preallocate(this.headerPath, 32)
-    await preallocate(this.storagePath, this.itemSize * length)
+    await preallocate(this.storagePath, BigInt(this.itemSize) * BigInt(length))
   }
 
   /**

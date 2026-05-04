@@ -178,7 +178,7 @@ class DiskSortedHashTable {
     this._deletedCount = deletedCount
 
     await preallocate(this.headerPath, 48)
-    await preallocate(this.storagePath, this.itemSize * length)
+    await preallocate(this.storagePath, BigInt(this.itemSize) * BigInt(length))
   }
 
   /**
@@ -234,7 +234,7 @@ class DiskSortedHashTable {
     this._deletedCount = deletedCount
 
     await preallocate(this.headerPath, 48)
-    await preallocate(this.storagePath, this.itemSize * length)
+    await preallocate(this.storagePath, BigInt(this.itemSize) * BigInt(length))
   }
 
   /**
