@@ -38,7 +38,7 @@ const REMOVED = 2
  *   * `options`
  *     * `storagePath` - `string` - the path to the file used to store the disk hash table data.
  *     * `headerPath` - `string` - the path to the file used to store header information about the disk hash table.
- *     * `initialLength` - `number` - the initial length of the disk hash table. Minimum value 1024, maximum value 9007199254740991. Defaults to 1024.
+ *     * `initialLength` - `number` - the initial length of the disk hash table. Minimum value 1024, maximum value `Math.floor(9007199254740991 / itemSize)`. Defaults to 1024.
  *     * `itemSize` - `number` - the size in bytes of each item (including internal item info, key, and value) stored on disk. Minimum value 1024. Defaults to 524288.
  *     * `resizeRatio` - `number` - the ratio of number of items to table length at which to resize the disk hash table. Minimum value 0 (no resize), maximum value 1. Defaults to 0.
  *     * `resizeFactor` - `number` - the factor that is multiplied with the disk hash table's current length to determine the new table length on a resize.
@@ -61,7 +61,10 @@ const REMOVED = 2
  *   * `linux64`
  *
  * ## Maximum length of the disk hash table
- * The maximum length of the disk hash table is 9,007,199,254,740,991.
+ * The maximum length of the disk sorted hash table is represented by the following equation:
+ * ```
+ * Math.floor(9_007_199_254_740_991 / itemSize)
+ * ```
  *
  * ## Allocation of disk space
  * The disk hash table initially preallocates a block of memory on disk of `(itemSize * initialLength)` bytes as the storage file and a 32-byte block of memory as the header file for database operations. When the disk hash table is resized, the block of memory on disk is reallocated to a new size of `(itemSize * initialLength * numberOfResizes * resizeFactor)` bytes.
