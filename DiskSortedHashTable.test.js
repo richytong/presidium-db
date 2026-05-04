@@ -5582,14 +5582,17 @@ const test17_2 = new Test('DiskSortedHashTable', async function integration17_2(
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       values.push(`value${n1}`)
     } else {
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       const start2 = performance.now()
       await ht.set(`key${n2}`, `value${n2}`, n2 - 1)
       console.log('set', `key${n2}`, `value${n2}`, n2 - 1, 'in', `${performance.now() - start2}ms`)
+      assert.strictEqual(await ht.get(`key${n2}`), `value${n2}`)
       values.push(`value${n1}`)
       values.push(`value${n2}`)
     }
@@ -5604,13 +5607,16 @@ const test17_2 = new Test('DiskSortedHashTable', async function integration17_2(
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
     } else {
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       const start2 = performance.now()
       await ht.set(`key${n2}`, `value${n2}`, n2 - 1)
       console.log('set', `key${n2}`, `value${n2}`, n2 - 1, 'in', `${performance.now() - start2}ms`)
+      assert.strictEqual(await ht.get(`key${n2}`), `value${n2}`)
     }
     n1 += 1
     n2 -= 1
@@ -5623,13 +5629,16 @@ const test17_2 = new Test('DiskSortedHashTable', async function integration17_2(
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1)
       console.log('set', `key${n1}`, `value${n1}`, n1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
     } else {
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1)
       console.log('set', `key${n1}`, `value${n1}`, n1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       const start2 = performance.now()
       await ht.set(`key${n2}`, `value${n2}`, n2)
       console.log('set', `key${n2}`, `value${n2}`, n2, 'in', `${performance.now() - start2}ms`)
+      assert.strictEqual(await ht.get(`key${n2}`), `value${n2}`)
     }
     n1 += 1
     n2 -= 1
@@ -5694,14 +5703,17 @@ const test17_3 = new Test('DiskSortedHashTable', async function integration17_3(
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       values.push(`value${n1}`)
     } else {
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       const start2 = performance.now()
       await ht.set(`key${n2}`, `value${n2}`, n2 - 1)
       console.log('set', `key${n2}`, `value${n2}`, n2 - 1, 'in', `${performance.now() - start2}ms`)
+      assert.strictEqual(await ht.get(`key${n2}`), `value${n2}`)
       values.push(`value${n1}`)
       values.push(`value${n2}`)
     }
@@ -5716,13 +5728,16 @@ const test17_3 = new Test('DiskSortedHashTable', async function integration17_3(
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
     } else {
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       const start2 = performance.now()
       await ht.set(`key${n2}`, `value${n2}`, n2 - 1)
       console.log('set', `key${n2}`, `value${n2}`, n2 - 1, 'in', `${performance.now() - start2}ms`)
+      assert.strictEqual(await ht.get(`key${n2}`), `value${n2}`)
     }
     n1 -= 1
     n2 += 1
@@ -5735,13 +5750,16 @@ const test17_3 = new Test('DiskSortedHashTable', async function integration17_3(
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1)
       console.log('set', `key${n1}`, `value${n1}`, n1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
     } else {
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1)
       console.log('set', `key${n1}`, `value${n1}`, n1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       const start2 = performance.now()
       await ht.set(`key${n2}`, `value${n2}`, n2)
       console.log('set', `key${n2}`, `value${n2}`, n2, 'in', `${performance.now() - start2}ms`)
+      assert.strictEqual(await ht.get(`key${n2}`), `value${n2}`)
     }
     n1 -= 1
     n2 += 1
@@ -5807,14 +5825,17 @@ const test17_6 = new Test('DiskSortedHashTable', async function integration17_6(
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       values.push(`value${n1}`)
     } else {
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       const start2 = performance.now()
       await ht.set(`key${n2}`, `value${n2}`, n2 - 1)
       console.log('set', `key${n2}`, `value${n2}`, n2 - 1, 'in', `${performance.now() - start2}ms`)
+      assert.strictEqual(await ht.get(`key${n2}`), `value${n2}`)
       values.push(`value${n1}`)
       values.push(`value${n2}`)
     }
@@ -5829,13 +5850,16 @@ const test17_6 = new Test('DiskSortedHashTable', async function integration17_6(
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
     } else {
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       const start2 = performance.now()
       await ht.set(`key${n2}`, `value${n2}`, n2 - 1)
       console.log('set', `key${n2}`, `value${n2}`, n2 - 1, 'in', `${performance.now() - start2}ms`)
+      assert.strictEqual(await ht.get(`key${n2}`), `value${n2}`)
     }
     n1 += 1
     n2 -= 1
@@ -5848,13 +5872,16 @@ const test17_6 = new Test('DiskSortedHashTable', async function integration17_6(
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1)
       console.log('set', `key${n1}`, `value${n1}`, n1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
     } else {
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1)
       console.log('set', `key${n1}`, `value${n1}`, n1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       const start2 = performance.now()
       await ht.set(`key${n2}`, `value${n2}`, n2)
       console.log('set', `key${n2}`, `value${n2}`, n2, 'in', `${performance.now() - start2}ms`)
+      assert.strictEqual(await ht.get(`key${n2}`), `value${n2}`)
     }
     n1 += 1
     n2 -= 1
@@ -5920,14 +5947,17 @@ const test17_7_0 = new Test('DiskSortedHashTable', async function integration17_
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       values.push(`value${n1}`)
     } else {
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       const start2 = performance.now()
       await ht.set(`key${n2}`, `value${n2}`, n2 - 1)
       console.log('set', `key${n2}`, `value${n2}`, n2 - 1, 'in', `${performance.now() - start2}ms`)
+      assert.strictEqual(await ht.get(`key${n2}`), `value${n2}`)
       values.push(`value${n1}`)
       values.push(`value${n2}`)
     }
@@ -5942,13 +5972,16 @@ const test17_7_0 = new Test('DiskSortedHashTable', async function integration17_
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
     } else {
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       const start2 = performance.now()
       await ht.set(`key${n2}`, `value${n2}`, n2 - 1)
       console.log('set', `key${n2}`, `value${n2}`, n2 - 1, 'in', `${performance.now() - start2}ms`)
+      assert.strictEqual(await ht.get(`key${n2}`), `value${n2}`)
     }
     n1 -= 1
     n2 += 1
@@ -5961,13 +5994,16 @@ const test17_7_0 = new Test('DiskSortedHashTable', async function integration17_
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1)
       console.log('set', `key${n1}`, `value${n1}`, n1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
     } else {
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1)
       console.log('set', `key${n1}`, `value${n1}`, n1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       const start2 = performance.now()
       await ht.set(`key${n2}`, `value${n2}`, n2)
       console.log('set', `key${n2}`, `value${n2}`, n2, 'in', `${performance.now() - start2}ms`)
+      assert.strictEqual(await ht.get(`key${n2}`), `value${n2}`)
     }
     n1 -= 1
     n2 += 1
@@ -6033,14 +6069,17 @@ const test17_7_1 = new Test('DiskSortedHashTable', async function integration17_
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       values.push(`value${n1}`)
     } else {
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       const start2 = performance.now()
-      console.log('set', `key${n2}`, `value${n2}`, n2 - 1, 'in', `${performance.now() - start2}ms`)
       await ht.set(`key${n2}`, `value${n2}`, n2 - 1)
+      console.log('set', `key${n2}`, `value${n2}`, n2 - 1, 'in', `${performance.now() - start2}ms`)
+      assert.strictEqual(await ht.get(`key${n2}`), `value${n2}`)
       values.push(`value${n1}`)
       values.push(`value${n2}`)
     }
@@ -6055,13 +6094,16 @@ const test17_7_1 = new Test('DiskSortedHashTable', async function integration17_
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
     } else {
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       const start2 = performance.now()
-      console.log('set', `key${n2}`, `value${n2}`, n2 - 1, 'in', `${performance.now() - start2}ms`)
       await ht.set(`key${n2}`, `value${n2}`, n2 - 1)
+      console.log('set', `key${n2}`, `value${n2}`, n2 - 1, 'in', `${performance.now() - start2}ms`)
+      assert.strictEqual(await ht.get(`key${n2}`), `value${n2}`)
     }
     n1 -= 1
     n2 += 1
@@ -6074,13 +6116,16 @@ const test17_7_1 = new Test('DiskSortedHashTable', async function integration17_
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1)
       console.log('set', `key${n1}`, `value${n1}`, n1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
     } else {
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1)
       console.log('set', `key${n1}`, `value${n1}`, n1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       const start2 = performance.now()
       console.log('set', `key${n2}`, `value${n2}`, n2, 'in', `${performance.now() - start2}ms`)
       await ht.set(`key${n2}`, `value${n2}`, n2)
+      assert.strictEqual(await ht.get(`key${n2}`), `value${n2}`)
     }
     n1 -= 1
     n2 += 1
@@ -6146,14 +6191,17 @@ const test17_7_2 = new Test('DiskSortedHashTable', async function integration17_
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       values.push(`value${n1}`)
     } else {
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       const start2 = performance.now()
       await ht.set(`key${n2}`, `value${n2}`, n2 - 1)
       console.log('set', `key${n2}`, `value${n2}`, n2 - 1, 'in', `${performance.now() - start2}ms`)
+      assert.strictEqual(await ht.get(`key${n2}`), `value${n2}`)
       values.push(`value${n1}`)
       values.push(`value${n2}`)
     }
@@ -6168,13 +6216,16 @@ const test17_7_2 = new Test('DiskSortedHashTable', async function integration17_
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
     } else {
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1 - 1)
       console.log('set', `key${n1}`, `value${n1}`, n1 - 1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       const start2 = performance.now()
       await ht.set(`key${n2}`, `value${n2}`, n2 - 1)
       console.log('set', `key${n2}`, `value${n2}`, n2 - 1, 'in', `${performance.now() - start2}ms`)
+      assert.strictEqual(await ht.get(`key${n2}`), `value${n2}`)
     }
     n1 -= 1
     n2 += 1
@@ -6187,13 +6238,16 @@ const test17_7_2 = new Test('DiskSortedHashTable', async function integration17_
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1)
       console.log('set', `key${n1}`, `value${n1}`, n1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
     } else {
       const start1 = performance.now()
       await ht.set(`key${n1}`, `value${n1}`, n1)
       console.log('set', `key${n1}`, `value${n1}`, n1, 'in', `${performance.now() - start1}ms`)
+      assert.strictEqual(await ht.get(`key${n1}`), `value${n1}`)
       const start2 = performance.now()
       await ht.set(`key${n2}`, `value${n2}`, n2)
       console.log('set', `key${n2}`, `value${n2}`, n2, 'in', `${performance.now() - start2}ms`)
+      assert.strictEqual(await ht.get(`key${n2}`), `value${n2}`)
     }
     n1 -= 1
     n2 += 1
@@ -6257,6 +6311,7 @@ const test18 = new Test('DiskSortedHashTable', async function integration18() {
     const start = performance.now()
     await ht.set(`key${n}`, `value${n}`, n - 1)
     console.log('set', `key${n}`, `value${n}`, n - 1, 'in', `${performance.now() - start}ms`)
+    assert.strictEqual(await ht.get(`key${n}`), `value${n}`)
     values.push(`value${n}`)
     n += 1
   }
@@ -6266,6 +6321,7 @@ const test18 = new Test('DiskSortedHashTable', async function integration18() {
     const start = performance.now()
     await ht.set(`key${n}`, `value${n}`, n - 1)
     console.log('set', `key${n}`, `value${n}`, n - 1, 'in', `${performance.now() - start}ms`)
+    assert.strictEqual(await ht.get(`key${n}`), `value${n}`)
     n += 1
   }
 
@@ -6274,6 +6330,7 @@ const test18 = new Test('DiskSortedHashTable', async function integration18() {
     const start = performance.now()
     await ht.set(`key${n}`, `value${n}`, n)
     console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms`)
+    assert.strictEqual(await ht.get(`key${n}`), `value${n}`)
     n += 1
   }
 
@@ -6668,6 +6725,7 @@ const test28 = new Test('DiskSortedHashTable', async function integration28() {
           const start = performance.now()
           await ht.set(`key${n}`, `value${n}`, n)
           console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms`)
+          assert.strictEqual(await ht.get(`key${n}`), `value${n}`)
         }
 
         const btreeRootNode = await constructBTree2(ht, { unique: false })
@@ -6735,6 +6793,7 @@ const test28 = new Test('DiskSortedHashTable', async function integration28() {
           const start = performance.now()
           await ht.set(`key${n}`, `value${n}`, n)
           console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms`)
+          assert.strictEqual(await ht.get(`key${n}`), `value${n}`)
         }
 
         const btreeRootNode2 = await constructBTree2(ht, { unique: false })
@@ -6799,6 +6858,7 @@ const test28 = new Test('DiskSortedHashTable', async function integration28() {
           const start = performance.now()
           await ht.set(`key${n}`, `value${n}`, n)
           console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms`)
+          assert.strictEqual(await ht.get(`key${n}`), `value${n}`)
         }
 
         const btreeRootNode3 = await constructBTree2(ht, { unique: false })
@@ -6881,7 +6941,8 @@ const test29 = new Test('DiskSortedHashTable', async function integration29() {
         for (const n of insertNumbers) {
           const start = performance.now()
           await ht.set(`key${n}`, `value${n}`, n)
-          console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms`)
+          console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms; degree ${degree}; delete numbers index ${deleteNumbersIndex}; insert numbers index ${insertNumbersIndex}`)
+          assert.strictEqual(await ht.get(`key${n}`), `value${n}`)
         }
 
         if (deleteNumbersIndex === 0) {
@@ -6978,7 +7039,8 @@ const test30 = new Test('DiskSortedHashTable', async function integration30() {
         for (const n of insertNumbers) {
           const start = performance.now()
           await ht.set(`key${n}`, `value${n}`, n)
-          console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms`)
+          console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms; degree ${degree}; delete numbers index ${deleteNumbersIndex}; insert numbers index ${insertNumbersIndex}`)
+          assert.strictEqual(await ht.get(`key${n}`), `value${n}`)
         }
 
         if (deleteNumbersIndex === 0) {
@@ -7075,6 +7137,7 @@ const test31 = new Test('DiskSortedHashTable', async function integration31() {
           const start = performance.now()
           await ht.set(`key${n}`, `value${n}`, n)
           console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms; degree ${degree}; delete numbers index ${deleteNumbersIndex}; insert numbers index ${insertNumbersIndex}`)
+          assert.strictEqual(await ht.get(`key${n}`), `value${n}`)
         }
 
         if (deleteNumbersIndex === 0) {
@@ -7174,6 +7237,7 @@ const test32 = new Test('DiskSortedHashTable', async function integration32() {
           const start = performance.now()
           await ht.set(`key${n}`, `value${n}`, n)
           console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms; degree ${degree}; delete numbers index ${deleteNumbersIndex}; insert numbers index ${insertNumbersIndex}`)
+          assert.strictEqual(await ht.get(`key${n}`), `value${n}`)
         }
 
         if (deleteNumbersIndex === 0) {
@@ -7273,6 +7337,7 @@ const test33 = new Test('DiskSortedHashTable', async function integration33() {
           const start = performance.now()
           await ht.set(`key${n}`, `value${n}`, n)
           console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms; degree ${degree}; delete numbers index ${deleteNumbersIndex}; insert numbers index ${insertNumbersIndex}`)
+          assert.strictEqual(await ht.get(`key${n}`), `value${n}`)
         }
 
         if (deleteNumbersIndex === 0) {
@@ -7372,6 +7437,7 @@ const test34 = new Test('DiskSortedHashTable', async function integration34() {
           const start = performance.now()
           await ht.set(`key${n}`, `value${n}`, n)
           console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms; degree ${degree}; delete numbers index ${deleteNumbersIndex}; insert numbers index ${insertNumbersIndex}`)
+          assert.strictEqual(await ht.get(`key${n}`), `value${n}`)
         }
 
         if (deleteNumbersIndex === 0) {
@@ -7471,6 +7537,7 @@ const test35 = new Test('DiskSortedHashTable', async function integration35() {
           const start = performance.now()
           await ht.set(`key${n}`, `value${n}`, n)
           console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms; degree ${degree}; delete numbers index ${deleteNumbersIndex}; insert numbers index ${insertNumbersIndex}`)
+          assert.strictEqual(await ht.get(`key${n}`), `value${n}`)
         }
 
         if (deleteNumbersIndex === 0) {
@@ -7564,6 +7631,7 @@ const test36 = new Test('DiskSortedHashTable', async function integration36() {
       const start = performance.now()
       await ht.set(`key${n}`, `value${n}`, n)
       console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms, degree ${degree}, insert numbers index ${insertNumbersIndex}`)
+      assert.strictEqual(await ht.get(`key${n}`), `value${n}`)
     }
 
     const btreeRootNode = await constructBTree2(ht, { unique: false })
@@ -7633,6 +7701,7 @@ const test37 = new Test('DiskSortedHashTable', async function integration37() {
     const start = performance.now()
     await ht.set(`key${n}`, `value${n}`, n)
     console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms, degree ${degree}, current count ${ht.count()}`)
+    assert.strictEqual(await ht.get(`key${n}`), `value${n}`)
     insertedNumbers.push(n)
   }
 
