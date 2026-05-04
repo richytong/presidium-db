@@ -7682,7 +7682,8 @@ const test37 = new Test('DiskSortedHashTable', async function integration37() {
   const size = 2_000_000_000
   const degree = 2
 
-  await fs.promises.rm(`${__dirname}/DiskSortedHashTable_test_data`, { recursive: true })
+  await fs.promises.rm(`${__dirname}/DiskHashTable_test_data`, { recursive: true }).catch(() => {})
+  await fs.promises.rm(`${__dirname}/DiskSortedHashTable_test_data`, { recursive: true }).catch(() => {})
 
   const ht = new DiskSortedHashTable({
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/${size}`,
@@ -7711,6 +7712,8 @@ const test37 = new Test('DiskSortedHashTable', async function integration37() {
     console.log(`deleted key${n} in ${performance.now() - start}ms; degree ${degree}, current count ${ht.count()}`)
     assert.strictEqual(await ht.get(`key${n}`), undefined)
   }
+
+  await fs.promises.rm(`${__dirname}/DiskSortedHashTable_test_data`, { recursive: true })
 
 }).case()
 
