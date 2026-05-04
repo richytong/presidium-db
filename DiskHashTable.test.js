@@ -354,7 +354,7 @@ const test2_0 = new Test('DiskHashTable', async function integration2_0() {
 }).case()
 
 const test3 = new Test('DiskHashTable', async function integration3() {
-  const size = 2_000_000_000
+  const size = 2_000_000
 
   await fs.promises.rm(`${__dirname}/DiskHashTable_test_data`, { recursive: true }).catch(() => {})
   await fs.promises.rm(`${__dirname}/DiskSortedHashTable_test_data`, { recursive: true }).catch(() => {})

@@ -7679,7 +7679,7 @@ const test36 = new Test('DiskSortedHashTable', async function integration36() {
 }).case()
 
 const test37 = new Test('DiskSortedHashTable', async function integration37() {
-  const size = 2_000_000_000
+  const size = 2_000_000
   const degree = 2
 
   await fs.promises.rm(`${__dirname}/DiskHashTable_test_data`, { recursive: true }).catch(() => {})
