@@ -7654,7 +7654,7 @@ const test = Test.all([
 ])
 
 if (process.argv[1] == __filename) {
-  test28()
+  test()
 }
 
 module.exports = test
