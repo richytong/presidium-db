@@ -4737,10 +4737,14 @@ class DiskSortedHashTable {
     })
   }
 
-  // _update(key string, value string|Buffer|Uint8Array, sortValue number|string, index number) -> Promise<>
-  async _update(key, value, sortValue, index) {
-    const item = await this._getHeadItem(index)
-
+// _update(key string, value string|Buffer|Uint8Array, sortValue number|string, index number, item {
+//   index: number,
+//   sortValue: string|number,
+//   btreeLeftChildNodeRightmostItemIndex: number,
+//   btreeRightChildNodeRightmostItemIndex: number,
+//   btreeLeftItemIndex: number,
+// }) -> Promise<>
+  async _update(key, value, sortValue, index, item) {
     let btreeLeftChildNodeRightmostItemIndex = item.btreeLeftChildNodeRightmostItemIndex
     let btreeRightChildNodeRightmostItemIndex = item.btreeRightChildNodeRightmostItemIndex
     let btreeLeftItemIndex = item.btreeLeftItemIndex
@@ -5015,7 +5019,7 @@ class DiskSortedHashTable {
       await this._insert(key, value, sortValue, index)
       await this._incrementCount()
     } else { // update
-      await this._update(key, value, sortValue, index)
+      await this._update(key, value, sortValue, index, currentItem)
       if (currentItem.statusMarker == REMOVED) {
         await this._incrementCount()
         await this._decrementDeletedCount()
