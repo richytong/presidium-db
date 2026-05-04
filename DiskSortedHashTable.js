@@ -331,25 +331,6 @@ class DiskSortedHashTable {
     return headerReadBuffer
   }
 
-  // _getHeader() -> Promise<>
-  async _getHeader() {
-    const headerReadBuffer = await this._readHeader()
-
-    const length = headerReadBuffer.readUInt32BE(0)
-    const count = headerReadBuffer.readUInt32BE(4)
-    const firstIndex = headerReadBuffer.readInt32BE(8)
-    const lastIndex = headerReadBuffer.readInt32BE(12)
-    const btreeRootNodeRightmostItemIndex = headerReadBuffer.readInt32BE(16)
-
-    return {
-      length,
-      count,
-      firstIndex,
-      lastIndex,
-      btreeRootNodeRightmostItemIndex,
-    }
-  }
-
   // _readKey(index number, keyByteLength number) -> key string
   async _readKey(index, keyByteLength) {
     const position = (index * this.itemSize) + 33
@@ -1003,12 +984,6 @@ class DiskSortedHashTable {
       }
       if (btreeChildNodeItemsParentNodeItem.rightItem) {
         btreeChildNodeItemsParentNodeItem.rightItem.isLeftChildPointer = true
-      }
-      if (btreeChildNodeItemsParentNodeItem.btreeLeftItemIndex == btreeChildNodeItemsLeftParentNodeItem?.index) {
-        btreeChildNodeItemsParentNodeItem.leftItem = btreeChildNodeItemsLeftParentNodeItem
-      }
-      if (btreeChildNodeItemsParentNodeItem.leftItem) {
-        btreeChildNodeItemsParentNodeItem.leftItem.isRightChildPointer = true
       }
 
       return this._insertBTreeNodeItem(
@@ -2659,7 +2634,6 @@ class DiskSortedHashTable {
           if (btreeParentNodeItem.btreeParentNodeItem.isLeftChildPointer) {
             grandparentNodeItem = btreeParentNodeItem.btreeParentNodeItem
           } else if (btreeParentNodeItem.btreeParentNodeItem.isRightChildPointer) {
-            await this._logBTree()
             throw new Error('bad tree')
           } else {
             throw new Error('grandparent node item isLeftChildPointer or isRightChildPointer unset')
@@ -2724,7 +2698,6 @@ class DiskSortedHashTable {
           }
 
         } else { // no parent right sibling or parent left sibling
-          await this._logBTree()
           throw new Error('bad tree')
         }
 
@@ -3106,7 +3079,6 @@ class DiskSortedHashTable {
           if (btreeParentNodeItem.btreeParentNodeItem.isLeftChildPointer) {
             grandparentNodeItem = btreeParentNodeItem.btreeParentNodeItem
           } else if (btreeParentNodeItem.btreeParentNodeItem.isRightChildPointer) {
-            await this._logBTree()
             throw new Error('bad tree')
           } else {
             throw new Error('grandparent node item isLeftChildPointer or isRightChildPointer unset')
@@ -3173,7 +3145,6 @@ class DiskSortedHashTable {
           }
 
         } else { // no parent right sibling or parent left sibling
-          await this._logBTree()
           throw new Error('bad tree')
         }
 
@@ -3644,7 +3615,6 @@ class DiskSortedHashTable {
           if (btreeParentNodeItem.btreeParentNodeItem.isLeftChildPointer) {
             grandparentNodeItem = btreeParentNodeItem.btreeParentNodeItem
           } else if (btreeParentNodeItem.btreeParentNodeItem.isRightChildPointer) {
-            await this._logBTree()
             throw new Error('bad tree')
           } else {
             throw new Error('grandparent node item isLeftChildPointer or isRightChildPointer unset')
@@ -3729,14 +3699,12 @@ class DiskSortedHashTable {
           }
 
         } else { // no parent right sibling or parent left sibling
-          await this._logBTree()
           throw new Error('bad tree')
         }
 
       }
 
     } else {
-      await this._logBTree()
       throw new Error('bad tree')
     }
 
@@ -4192,11 +4160,13 @@ class DiskSortedHashTable {
     }
 
     if (isLeaf) {
+      const logBTree = require('./_internal/logBTree')
+      await logBTree(this)
       throw new Error('Did not find btreeItem')
     }
 
     i = btreeNodeItems.length - 1
-    while (i >= 0 && btreeNodeItems[i].sortValue > btreeItem.sortValue) {
+    while (i >= 0 && btreeNodeItems[i].sortValue >= btreeItem.sortValue) {
       i -= 1
     }
 
@@ -4554,19 +4524,6 @@ class DiskSortedHashTable {
     })
   }
 
-  // _updateLength() -> Promise<>
-  async _updateLength() {
-    const position = 0
-    const buffer = Buffer.alloc(4)
-    buffer.writeUInt32BE(this._length, 0)
-
-    await this.headerFd.write(buffer, {
-      offset: 0,
-      position,
-      length: 4,
-    })
-  }
-
   // _updateCount() -> Promise<>
   async _updateCount() {
     const position = 4
@@ -4745,6 +4702,7 @@ class DiskSortedHashTable {
 //   btreeLeftItemIndex: number,
 // }) -> Promise<>
   async _update(key, value, sortValue, index, item) {
+
     let btreeLeftChildNodeRightmostItemIndex = item.btreeLeftChildNodeRightmostItemIndex
     let btreeRightChildNodeRightmostItemIndex = item.btreeRightChildNodeRightmostItemIndex
     let btreeLeftItemIndex = item.btreeLeftItemIndex
@@ -5019,6 +4977,11 @@ class DiskSortedHashTable {
       await this._insert(key, value, sortValue, index)
       await this._incrementCount()
     } else { // update
+      currentItem.sortValue = await this._readSortValue(
+        index,
+        currentItem.keyByteLength,
+        currentItem.sortValueByteLength
+      )
       await this._update(key, value, sortValue, index, currentItem)
       if (currentItem.statusMarker == REMOVED) {
         await this._incrementCount()

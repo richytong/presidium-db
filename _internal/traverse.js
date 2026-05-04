@@ -15,12 +15,6 @@ function traverse(btreeNode, options = {}, height = 0) {
   }
 
   for (const item of btreeNode.items) {
-    if (isLeaf && item.btreeLeftChildNodeRightmostItemIndex > -1 && item.btreeRightChildNodeRightmostItemIndex > -1) {
-      const error = new Error('Imbalanced node')
-      error.node = btreeNode
-      throw error
-    }
-
     const key = btreeNode[item.key]
 
     if (key.leftChild) {
