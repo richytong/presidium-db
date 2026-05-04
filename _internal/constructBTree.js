@@ -12,6 +12,12 @@ async function constructBTree(ht, options, btreeNode = {}, memo = {}) {
 
   if (btreeNode.items == null) {
     const btreeRootNodeRightmostItem = await ht._getBTreeRootNodeRightmostItem()
+    if (btreeRootNodeRightmostItem) {
+      btreeRootNodeRightmostItem.key = await ht._readKey(
+        btreeRootNodeRightmostItem.index,
+        btreeRootNodeRightmostItem.keyByteLength
+      )
+    }
     const btreeRootNodeItems = btreeRootNodeRightmostItem == null
       ? []
       : await getNodeItems(ht, btreeRootNodeRightmostItem)

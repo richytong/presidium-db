@@ -40,7 +40,7 @@ const REMOVED = 2
  *   * `options`
  *     * `storagePath` - `string` - the path to the file used to store the disk sorted hash table data.
  *     * `headerPath` - `string` - the path to the file used to store header information about the disk sorted hash table.
- *     * `initialLength` - `number` - the initial length of the disk sorted hash table. Minimum value 1024, maximum value 2147483647. Defaults to 1024.
+ *     * `initialLength` - `number` - the initial length of the disk sorted hash table. Minimum value 1024, maximum value 9007199254740991. Defaults to 1024.
  *     * `itemSize` - `number` - the size in bytes of each item (including internal item info, key, value, and sortValue) stored on disk. Minimum value 1024. Defaults to 524288.
  *     * `sortValueType` - `'string'|'number'` - the type of the disk sorted hash table sort-values.
  *     * `resizeRatio` - `number` - the ratio of number of items to table length at which to resize the disk sorted hash table. Minimum value 0 (no resize), maximum value 1. Defaults to 0.
@@ -71,10 +71,10 @@ const REMOVED = 2
  *   * `linux64`
  *
  * ## Maximum length of the disk sorted hash table
- * The maximum length of the disk sorted hash table is 2,147,483,647.
+ * The maximum length of the disk sorted hash table is 9,007,199,254,740,991.
  *
  * ## Allocation of disk space
- * The disk sorted hash table initially preallocates a block of memory on disk of `(itemSize * initialLength)` bytes as the storage file and a 24-byte block of memory as the header file for database operations. When the disk sorted hash table is resized, the block of memory on disk is reallocated to a new size of `(itemSize * initialLength * numberOfResizes * resizeFactor)` bytes.
+ * The disk sorted hash table initially preallocates a block of memory on disk of `(itemSize * initialLength)` bytes as the storage file and a 48-byte block of memory as the header file for database operations. When the disk sorted hash table is resized, the block of memory on disk is reallocated to a new size of `(itemSize * initialLength * numberOfResizes * resizeFactor)` bytes.
  *
  * ## Resizing the disk sorted hash table
  * When an item is inserted into the disk sorted hash table via [set](/docs/DiskSortedHashTable#set), the current capacity ratio of the table is calculated as the sum of the table's count and deleted count divided by the table's length. If the current capacity ratio exceeds the `resizeRatio` (and the `resizeRatio` is not 0), a resize of the table occurs.
@@ -110,13 +110,13 @@ class DiskSortedHashTable {
 
   // _initializeHeader() -> headerReadBuffer Promise<Buffer>
   async _initializeHeader() {
-    const headerReadBuffer = Buffer.alloc(24)
-    headerReadBuffer.writeUInt32BE(this.initialLength, 0)
-    headerReadBuffer.writeUInt32BE(0, 4)
-    headerReadBuffer.writeUInt32BE(0, 8)
-    headerReadBuffer.writeInt32BE(-1, 12)
-    headerReadBuffer.writeInt32BE(-1, 16)
-    headerReadBuffer.writeInt32BE(-1, 20)
+    const headerReadBuffer = Buffer.alloc(48)
+    headerReadBuffer.writeBigUInt64BE(BigInt(this.initialLength), 0)
+    headerReadBuffer.writeBigUInt64BE(BigInt(0), 8)
+    headerReadBuffer.writeBigUInt64BE(BigInt(0), 16)
+    headerReadBuffer.writeBigInt64BE(BigInt(-1), 24)
+    headerReadBuffer.writeBigInt64BE(BigInt(-1), 32)
+    headerReadBuffer.writeBigInt64BE(BigInt(-1), 40)
 
     await this.headerFd.write(headerReadBuffer, {
       offset: 0,
@@ -168,16 +168,16 @@ class DiskSortedHashTable {
       headerReadBuffer = await this._initializeHeader()
     }
 
-    const length = headerReadBuffer.readUInt32BE(0)
+    const length = Number(headerReadBuffer.readBigUInt64BE(0))
     this._length = length
 
-    const count = headerReadBuffer.readUInt32BE(4)
+    const count = Number(headerReadBuffer.readBigUInt64BE(8))
     this._count = count
 
-    const deletedCount = headerReadBuffer.readUInt32BE(8)
+    const deletedCount = Number(headerReadBuffer.readBigUInt64BE(16))
     this._deletedCount = deletedCount
 
-    await preallocate(this.headerPath, 24)
+    await preallocate(this.headerPath, 48)
     await preallocate(this.storagePath, this.itemSize * length)
   }
 
@@ -224,16 +224,16 @@ class DiskSortedHashTable {
 
     const headerReadBuffer = await this._initializeHeader()
 
-    const length = headerReadBuffer.readUInt32BE(0)
+    const length = Number(headerReadBuffer.readBigUInt64BE(0))
     this._length = length
 
-    const count = headerReadBuffer.readUInt32BE(4)
+    const count = Number(headerReadBuffer.readBigUInt64BE(8))
     this._count = count
 
-    const deletedCount = headerReadBuffer.readUInt32BE(8)
+    const deletedCount = Number(headerReadBuffer.readBigUInt64BE(16))
     this._deletedCount = deletedCount
 
-    await preallocate(this.headerPath, 24)
+    await preallocate(this.headerPath, 48)
     await preallocate(this.storagePath, this.itemSize * length)
   }
 
@@ -291,12 +291,12 @@ class DiskSortedHashTable {
 
   // _hash1(key string) -> number
   _hash1(key) {
-    let hashCode = 0
+    let hash = 0
     const prime = 31
     for (let i = 0; i < key.length; i++) {
-      hashCode = (prime * hashCode + key.charCodeAt(i)) % this._length
+      hash = (prime * hash + key.charCodeAt(i)) % this._length
     }
-    return hashCode
+    return hash
   }
 
   // _hash2(key string) -> number
@@ -310,22 +310,22 @@ class DiskSortedHashTable {
   }
 
   // header file
-  // 4 bytes for table length
-  // 4 bytes for item count
-  // 4 bytes for deleted item count
-  // 4 bytes for first item index
-  // 4 bytes for last item index
-  // 4 bytes for btree root rightmost item index
+  // 8 bytes for table length
+  // 8 bytes for item count
+  // 8 bytes for deleted item count
+  // 8 bytes for first item index
+  // 8 bytes for last item index
+  // 8 bytes for btree root rightmost item index
 
   // _readHeader() -> headerReadBuffer Promise<Buffer>
   async _readHeader() {
-    const headerReadBuffer = Buffer.alloc(24)
+    const headerReadBuffer = Buffer.alloc(48)
 
     await this.headerFd.read({
       buffer: headerReadBuffer,
       offset: 0,
       position: 0,
-      length: 24,
+      length: 48,
     })
 
     return headerReadBuffer
@@ -333,7 +333,7 @@ class DiskSortedHashTable {
 
   // _readKey(index number, keyByteLength number) -> key string
   async _readKey(index, keyByteLength) {
-    const position = (index * this.itemSize) + 33
+    const position = (index * this.itemSize) + 53
     const keyBuffer = Buffer.alloc(keyByteLength)
 
     await this.storageFd.read({
@@ -348,7 +348,7 @@ class DiskSortedHashTable {
 
   // _readSortValue(index number, keyByteLength number, sortValueByteLength number) -> sortValue number|string
   async _readSortValue(index, keyByteLength, sortValueByteLength) {
-    const position = (index * this.itemSize) + 33 + keyByteLength
+    const position = (index * this.itemSize) + 53 + keyByteLength
     const sortValueBuffer = Buffer.alloc(sortValueByteLength)
 
     await this.storageFd.read({
@@ -365,7 +365,7 @@ class DiskSortedHashTable {
 
   // _readBinaryValue(index number, keyByteLength number, sortValueByteLength number, valueByteLength number) -> key string
   async _readBinaryValue(index, keyByteLength, sortValueByteLength, valueByteLength) {
-    const position = (index * this.itemSize) + 33 + keyByteLength + sortValueByteLength
+    const position = (index * this.itemSize) + 53 + keyByteLength + sortValueByteLength
     const valueBuffer = Buffer.alloc(valueByteLength)
 
     await this.storageFd.read({
@@ -381,13 +381,13 @@ class DiskSortedHashTable {
   // _readHead(index number) -> readBuffer Promise<Buffer>
   async _readHead(index) {
     const position = index * this.itemSize
-    const readBuffer = Buffer.alloc(33)
+    const readBuffer = Buffer.alloc(53)
 
     await this.storageFd.read({
       buffer: readBuffer,
       offset: 0,
       position,
-      length: 33,
+      length: 53,
     })
 
     return readBuffer
@@ -410,9 +410,9 @@ class DiskSortedHashTable {
 
   // _writeFirstIndex(index number) -> Promise<>
   async _writeFirstIndex(index) {
-    const position = 12
-    const buffer = Buffer.alloc(4)
-    buffer.writeInt32BE(index, 0)
+    const position = 24
+    const buffer = Buffer.alloc(8)
+    buffer.writeBigInt64BE(BigInt(index), 0)
 
     await this.headerFd.write(buffer, {
       offset: 0,
@@ -423,9 +423,9 @@ class DiskSortedHashTable {
 
   // _writeLastIndex(index number) -> Promise<>
   async _writeLastIndex(index) {
-    const position = 16
-    const buffer = Buffer.alloc(4)
-    buffer.writeInt32BE(index, 0)
+    const position = 32
+    const buffer = Buffer.alloc(8)
+    buffer.writeBigInt64BE(BigInt(index), 0)
 
     await this.headerFd.write(buffer, {
       offset: 0,
@@ -436,9 +436,9 @@ class DiskSortedHashTable {
 
   // _writeBTreeRootRightmostItemIndex(index number) -> Promise<>
   async _writeBTreeRootRightmostItemIndex(index) {
-    const position = 20
-    const buffer = Buffer.alloc(4)
-    buffer.writeInt32BE(index, 0)
+    const position = 40
+    const buffer = Buffer.alloc(8)
+    buffer.writeBigInt64BE(BigInt(index), 0)
 
     await this.headerFd.write(buffer, {
       offset: 0,
@@ -454,9 +454,9 @@ class DiskSortedHashTable {
   async _writeBTreeLeftChildNodeRightmostItemIndex(
     btreeNodeItemIndex, btreeLeftChildNodeRightmostItemIndex
   ) {
-    const position = (btreeNodeItemIndex * this.itemSize) + 21
-    const buffer = Buffer.alloc(4)
-    buffer.writeInt32BE(btreeLeftChildNodeRightmostItemIndex, 0)
+    const position = (btreeNodeItemIndex * this.itemSize) + 29
+    const buffer = Buffer.alloc(8)
+    buffer.writeBigInt64BE(BigInt(btreeLeftChildNodeRightmostItemIndex), 0)
 
     await this.storageFd.write(buffer, {
       offset: 0,
@@ -472,9 +472,9 @@ class DiskSortedHashTable {
   async _writeBTreeRightChildNodeRightmostItemIndex(
     btreeNodeItemIndex, btreeRightChildNodeRightmostItemIndex
   ) {
-    const position = (btreeNodeItemIndex * this.itemSize) + 25
-    const buffer = Buffer.alloc(4)
-    buffer.writeInt32BE(btreeRightChildNodeRightmostItemIndex, 0)
+    const position = (btreeNodeItemIndex * this.itemSize) + 37
+    const buffer = Buffer.alloc(8)
+    buffer.writeBigInt64BE(BigInt(btreeRightChildNodeRightmostItemIndex), 0)
 
     await this.storageFd.write(buffer, {
       offset: 0,
@@ -490,9 +490,9 @@ class DiskSortedHashTable {
   async _writeBTreeLeftItemIndex(
     btreeNodeItemIndex, btreeLeftItemIndex
   ) {
-    const position = (btreeNodeItemIndex * this.itemSize) + 29
-    const buffer = Buffer.alloc(4)
-    buffer.writeInt32BE(btreeLeftItemIndex, 0)
+    const position = (btreeNodeItemIndex * this.itemSize) + 45
+    const buffer = Buffer.alloc(8)
+    buffer.writeBigInt64BE(BigInt(btreeLeftItemIndex), 0)
 
     await this.storageFd.write(buffer, {
       offset: 0,
@@ -510,12 +510,19 @@ class DiskSortedHashTable {
   // }>
   async _getBTreeRootNodeRightmostItem() {
     const headerReadBuffer = await this._readHeader()
-    const index = headerReadBuffer.readInt32BE(20)
+    const index = Number(headerReadBuffer.readBigInt64BE(40))
+
     if (index == -1) {
       return undefined
     }
-    const readBuffer = await this._read(index)
-    return this._parseBTreeItem(readBuffer, index)
+
+    const headReadBuffer = await this._readHead(index)
+    const item = this._parseItemHead(headReadBuffer, index)
+    const sortValue = await this._readSortValue(index, item.keyByteLength, item.sortValueByteLength)
+
+    item.sortValue = sortValue
+
+    return item
   }
 
   // _getHeadItem(index number) -> headItem Promise<{ index: number, forwardIndex: number, reverseIndex: number }>
@@ -4332,14 +4339,14 @@ class DiskSortedHashTable {
     const statusMarker = headReadBuffer.readUInt8(0)
     item.statusMarker = statusMarker
 
-    const forwardIndex = headReadBuffer.readInt32BE(13)
-    const reverseIndex = headReadBuffer.readInt32BE(17)
+    const forwardIndex = Number(headReadBuffer.readBigInt64BE(13))
+    const reverseIndex = Number(headReadBuffer.readBigInt64BE(21))
     item.forwardIndex = forwardIndex
     item.reverseIndex = reverseIndex
 
-    const btreeLeftChildNodeRightmostItemIndex = headReadBuffer.readInt32BE(21)
-    const btreeRightChildNodeRightmostItemIndex = headReadBuffer.readInt32BE(25)
-    const btreeLeftItemIndex = headReadBuffer.readInt32BE(29)
+    const btreeLeftChildNodeRightmostItemIndex = Number(headReadBuffer.readBigInt64BE(29))
+    const btreeRightChildNodeRightmostItemIndex = Number(headReadBuffer.readBigInt64BE(37))
+    const btreeLeftItemIndex = Number(headReadBuffer.readBigInt64BE(45))
 
     item.btreeLeftChildNodeRightmostItemIndex = btreeLeftChildNodeRightmostItemIndex
     item.btreeRightChildNodeRightmostItemIndex = btreeRightChildNodeRightmostItemIndex
@@ -4372,36 +4379,36 @@ class DiskSortedHashTable {
     const statusMarker = readBuffer.readUInt8(0)
     item.statusMarker = statusMarker
 
-    const forwardIndex = readBuffer.readInt32BE(13)
-    const reverseIndex = readBuffer.readInt32BE(17)
+    const forwardIndex = Number(readBuffer.readBigInt64BE(13))
+    const reverseIndex = Number(readBuffer.readBigInt64BE(21))
     item.forwardIndex = forwardIndex
     item.reverseIndex = reverseIndex
 
-    const btreeLeftChildNodeRightmostItemIndex = readBuffer.readInt32BE(21)
-    const btreeRightChildNodeRightmostItemIndex = readBuffer.readInt32BE(25)
-    const btreeLeftItemIndex = readBuffer.readInt32BE(29)
+    const btreeLeftChildNodeRightmostItemIndex = Number(readBuffer.readBigInt64BE(29))
+    const btreeRightChildNodeRightmostItemIndex = Number(readBuffer.readBigInt64BE(37))
+    const btreeLeftItemIndex = Number(readBuffer.readBigInt64BE(45))
 
     item.btreeLeftChildNodeRightmostItemIndex = btreeLeftChildNodeRightmostItemIndex
     item.btreeRightChildNodeRightmostItemIndex = btreeRightChildNodeRightmostItemIndex
     item.btreeLeftItemIndex = btreeLeftItemIndex
 
     const keyByteLength = readBuffer.readUInt32BE(1)
-    const keyBuffer = readBuffer.subarray(33, keyByteLength + 33)
+    const keyBuffer = readBuffer.subarray(53, keyByteLength + 53)
     const key = keyBuffer.toString(ENCODING)
     item.key = key
 
     const sortValueByteLength = readBuffer.readUInt32BE(5)
     const sortValueBuffer = readBuffer.subarray(
-      33 + keyByteLength,
-      33 + keyByteLength + sortValueByteLength
+      53 + keyByteLength,
+      53 + keyByteLength + sortValueByteLength
     )
     const sortValue = convert(sortValueBuffer.toString(ENCODING), this.sortValueType)
     item.sortValue = sortValue
 
     const valueByteLength = readBuffer.readUInt32BE(9)
     const valueBuffer = readBuffer.subarray(
-      33 + keyByteLength + sortValueByteLength,
-      33 + keyByteLength + sortValueByteLength + valueByteLength
+      53 + keyByteLength + sortValueByteLength,
+      53 + keyByteLength + sortValueByteLength + valueByteLength
     )
     const value = valueBuffer.toString(ENCODING)
     item.value = value
@@ -4424,36 +4431,36 @@ class DiskSortedHashTable {
     const statusMarker = readBuffer.readUInt8(0)
     item.statusMarker = statusMarker
 
-    const forwardIndex = readBuffer.readInt32BE(13)
-    const reverseIndex = readBuffer.readInt32BE(17)
+    const forwardIndex = Number(readBuffer.readBigInt64BE(13))
+    const reverseIndex = Number(readBuffer.readBigInt64BE(21))
     item.forwardIndex = forwardIndex
     item.reverseIndex = reverseIndex
 
-    const btreeLeftChildNodeRightmostItemIndex = readBuffer.readInt32BE(21)
-    const btreeRightChildNodeRightmostItemIndex = readBuffer.readInt32BE(25)
-    const btreeLeftItemIndex = readBuffer.readInt32BE(29)
+    const btreeLeftChildNodeRightmostItemIndex = Number(readBuffer.readBigInt64BE(29))
+    const btreeRightChildNodeRightmostItemIndex = Number(readBuffer.readBigInt64BE(37))
+    const btreeLeftItemIndex = Number(readBuffer.readBigInt64BE(45))
 
     item.btreeLeftChildNodeRightmostItemIndex = btreeLeftChildNodeRightmostItemIndex
     item.btreeRightChildNodeRightmostItemIndex = btreeRightChildNodeRightmostItemIndex
     item.btreeLeftItemIndex = btreeLeftItemIndex
 
     const keyByteLength = readBuffer.readUInt32BE(1)
-    const keyBuffer = readBuffer.subarray(33, keyByteLength + 33)
+    const keyBuffer = readBuffer.subarray(53, keyByteLength + 53)
     const key = keyBuffer.toString(ENCODING)
     item.key = key
 
     const sortValueByteLength = readBuffer.readUInt32BE(5)
     const sortValueBuffer = readBuffer.subarray(
-      33 + keyByteLength,
-      33 + keyByteLength + sortValueByteLength
+      53 + keyByteLength,
+      53 + keyByteLength + sortValueByteLength
     )
     const sortValue = convert(sortValueBuffer.toString(ENCODING), this.sortValueType)
     item.sortValue = sortValue
 
     const valueByteLength = readBuffer.readUInt32BE(9)
     const valueBuffer = readBuffer.subarray(
-      33 + keyByteLength + sortValueByteLength,
-      33 + keyByteLength + sortValueByteLength + valueByteLength
+      53 + keyByteLength + sortValueByteLength,
+      53 + keyByteLength + sortValueByteLength + valueByteLength
     )
     const value = valueType == 'binary' ? valueBuffer : valueBuffer.toString(ENCODING)
     item.value = value
@@ -4464,7 +4471,7 @@ class DiskSortedHashTable {
   // _getForwardStartItem(valueType 'string'|'binary') -> item { index: number, readBuffer: Buffer, sortValue: string|number, value: string }
   async _getForwardStartItem(valueType = 'binary') {
     const headerReadBuffer = await this._readHeader()
-    const index = headerReadBuffer.readInt32BE(12)
+    const index = Number(headerReadBuffer.readBigInt64BE(24))
     if (index == -1) {
       return undefined
     }
@@ -4475,7 +4482,7 @@ class DiskSortedHashTable {
   // _getReverseStartItem(valueType 'string'|'number') -> item { index: number, readBuffer: Buffer, sortValue: string|number, value: string }
   async _getReverseStartItem(valueType = 'binary') {
     const headerReadBuffer = await this._readHeader()
-    const index = headerReadBuffer.readInt32BE(16)
+    const index = Number(headerReadBuffer.readBigInt64BE(32))
     if (index == -1) {
       return undefined
     }
@@ -4501,8 +4508,8 @@ class DiskSortedHashTable {
   // _updateForwardIndex(index number, forwardIndex number) -> Promise<>
   async _updateForwardIndex(index, forwardIndex) {
     const position = (index * this.itemSize) + 13
-    const buffer = Buffer.alloc(4)
-    buffer.writeInt32BE(forwardIndex, 0)
+    const buffer = Buffer.alloc(8)
+    buffer.writeBigInt64BE(BigInt(forwardIndex), 0)
 
     await this.storageFd.write(buffer, {
       offset: 0,
@@ -4513,9 +4520,9 @@ class DiskSortedHashTable {
 
   // _updateReverseIndex(index number, reverseIndex number) -> Promise<>
   async _updateReverseIndex(index, reverseIndex) {
-    const position = (index * this.itemSize) + 17
-    const buffer = Buffer.alloc(4)
-    buffer.writeInt32BE(reverseIndex, 0)
+    const position = (index * this.itemSize) + 21
+    const buffer = Buffer.alloc(8)
+    buffer.writeBigInt64BE(BigInt(reverseIndex), 0)
 
     await this.storageFd.write(buffer, {
       offset: 0,
@@ -4526,27 +4533,27 @@ class DiskSortedHashTable {
 
   // _updateCount() -> Promise<>
   async _updateCount() {
-    const position = 4
-    const buffer = Buffer.alloc(4)
-    buffer.writeUInt32BE(this._count, 0)
+    const position = 8
+    const buffer = Buffer.alloc(8)
+    buffer.writeBigUInt64BE(BigInt(this._count), 0)
 
     await this.headerFd.write(buffer, {
       offset: 0,
       position,
-      length: 4,
+      length: 8,
     })
   }
 
   // _updateDeletedCount() -> Promise<>
   async _updateDeletedCount() {
-    const position = 8
-    const buffer = Buffer.alloc(4)
-    buffer.writeUInt32BE(this._deletedCount, 0)
+    const position = 16
+    const buffer = Buffer.alloc(8)
+    buffer.writeBigUInt64BE(BigInt(this._deletedCount), 0)
 
     await this.headerFd.write(buffer, {
       offset: 0,
       position,
-      length: 4,
+      length: 8,
     })
   }
 
@@ -4654,11 +4661,11 @@ class DiskSortedHashTable {
     // 4 bytes for key size
     // 4 bytes for sort value size
     // 4 bytes for value size
-    // 4 bytes for forward index
-    // 4 bytes for reverse index
-    // 4 bytes for btree left child node rightmost item index
-    // 4 bytes for btree right child node rightmost item index
-    // 4 bytes for btree left item index
+    // 8 bytes for forward index
+    // 8 bytes for reverse index
+    // 8 bytes for btree left child node rightmost item index
+    // 8 bytes for btree right child node rightmost item index
+    // 8 bytes for btree left item index
     // chunk for key
     // chunk for sort value
     // remainder for value
@@ -4671,20 +4678,20 @@ class DiskSortedHashTable {
     buffer.writeUInt32BE(keyByteLength, 1)
     buffer.writeUInt32BE(sortValueByteLength, 5)
     buffer.writeUInt32BE(valueByteLength, 9)
-    buffer.writeInt32BE(forwardIndex, 13)
-    buffer.writeInt32BE(reverseIndex, 17)
-    buffer.writeInt32BE(btreeLeftChildNodeRightmostItemIndex, 21)
-    buffer.writeInt32BE(btreeRightChildNodeRightmostItemIndex, 25)
-    buffer.writeInt32BE(btreeLeftItemIndex, 29)
-    buffer.write(key, 33, keyByteLength, ENCODING)
-    buffer.write(sortValueString, 33 + keyByteLength, sortValueByteLength, ENCODING)
+    buffer.writeBigInt64BE(BigInt(forwardIndex), 13)
+    buffer.writeBigInt64BE(BigInt(reverseIndex), 21)
+    buffer.writeBigInt64BE(BigInt(btreeLeftChildNodeRightmostItemIndex), 29)
+    buffer.writeBigInt64BE(BigInt(btreeRightChildNodeRightmostItemIndex), 37)
+    buffer.writeBigInt64BE(BigInt(btreeLeftItemIndex), 45)
+    buffer.write(key, 53, keyByteLength, ENCODING)
+    buffer.write(sortValueString, 53 + keyByteLength, sortValueByteLength, ENCODING)
 
     if (value.constructor == Uint8Array) {
-      Buffer.from(value).copy(buffer, 33 + keyByteLength + sortValueByteLength)
+      Buffer.from(value).copy(buffer, 53 + keyByteLength + sortValueByteLength)
     } else if (value.constructor == Buffer) {
-      value.copy(buffer, 33 + keyByteLength + sortValueByteLength)
+      value.copy(buffer, 53 + keyByteLength + sortValueByteLength)
     } else {
-      buffer.write(value, 33 + keyByteLength + sortValueByteLength, valueByteLength, ENCODING)
+      buffer.write(value, 53 + keyByteLength + sortValueByteLength, valueByteLength, ENCODING)
     }
 
     await this.storageFd.write(buffer, {
@@ -4897,20 +4904,20 @@ class DiskSortedHashTable {
     buffer.writeUInt32BE(keyByteLength, 1)
     buffer.writeUInt32BE(sortValueByteLength, 5)
     buffer.writeUInt32BE(valueByteLength, 9)
-    buffer.writeInt32BE(forwardIndex, 13)
-    buffer.writeInt32BE(reverseIndex, 17)
-    buffer.writeInt32BE(btreeLeftChildNodeRightmostItemIndex, 21)
-    buffer.writeInt32BE(btreeRightChildNodeRightmostItemIndex, 25)
-    buffer.writeInt32BE(btreeLeftItemIndex, 29)
-    buffer.write(key, 33, keyByteLength, ENCODING)
-    buffer.write(sortValueString, 33 + keyByteLength, sortValueByteLength, ENCODING)
+    buffer.writeBigInt64BE(BigInt(forwardIndex), 13)
+    buffer.writeBigInt64BE(BigInt(reverseIndex), 21)
+    buffer.writeBigInt64BE(BigInt(btreeLeftChildNodeRightmostItemIndex), 29)
+    buffer.writeBigInt64BE(BigInt(btreeRightChildNodeRightmostItemIndex), 37)
+    buffer.writeBigInt64BE(BigInt(btreeLeftItemIndex), 45)
+    buffer.write(key, 53, keyByteLength, ENCODING)
+    buffer.write(sortValueString, 53 + keyByteLength, sortValueByteLength, ENCODING)
 
     if (value.constructor == Uint8Array) {
-      Buffer.from(value).copy(buffer, 33 + keyByteLength + sortValueByteLength)
+      Buffer.from(value).copy(buffer, 53 + keyByteLength + sortValueByteLength)
     } else if (value.constructor == Buffer) {
-      value.copy(buffer, 33 + keyByteLength + sortValueByteLength)
+      value.copy(buffer, 53 + keyByteLength + sortValueByteLength)
     } else {
-      buffer.write(value, 33 + keyByteLength + sortValueByteLength, valueByteLength, ENCODING)
+      buffer.write(value, 53 + keyByteLength + sortValueByteLength, valueByteLength, ENCODING)
     }
 
     await this.storageFd.write(buffer, {
