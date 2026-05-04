@@ -355,7 +355,6 @@ const test2_0 = new Test('DiskHashTable', async function integration2_0() {
 
 const test3 = new Test('DiskHashTable', async function integration3() {
   const size = 2_000_000_000
-  const degree = 2
 
   await fs.promises.rm(`${__dirname}/DiskHashTable_test_data`, { recursive: true }).catch(() => {})
   await fs.promises.rm(`${__dirname}/DiskSortedHashTable_test_data`, { recursive: true }).catch(() => {})
@@ -367,7 +366,6 @@ const test3 = new Test('DiskHashTable', async function integration3() {
     itemSize: 100,
     sortValueType: 'number',
     resizeRatio: 0,
-    degree,
   })
   await ht.destroy()
   await ht.init()
@@ -376,7 +374,7 @@ const test3 = new Test('DiskHashTable', async function integration3() {
   for (const n of randomUniqueNumbersGenerator(size, size * 2)) {
     const start = performance.now()
     await ht.set(`key${n}`, `value${n}`, n)
-    console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms, degree ${degree}, current count ${ht.count()}`)
+    console.log('set', `key${n}`, `value${n}`, n, 'in', `${performance.now() - start}ms, current count ${ht.count()}`)
     assert.strictEqual(await ht.get(`key${n}`), `value${n}`)
     insertedNumbers.push(n)
   }
@@ -384,7 +382,7 @@ const test3 = new Test('DiskHashTable', async function integration3() {
   for (const n of insertedNumbers) {
     const start = performance.now()
     await ht.delete(`key${n}`)
-    console.log(`deleted key${n} in ${performance.now() - start}ms; degree ${degree}, current count ${ht.count()}`)
+    console.log(`deleted key${n} in ${performance.now() - start}ms; current count ${ht.count()}`)
     assert.strictEqual(await ht.get(`key${n}`), undefined)
   }
 
