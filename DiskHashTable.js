@@ -38,7 +38,7 @@ const REMOVED = 2
  *   * `options`
  *     * `storagePath` - `string` - the path to the file used to store the disk hash table data.
  *     * `headerPath` - `string` - the path to the file used to store header information about the disk hash table.
- *     * `initialLength` - `number` - the initial length of the disk hash table. Minimum value 1024, maximum value 2147483647. Defaults to 1024.
+ *     * `initialLength` - `number` - the initial length of the disk hash table. Minimum value 1024, maximum value 9007199254740991. Defaults to 1024.
  *     * `itemSize` - `number` - the size in bytes of each item (including internal item info, key, and value) stored on disk. Minimum value 1024. Defaults to 524288.
  *     * `resizeRatio` - `number` - the ratio of number of items to table length at which to resize the disk hash table. Minimum value 0 (no resize), maximum value 1. Defaults to 0.
  *     * `resizeFactor` - `number` - the factor that is multiplied with the disk hash table's current length to determine the new table length on a resize.
@@ -61,10 +61,10 @@ const REMOVED = 2
  *   * `linux64`
  *
  * ## Maximum length of the disk hash table
- * The maximum length of the disk hash table is 2,147,483,647.
+ * The maximum length of the disk hash table is 9,007,199,254,740,991.
  *
  * ## Allocation of disk space
- * The disk hash table initially preallocates a block of memory on disk of `(itemSize * initialLength)` bytes as the storage file and a 16-byte block of memory as the header file for database operations. When the disk hash table is resized, the block of memory on disk is reallocated to a new size of `(itemSize * initialLength * numberOfResizes * resizeFactor)` bytes.
+ * The disk hash table initially preallocates a block of memory on disk of `(itemSize * initialLength)` bytes as the storage file and a 32-byte block of memory as the header file for database operations. When the disk hash table is resized, the block of memory on disk is reallocated to a new size of `(itemSize * initialLength * numberOfResizes * resizeFactor)` bytes.
  *
  * ## Resizing the disk hash table
  * When an item is inserted into the disk hash table via [set](/docs/DiskHashTable#set), the current capacity ratio of the table is calculated as the sum of the table's count and deleted count divided by the table's length. If the current capacity ratio exceeds the `resizeRatio` (and the `resizeRatio` is not 0), a resize of the table occurs.
@@ -95,11 +95,11 @@ class DiskHashTable {
 
   // _initializeHeader() -> headerReadBuffer Promise<Buffer>
   async _initializeHeader() {
-    const headerReadBuffer = Buffer.alloc(16)
-    headerReadBuffer.writeUInt32BE(this.initialLength, 0)
-    headerReadBuffer.writeUInt32BE(0, 4)
-    headerReadBuffer.writeInt32BE(0, 8)
-    headerReadBuffer.writeInt32BE(-1, 12)
+    const headerReadBuffer = Buffer.alloc(32)
+    headerReadBuffer.writeBigUInt64BE(BigInt(this.initialLength), 0)
+    headerReadBuffer.writeBigUInt64BE(BigInt(0), 8)
+    headerReadBuffer.writeBigInt64BE(BigInt(0), 16)
+    headerReadBuffer.writeBigInt64BE(BigInt(-1), 24)
 
     await this.headerFd.write(headerReadBuffer, {
       offset: 0,
@@ -151,19 +151,19 @@ class DiskHashTable {
       headerReadBuffer = await this._initializeHeader()
     }
 
-    const length = headerReadBuffer.readUInt32BE(0)
+    const length = Number(headerReadBuffer.readBigUInt64BE(0))
     this._length = length
 
-    const count = headerReadBuffer.readUInt32BE(4)
+    const count = Number(headerReadBuffer.readBigUInt64BE(8))
     this._count = count
 
-    const deletedCount = headerReadBuffer.readUInt32BE(8)
+    const deletedCount = Number(headerReadBuffer.readBigUInt64BE(16))
     this._deletedCount = deletedCount
 
-    const headIndex = headerReadBuffer.readInt32BE(12)
+    const headIndex = Number(headerReadBuffer.readBigInt64BE(24))
     this._headIndex = headIndex
 
-    await preallocate(this.headerPath, 16)
+    await preallocate(this.headerPath, 32)
     await preallocate(this.storagePath, this.itemSize * length)
   }
 
@@ -210,19 +210,19 @@ class DiskHashTable {
 
     const headerReadBuffer = await this._initializeHeader()
 
-    const length = headerReadBuffer.readUInt32BE(0)
+    const length = Number(headerReadBuffer.readBigUInt64BE(0))
     this._length = length
 
-    const count = headerReadBuffer.readUInt32BE(4)
+    const count = Number(headerReadBuffer.readBigUInt64BE(8))
     this._count = count
 
-    const deletedCount = headerReadBuffer.readUInt32BE(8)
+    const deletedCount = Number(headerReadBuffer.readBigUInt64BE(16))
     this._deletedCount = deletedCount
 
-    const headIndex = headerReadBuffer.readInt32BE(12)
+    const headIndex = Number(headerReadBuffer.readBigInt64BE(24))
     this._headIndex = headIndex
 
-    await preallocate(this.headerPath, 16)
+    await preallocate(this.headerPath, 32)
     await preallocate(this.storagePath, this.itemSize * length)
   }
 
@@ -280,12 +280,12 @@ class DiskHashTable {
 
   // _hash1(key string) -> number
   _hash1(key) {
-    let hashCode = 0
+    let index = 0
     const prime = 31
     for (let i = 0; i < key.length; i++) {
-      hashCode = (prime * hashCode + key.charCodeAt(i)) % this._length
+      index = (prime * index + key.charCodeAt(i)) % this._length
     }
-    return hashCode
+    return index
   }
 
   // _hash2(key string) -> number
@@ -295,24 +295,27 @@ class DiskHashTable {
       hash = (hash << 3) - hash + key.charCodeAt(i)
     }
     const prime = 3
-    return prime - (Math.abs(hash) % prime)
+    if (hash < 0) {
+      hash = -hash
+    }
+    return prime - (hash % prime)
   }
 
   // header file
-  // 32 bits / 4 bytes table length
-  // 32 bits / 4 bytes item count
-  // 32 bits / 4 bytes deleted item count
-  // 32 bits / 4 bytes head index
+  // 8 bytes table length
+  // 8 bytes item count
+  // 8 bytes deleted item count
+  // 8 bytes head index
 
   // _readHeader() -> headerReadBuffer Promise<Buffer>
   async _readHeader() {
-    const headerReadBuffer = Buffer.alloc(16)
+    const headerReadBuffer = Buffer.alloc(32)
 
     await this.headerFd.read({
       buffer: headerReadBuffer,
       offset: 0,
       position: 0,
-      length: 16,
+      length: 32,
     })
 
     return headerReadBuffer
@@ -321,13 +324,13 @@ class DiskHashTable {
   // _readHead(index number) -> readBuffer Promise<Buffer>
   async _readHead(index) {
     const position = index * this.itemSize
-    const readBuffer = Buffer.alloc(13)
+    const readBuffer = Buffer.alloc(17)
 
     await this.storageFd.read({
       buffer: readBuffer,
       offset: 0,
       position,
-      length: 13,
+      length: 17,
     })
 
     return readBuffer
@@ -350,7 +353,7 @@ class DiskHashTable {
 
   // _readKey(index number, keyByteLength number) -> key string
   async _readKey(index, keyByteLength) {
-    const position = (index * this.itemSize) + 13
+    const position = (index * this.itemSize) + 17
     const keyBuffer = Buffer.alloc(keyByteLength)
 
     await this.storageFd.read({
@@ -365,7 +368,7 @@ class DiskHashTable {
 
   // _readBinaryValue(index number, keyByteLength number, valueByteLength number) -> key string
   async _readBinaryValue(index, keyByteLength, valueByteLength) {
-    const position = (index * this.itemSize) + 13 + keyByteLength
+    const position = (index * this.itemSize) + 17 + keyByteLength
     const valueBuffer = Buffer.alloc(valueByteLength)
 
     await this.storageFd.read({
@@ -389,8 +392,8 @@ class DiskHashTable {
     if (statusMarker == OCCUPIED || statusMarker == REMOVED) {
       const keyByteLength = readBuffer.readUInt32BE(1)
       const valueByteLength = readBuffer.readUInt32BE(5)
-      const nextIndex = readBuffer.readInt32BE(9)
-      const keyBuffer = readBuffer.subarray(13, keyByteLength + 13)
+      const nextIndex = Number(readBuffer.readBigInt64BE(9))
+      const keyBuffer = readBuffer.subarray(17, 17 + keyByteLength)
       const key = await this._readKey(index, keyByteLength)
       return { index, statusMarker, nextIndex, keyByteLength, valueByteLength, key }
     }
@@ -409,13 +412,13 @@ class DiskHashTable {
     if (statusMarker == OCCUPIED || statusMarker == REMOVED) {
       const keyByteLength = readBuffer.readUInt32BE(1)
       const valueByteLength = readBuffer.readUInt32BE(5)
-      const nextIndex = readBuffer.readInt32BE(9)
-      const keyBuffer = readBuffer.subarray(13, keyByteLength + 13)
+      const nextIndex = Number(readBuffer.readBigInt64BE(9))
+      const keyBuffer = readBuffer.subarray(17, 17 + keyByteLength)
       const key = keyBuffer.toString(ENCODING)
 
       const valueBuffer = readBuffer.subarray(
-        13 + keyByteLength,
-        13 + keyByteLength + valueByteLength
+        17 + keyByteLength,
+        17 + keyByteLength + valueByteLength
       )
       const value = valueType == 'binary' ? valueBuffer : valueBuffer.toString(ENCODING)
 
@@ -441,20 +444,20 @@ class DiskHashTable {
   // _getHeadIndex() -> headIndex Promise<number>
   async _getHeadIndex() {
     const headerReadBuffer = await this._readHeader()
-    const headIndex = headerReadBuffer.readInt32BE(12)
+    const headIndex = Number(headerReadBuffer.readBigInt64BE(24))
     return headIndex
   }
 
   // _setHeadIndex(index number) -> Promise<>
   async _setHeadIndex(index) {
-    const position = 12
-    const buffer = Buffer.alloc(4)
-    buffer.writeInt32BE(index, 0)
+    const position = 24
+    const buffer = Buffer.alloc(8)
+    buffer.writeBigInt64BE(BigInt(index), 0)
 
     await this.headerFd.write(buffer, {
       offset: 0,
       position,
-      length: 4,
+      length: 8,
     })
   }
 
@@ -464,8 +467,8 @@ class DiskHashTable {
       throw new Error('Negative index')
     }
 
-    const readBuffer = await this._read(index)
-    const nextIndex = readBuffer.readInt32BE(9)
+    const headReadBuffer = await this._readHead(index)
+    const nextIndex = Number(headReadBuffer.readBigInt64BE(9))
     return nextIndex
   }
 
@@ -507,27 +510,27 @@ class DiskHashTable {
     const buffer = Buffer.alloc(this.itemSize)
 
     // storage file slice
-    // 8 bits / 1 byte for status marker: 0 empty / 1 occupied / 2 deleted
-    // 32 bits / 4 bytes for key size
-    // 32 bits / 4 bytes for value size
-    // 32 bits / 4 bytes for next index
+    // 1 byte for status marker: 0 empty / 1 occupied / 2 deleted
+    // 4 bytes for key size
+    // 4 bytes for value size
+    // 8 bytes for next index
     // chunk for key
     // remainder for value
-    const statusMarker = 1
+    const statusMarker = OCCUPIED
     const keyByteLength = Buffer.byteLength(key, ENCODING)
     const valueByteLength = Buffer.byteLength(value, ENCODING)
     buffer.writeUInt8(statusMarker, 0)
-    buffer.writeUint32BE(keyByteLength, 1)
-    buffer.writeUint32BE(valueByteLength, 5)
-    buffer.writeInt32BE(nextIndex, 9)
-    buffer.write(key, 13, keyByteLength, ENCODING)
+    buffer.writeUInt32BE(keyByteLength, 1)
+    buffer.writeUInt32BE(valueByteLength, 5)
+    buffer.writeBigInt64BE(BigInt(nextIndex), 9)
+    buffer.write(key, 17, keyByteLength, ENCODING)
 
     if (value.constructor == Uint8Array) {
-      Buffer.from(value).copy(buffer, 13 + keyByteLength)
+      Buffer.from(value).copy(buffer, 17 + keyByteLength)
     } else if (value.constructor == Buffer) {
-      value.copy(buffer, 13 + keyByteLength)
+      value.copy(buffer, 17 + keyByteLength)
     } else {
-      buffer.write(value, 13 + keyByteLength, valueByteLength, ENCODING)
+      buffer.write(value, 17 + keyByteLength, valueByteLength, ENCODING)
     }
 
     await this.storageFd.write(buffer, {
@@ -709,27 +712,27 @@ class DiskHashTable {
 
   // _updateCount() -> Promise<>
   async _updateCount() {
-    const position = 4
-    const buffer = Buffer.alloc(4)
-    buffer.writeUInt32BE(this._count, 0)
+    const position = 8
+    const buffer = Buffer.alloc(8)
+    buffer.writeBigUInt64BE(BigInt(this._count), 0)
 
     await this.headerFd.write(buffer, {
       offset: 0,
       position,
-      length: 4,
+      length: 8,
     })
   }
 
   // _updateDeletedCount() -> Promise<>
   async _updateDeletedCount() {
-    const position = 8
-    const buffer = Buffer.alloc(4)
-    buffer.writeUInt32BE(this._deletedCount, 0)
+    const position = 16
+    const buffer = Buffer.alloc(8)
+    buffer.writeBigUInt64BE(BigInt(this._deletedCount), 0)
 
     await this.headerFd.write(buffer, {
       offset: 0,
       position,
-      length: 4,
+      length: 8,
     })
   }
 
