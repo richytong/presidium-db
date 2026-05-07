@@ -1602,15 +1602,6 @@ class DiskSortedHashTable {
           // right great grandparent right item left child stays the same
         }
 
-        if (greatGrandparentNodeItem.leftItem) {
-          // TODO coverage
-          // point right great grandparent left item right child
-          await this._writeBTreeRightChildNodeRightmostItemIndex(
-            greatGrandparentNodeItem.leftItem.index,
-            greatGrandparentNodeItem.btreeRightChildNodeRightmostItemIndex
-          )
-        }
-
         const rightmostGrandparentNodeItem =
           getRightmostNodeItemExcluding(grandparentNodeItems, grandparentNodeItem)
 
@@ -1667,12 +1658,6 @@ class DiskSortedHashTable {
           // root rightmost item stays the same
         } else if (greatGrandparentNodeItem.rightItem) {
           // root rightmost item stays the same
-        } else if (greatGrandparentNodeItem.leftItem) {
-          // TODO coverage
-          // point root
-          await this._writeBTreeRootRightmostItemIndex(
-            greatGrandparentNodeItem.leftItem.index
-          )
         } else {
           // point root
           await this._writeBTreeRootRightmostItemIndex(
@@ -2141,19 +2126,12 @@ class DiskSortedHashTable {
               leftGrandparentNodeItem.index,
               btreeParentNodeItems[0].btreeLeftChildNodeRightmostItemIndex
             )
-          } else if (btreeNodeItems.length > 1) {
+          } else {
             const rightmostBTreeNodeItem = getRightmostNodeItemExcluding(btreeNodeItems, btreeItem)
 
             // point left grandparent right child
             await this._writeBTreeRightChildNodeRightmostItemIndex(
               leftGrandparentNodeItem.index, rightmostBTreeNodeItem.index
-            )
-          } else {
-            // TODO coverage
-            // point left grandparent right child
-            await this._writeBTreeRightChildNodeRightmostItemIndex(
-              leftGrandparentNodeItem.index,
-              rightParentNodeItem.btreeLeftChildNodeRightmostItemIndex
             )
           }
 

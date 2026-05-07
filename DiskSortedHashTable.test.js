@@ -4519,8 +4519,8 @@ const test14_4 = new Test('DiskSortedHashTable', async function integration14_4(
 
 const test14_5 = new Test('DiskSortedHashTable', async function integration14_5() {
   const ht100 = new DiskSortedHashTable({
-    storagePath: `${__dirname}/DiskSortedHashTable_test_data/10`,
-    headerPath: `${__dirname}/DiskSortedHashTable_test_data/10_header`,
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/100`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/100_header`,
     initialLength: 100,
     sortValueType: 'number',
     resizeRatio: 0,
@@ -4528,14 +4528,6 @@ const test14_5 = new Test('DiskSortedHashTable', async function integration14_5(
   await ht100.destroy()
   await ht100.init()
 
-  // await ht100.set('key1', 'value1', 1)
-  // await ht100.set('key2', 'value2', 2)
-  // await ht100.set('key3', 'value3', 3)
-  // await ht100.set('key4', 'value4', 4)
-  // await ht100.set('key5', 'value5', 5)
-  // await ht100.set('key6', 'value6', 6)
-  // await ht100.set('key7', 'value7', 7)
-  // await ht100.set('key8', 'value8', 8)
   await ht100.set('key9', 'value9', 9)
   await ht100.set('key10', 'value10', 10)
   await ht100.set('key11', 'value11', 11)
@@ -4870,29 +4862,29 @@ const test14_5 = new Test('DiskSortedHashTable', async function integration14_5(
 }).case()
 
 const test14_6 = new Test('DiskSortedHashTable', async function integration14_6() {
-  const ht100 = new DiskSortedHashTable({
-    storagePath: `${__dirname}/DiskSortedHashTable_test_data/10`,
-    headerPath: `${__dirname}/DiskSortedHashTable_test_data/10_header`,
+  const ht = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/100`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/100_header`,
     initialLength: 100,
     sortValueType: 'number',
     resizeRatio: 0,
   })
-  await ht100.destroy()
-  await ht100.init()
+  await ht.destroy()
+  await ht.init()
 
-  await ht100.set('key1', 'value1', 1)
-  await ht100.set('key2', 'value2', 2)
-  await ht100.set('key3', 'value3', 3)
+  await ht.set('key1', 'value1', 1)
+  await ht.set('key2', 'value2', 2)
+  await ht.set('key3', 'value3', 3)
 
-  await ht100.delete('key3')
+  await ht.delete('key3')
 
-  await ht100.set('key4', 'value4', 4)
+  await ht.set('key4', 'value4', 4)
 
-  await ht100.set('key3', 'value3', 3)
+  await ht.set('key3', 'value3', 3)
 
   {
     const values = []
-    for await (const value of ht100.forwardIterator()) {
+    for await (const value of ht.forwardIterator()) {
       values.push(value)
     }
     assert.deepEqual(values, [
@@ -4905,7 +4897,7 @@ const test14_6 = new Test('DiskSortedHashTable', async function integration14_6(
 
   {
     const values = []
-    for await (const value of ht100.reverseIterator()) {
+    for await (const value of ht.reverseIterator()) {
       values.push(value)
     }
     assert.deepEqual(values, [
@@ -4917,12 +4909,12 @@ const test14_6 = new Test('DiskSortedHashTable', async function integration14_6(
   }
 
   {
-    const btreeRootNode = await constructBTree(ht100, { unique: false })
+    const btreeRootNode = await constructBTree(ht, { unique: false })
     const items = traverseInOrder(btreeRootNode)
     assert.deepEqual(items.map(item => Number(item.sortValue)), [1, 2, 3, 4])
   }
 
-  ht100.close()
+  ht.close()
 }).case()
 
 const test15 = new Test('DiskSortedHashTable', async function integration15() {
