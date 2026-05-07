@@ -4170,8 +4170,6 @@ class DiskSortedHashTable {
     }
 
     if (isLeaf) {
-      const logBTree = require('./_internal/logBTree')
-      await logBTree(this)
       throw new Error('Did not find btreeItem')
     }
 
