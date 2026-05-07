@@ -4,10 +4,10 @@ require('.')
 require('./index')
 
 const test = Test.all([
-  require('./_internal/getLeftParentItem.test')
-  require('./_internal/getRightParentItem.test')
-  require('./_internal/getLeftmostNodeItemExcluding.test')
-  require('./_internal/getRightmostNodeItemExcluding.test')
+  require('./_internal/getLeftParentItem.test'),
+  require('./_internal/getRightParentItem.test'),
+  require('./_internal/getLeftmostNodeItemExcluding.test'),
+  require('./_internal/getRightmostNodeItemExcluding.test'),
   require('./DiskHashTable.test'),
   require('./DiskSortedHashTable.test'),
 ])
