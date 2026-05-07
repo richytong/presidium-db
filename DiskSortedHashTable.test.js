@@ -309,6 +309,8 @@ const test1_2 = new Test('DiskSortedHashTable', async function integration1_2() 
   await ht3.set(collisionKey, '#800000(1)', 1)
   assert.equal(await ht3.get('maroon'), '#800000')
   assert.equal(await ht3.get(collisionKey), '#800000(1)')
+  await ht3.delete('maroon').then(didDelete => assert(didDelete))
+  await ht3.delete(collisionKey).then(didDelete => assert(didDelete))
 
   ht3.close()
 }).case()

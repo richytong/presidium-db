@@ -383,10 +383,6 @@ class DiskHashTable {
 
   // _getKeyItem(index number) -> keyItem { index: number, nextIndex: number, keyByteLength: number, valueByteLength: number }
   async _getKeyItem(index) {
-    if (index == -1) {
-      return undefined
-    }
-
     const readBuffer = await this._readHead(index)
     const statusMarker = readBuffer.readUInt8(0)
     if (statusMarker == OCCUPIED || statusMarker == REMOVED) {
@@ -397,7 +393,6 @@ class DiskHashTable {
       const key = await this._readKey(index, keyByteLength)
       return { index, statusMarker, nextIndex, keyByteLength, valueByteLength, key }
     }
-
     return undefined
   }
 
@@ -424,7 +419,6 @@ class DiskHashTable {
 
       return { statusMarker, index, nextIndex, key, value }
     }
-
     return undefined
   }
 
@@ -463,10 +457,6 @@ class DiskHashTable {
 
   // _getNextIndex(index number) -> nextIndex Promise<number>
   async _getNextIndex(index) {
-    if (index == -1) {
-      throw new Error('Negative index')
-    }
-
     const headReadBuffer = await this._readHead(index)
     const nextIndex = Number(headReadBuffer.readBigInt64BE(9))
     return nextIndex
