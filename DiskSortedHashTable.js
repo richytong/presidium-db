@@ -1321,38 +1321,27 @@ class DiskSortedHashTable {
         )
 
         if (leftGreatGrandparentNodeItem.btreeParentNodeItem && leftGreatGrandparentNodeItem.rightItem == null) {
-          // TODO coverage
-          if (leftGreatGrandparentNodeItem.btreeParentNodeItem.isLeftChildPointer) {
-            // point great great grandparent left child
-            await this._writeBTreeLeftChildNodeRightmostItemIndex(
-              leftGreatGrandparentNodeItem.btreeParentNodeItem.index,
-              grandparentLeftSiblingNodeItems[grandparentLeftSiblingNodeItems.length - 1].index
-            )
 
-            if (leftGreatGrandparentNodeItem.btreeParentNodeItem.leftItem) {
-              // point great great grandparent left item right child
-              await this._writeBTreeRightChildNodeRightmostItemIndex(
-                leftGreatGrandparentNodeItem.btreeParentNodeItem.leftItem.index,
-                grandparentLeftSiblingNodeItems[grandparentLeftSiblingNodeItems.length - 1].index
-              )
-            }
-
-          } else if (leftGreatGrandparentNodeItem.btreeParentNodeItem.isRightChildPointer) {
-            // point great great grandparent right child
+          const leftGreatGreatGrandparentNodeItem =
+            getLeftParentItem(leftGreatGrandparentNodeItem.btreeParentNodeItem)
+          if (leftGreatGreatGrandparentNodeItem) {
+            // point left great great grandparent right child
             await this._writeBTreeRightChildNodeRightmostItemIndex(
-              leftGreatGrandparentNodeItem.btreeParentNodeItem.index,
+              leftGreatGreatGrandparentNodeItem.index,
               grandparentLeftSiblingNodeItems[grandparentLeftSiblingNodeItems.length - 1].index
             )
-
-            if (leftGreatGrandparentNodeItem.btreeParentNodeItem.rightItem) {
-              // point great great grandparent right item left child
-              await this._writeBTreeLeftChildNodeRightmostItemIndex(
-                leftGreatGrandparentNodeItem.btreeParentNodeItem.rightItem.index,
-                grandparentLeftSiblingNodeItems[grandparentLeftSiblingNodeItems.length - 1].index
-              )
-            }
-
           }
+
+          const rightGreatGreatGrandparentNodeItem =
+            getRightParentItem(leftGreatGrandparentNodeItem.btreeParentNodeItem)
+          if (rightGreatGreatGrandparentNodeItem) {
+            // point right great great grandparent left child
+            await this._writeBTreeLeftChildNodeRightmostItemIndex(
+              rightGreatGreatGrandparentNodeItem.index,
+              grandparentLeftSiblingNodeItems[grandparentLeftSiblingNodeItems.length - 1].index
+            )
+          }
+
         }
 
       } else if (grandparentRightSiblingNodeItems?.length > (this.degree - 1)) { // grandparent right sibling node over minimum
@@ -1442,39 +1431,27 @@ class DiskSortedHashTable {
         }
 
         if (rightGreatGrandparentNodeItem.btreeParentNodeItem && rightGreatGrandparentNodeItem.rightItem == null) {
-          if (rightGreatGrandparentNodeItem.btreeParentNodeItem.isLeftChildPointer) {
-            // point great great grandparent left child
-            await this._writeBTreeLeftChildNodeRightmostItemIndex(
-              rightGreatGrandparentNodeItem.btreeParentNodeItem.index,
-              grandparentRightSiblingNodeItems[0].index
-            )
 
-            if (rightGreatGrandparentNodeItem.btreeParentNodeItem.leftItem) {
-              // point great great grandparent left item right child
-              await this._writeBTreeRightChildNodeRightmostItemIndex(
-                rightGreatGrandparentNodeItem.btreeParentNodeItem.leftItem.index,
-                grandparentRightSiblingNodeItems[0].index
-              )
-            }
-
-          } else if (rightGreatGrandparentNodeItem.btreeParentNodeItem.isRightChildPointer) {
-            // point great great grandparent right child
+          const leftGreatGreatGrandparentNodeItem =
+            getLeftParentItem(rightGreatGrandparentNodeItem.btreeParentNodeItem)
+          if (leftGreatGreatGrandparentNodeItem) {
+            // point left great great grandparent right child
             await this._writeBTreeRightChildNodeRightmostItemIndex(
-              rightGreatGrandparentNodeItem.btreeParentNodeItem.index,
+              leftGreatGreatGrandparentNodeItem.index,
               grandparentRightSiblingNodeItems[0].index
             )
-
-            if (rightGreatGrandparentNodeItem.btreeParentNodeItem.rightItem) {
-              // point great great grandparent right item left child
-              await this._writeBTreeLeftChildNodeRightmostItemIndex(
-                rightGreatGrandparentNodeItem.btreeParentNodeItem.rightItem.index,
-                grandparentRightSiblingNodeItems[0].index
-              )
-            }
-
-          } else {
-            throw new Error('great great grandparent node item isLeftChildPointer or isRightChildPointer unset')
           }
+
+          const rightGreatGreatGrandparentNodeItem =
+            getRightParentItem(rightGreatGrandparentNodeItem.btreeParentNodeItem)
+          if (rightGreatGreatGrandparentNodeItem) {
+            // point right great great grandparent left child
+            await this._writeBTreeLeftChildNodeRightmostItemIndex(
+              rightGreatGreatGrandparentNodeItem.index,
+              grandparentRightSiblingNodeItems[0].index
+            )
+          }
+
         }
 
       } else if (grandparentLeftSiblingNodeItems?.length === (this.degree - 1)) { // grandparent left sibling node at minimum
@@ -1626,6 +1603,7 @@ class DiskSortedHashTable {
         }
 
         if (greatGrandparentNodeItem.leftItem) {
+          // TODO coverage
           // point right great grandparent left item right child
           await this._writeBTreeRightChildNodeRightmostItemIndex(
             greatGrandparentNodeItem.leftItem.index,
@@ -1690,6 +1668,7 @@ class DiskSortedHashTable {
         } else if (greatGrandparentNodeItem.rightItem) {
           // root rightmost item stays the same
         } else if (greatGrandparentNodeItem.leftItem) {
+          // TODO coverage
           // point root
           await this._writeBTreeRootRightmostItemIndex(
             greatGrandparentNodeItem.leftItem.index
@@ -1717,10 +1696,7 @@ class DiskSortedHashTable {
           )
         }
 
-      } else {
-        throw new Error('bad tree')
       }
-
 
     } else { // grandparent node over minimum after grandparent rotation
 
@@ -2173,6 +2149,7 @@ class DiskSortedHashTable {
               leftGrandparentNodeItem.index, rightmostBTreeNodeItem.index
             )
           } else {
+            // TODO coverage
             // point left grandparent right child
             await this._writeBTreeRightChildNodeRightmostItemIndex(
               leftGrandparentNodeItem.index,
@@ -2478,8 +2455,6 @@ class DiskSortedHashTable {
             )
           }
 
-        } else { // no parent right sibling or parent left sibling
-          throw new Error('bad tree')
         }
 
       }
@@ -2877,8 +2852,6 @@ class DiskSortedHashTable {
             )
           }
 
-        } else { // no parent right sibling or parent left sibling
-          throw new Error('bad tree')
         }
 
       }
@@ -3346,14 +3319,10 @@ class DiskSortedHashTable {
             )
           }
 
-        } else { // no parent right sibling or parent left sibling
-          throw new Error('bad tree')
         }
 
       }
 
-    } else {
-      throw new Error('bad tree')
     }
 
   }
@@ -3450,32 +3419,20 @@ class DiskSortedHashTable {
           if (i === (btreeNodeItems.length - 1)) { // rightmost item
             // point parent nodes' left/right child node rightmost item to left item
 
-            if (btreeParentNodeItem == null) {
-              // skip
-            } else if (btreeParentNodeItem.isLeftChildPointer) {
-              await this._writeBTreeLeftChildNodeRightmostItemIndex(
-                btreeParentNodeItem.index,
-                btreeItem.btreeLeftItemIndex
-              )
-              if (btreeParentNodeItem.leftItem) {
-                await this._writeBTreeRightChildNodeRightmostItemIndex(
-                  btreeParentNodeItem.leftItem.index,
-                  btreeItem.btreeLeftItemIndex
-                )
-              }
-            } else if (btreeParentNodeItem.isRightChildPointer) {
+            const leftParentNodeItem = getLeftParentItem(btreeParentNodeItem)
+            if (leftParentNodeItem) {
+              // point left parent right child
               await this._writeBTreeRightChildNodeRightmostItemIndex(
-                btreeParentNodeItem.index,
-                btreeItem.btreeLeftItemIndex
+                leftParentNodeItem.index, btreeItem.btreeLeftItemIndex
               )
-              if (btreeParentNodeItem.rightItem) {
-                await this._writeBTreeLeftChildNodeRightmostItemIndex(
-                  btreeParentNodeItem.rightItem.index,
-                  btreeItem.btreeLeftItemIndex
-                )
-              }
-            } else {
-              throw new Error('parent node item isLeftChildPointer or isRightChildPointer unset')
+            }
+
+            const rightParentNodeItem = getRightParentItem(btreeParentNodeItem)
+            if (rightParentNodeItem) {
+              // point right parent left child
+              await this._writeBTreeLeftChildNodeRightmostItemIndex(
+                rightParentNodeItem.index, btreeItem.btreeLeftItemIndex
+              )
             }
 
             if (btreeParentNodeItem == null) { // root node
@@ -3599,8 +3556,6 @@ class DiskSortedHashTable {
               predecessorParentNodeItem.btreeParentNodeItem.leftItem.btreeLeftChildNodeRightmostItemIndex
             )
           }
-        } else {
-          throw new Error('parent node item isLeftChildPointer or isRightChildPointer unset')
         }
 
         let predecessorParentRightSiblingNodeRightmostItem
@@ -3617,8 +3572,6 @@ class DiskSortedHashTable {
               predecessorParentNodeItem.btreeParentNodeItem.rightItem.btreeRightChildNodeRightmostItemIndex
             )
           }
-        } else {
-          throw new Error('parent node item isLeftChildPointer or isRightChildPointer unset')
         }
 
         const predecessorParentLeftSiblingNodeItems =
@@ -3635,36 +3588,20 @@ class DiskSortedHashTable {
         // move predecessor to btreeItem position in b-tree
 
         if (i === (btreeNodeItems.length - 1)) {
-          if (btreeParentNodeItem == null) {
-            // skip
-          } else if (btreeParentNodeItem.isLeftChildPointer) {
-            // point right parent left child
-            await this._writeBTreeLeftChildNodeRightmostItemIndex(
-              btreeParentNodeItem.index, predecessor.index
-            )
-
-            if (btreeParentNodeItem.leftItem) {
-              // point left parent right child
-              await this._writeBTreeRightChildNodeRightmostItemIndex(
-                btreeParentNodeItem.leftItem.index, predecessor.index
-              )
-            }
-
-          } else if (btreeParentNodeItem.isRightChildPointer) {
+          const leftParentNodeItem = getLeftParentItem(btreeParentNodeItem)
+          if (leftParentNodeItem) {
             // point left parent right child
             await this._writeBTreeRightChildNodeRightmostItemIndex(
-              btreeParentNodeItem.index, predecessor.index
+              leftParentNodeItem.index, predecessor.index
             )
+          }
 
-            if (btreeParentNodeItem.rightItem) {
-              // point right parent left child
-              await this._writeBTreeLeftChildNodeRightmostItemIndex(
-                btreeParentNodeItem.rightItem.index, predecessor.index
-              )
-            }
-
-          } else {
-            throw new Error('parent node item isLeftChildPointer or isRightChildPointer unset')
+          const rightParentNodeItem = getRightParentItem(btreeParentNodeItem)
+          if (rightParentNodeItem) {
+            // point right parent left child
+            await this._writeBTreeLeftChildNodeRightmostItemIndex(
+              rightParentNodeItem.index, predecessor.index
+            )
           }
         }
 
@@ -3713,46 +3650,30 @@ class DiskSortedHashTable {
 
         if (predecessorNodeItems.length > (this.degree - 1)) { // leaf node has more than the minimum number of items per node
 
-          if (predecessorParentNodeItem.isLeftChildPointer) {
-            // point predecessor right parent left child
-            await this._writeBTreeLeftChildNodeRightmostItemIndex(
-              predecessorParentNodeItem.index,
-              predecessorNodeItems[predecessorNodeItems.length - 2].index
-            )
-
-            if (predecessorParentNodeItem.leftItem) {
-              // point predecessor left parent right child
-              await this._writeBTreeRightChildNodeRightmostItemIndex(
-                predecessorParentNodeItem.leftItem.index,
-                predecessorNodeItems[predecessorNodeItems.length - 2].index
-              )
-            }
-
-          } else if (predecessorParentNodeItem.isRightChildPointer) {
+          const predecessorLeftParentNodeItem = getLeftParentItem(predecessorParentNodeItem)
+          if (predecessorLeftParentNodeItem) {
             // point predecessor left parent right child
             await this._writeBTreeRightChildNodeRightmostItemIndex(
-              predecessorParentNodeItem.index,
+              predecessorLeftParentNodeItem.index,
               predecessorNodeItems[predecessorNodeItems.length - 2].index
             )
+          }
 
-            if (predecessorParentNodeItem.rightItem) {
-              // point predecessor right parent left child
-              await this._writeBTreeLeftChildNodeRightmostItemIndex(
-                predecessorParentNodeItem.rightItem.index,
-                predecessorNodeItems[predecessorNodeItems.length - 2].index
-              )
-            }
-
-          } else {
-            throw new Error('parent node item isLeftChildPointer or isRightChildPointer unset')
+          const predecessorRightParentNodeItem = getRightParentItem(predecessorParentNodeItem)
+          if (predecessorRightParentNodeItem) {
+            // point predecessor right parent left child
+            await this._writeBTreeLeftChildNodeRightmostItemIndex(
+              predecessorRightParentNodeItem.index,
+              predecessorNodeItems[predecessorNodeItems.length - 2].index
+            )
           }
 
         } else {
 
-
           { // replace btreeItem with predecessor
             let curNodeItem = predecessor
             while (curNodeItem.btreeParentNodeItem) {
+
               if (curNodeItem.btreeParentNodeItem.index === btreeItem.index) {
 
                 curNodeItem.btreeParentNodeItem.index = predecessor.index
@@ -3768,25 +3689,23 @@ class DiskSortedHashTable {
 
                 const grandparentNodeItem = curNodeItem.btreeParentNodeItem.btreeParentNodeItem
                 if (grandparentNodeItem && curNodeItem.btreeParentNodeItem.rightItem == null) {
-                  if (grandparentNodeItem.isLeftChildPointer) {
-                    grandparentNodeItem.btreeLeftChildNodeRightmostItemIndex = curNodeItem.btreeParentNodeItem.index
-                    if (grandparentNodeItem.leftItem) {
-                      grandparentNodeItem.leftItem.btreeRightChildNodeRightmostItemIndex = curNodeItem.btreeParentNodeItem.index
-                    }
-                  } else if (grandparentNodeItem.isRightChildPointer) {
-                    grandparentNodeItem.btreeRightChildNodeRightmostItemIndex = curNodeItem.btreeParentNodeItem.index
-                    if (grandparentNodeItem.rightItem) {
-                      grandparentNodeItem.rightItem.btreeLeftChildNodeRightmostItemIndex = curNodeItem.btreeParentNodeItem.index
-                    }
-                  } else {
-                    throw new Error('parent node item isLeftChildPointer or isRightChildPointer unset')
+                  const leftGrandparentNodeItem = getLeftParentItem(grandparentNodeItem)
+                  if (leftGrandparentNodeItem) {
+                    leftGrandparentNodeItem.btreeRightChildNodeRightmostItemIndex = curNodeItem.btreeParentNodeItem.index
+                  }
+                  const rightGrandparentNodeItem = getRightParentItem(grandparentNodeItem)
+                  if (rightGrandparentNodeItem) {
+                    rightGrandparentNodeItem.btreeLeftChildNodeRightmostItemIndex = curNodeItem.btreeParentNodeItem.index
                   }
                 }
 
                 break
               }
+
               curNodeItem = curNodeItem.btreeParentNodeItem
+
             }
+
           }
 
           // balance b-tree
@@ -3820,49 +3739,15 @@ class DiskSortedHashTable {
            // else if i === btreeNodeItems.length, sortValue is greater than all items' sortValues in btreeNodeItems, move to btreeNodeItems[btreeNodeItems.length - 1].rightChild
            // else (i > 0 and i < btreeNodeItems.length), sortValue is less than btreeNodeItems[i].sortValue, move to btreeNodeItems[i].rightChild
 
-    let leftSiblingNodeRightmostItem
-    if (btreeParentNodeItem == null) {
-      // skip
-    } else if (btreeParentNodeItem.isRightChildPointer) {
-      leftSiblingNodeRightmostItem = await this._getBTreeItem(
-        btreeParentNodeItem.btreeLeftChildNodeRightmostItemIndex
-      )
-    }
-    else if (btreeParentNodeItem.isLeftChildPointer) {
-      if (btreeParentNodeItem.leftItem) {
-        leftSiblingNodeRightmostItem = await this._getBTreeItem(
-          btreeParentNodeItem.leftItem.btreeLeftChildNodeRightmostItemIndex
-        )
-      }
-    } else {
-      throw new Error('parent node item isLeftChildPointer or isRightChildPointer unset')
-    }
+    const leftParentNodeItem = getLeftParentItem(btreeParentNodeItem)
+    const leftSiblingNodeItems = leftParentNodeItem == null
+      ? []
+      : await this._getBTreeNodeItems(await this._getBTreeItem(leftParentNodeItem.btreeLeftChildNodeRightmostItemIndex))
 
-    let rightSiblingNodeRightmostItem
-    if (btreeParentNodeItem == null) {
-      // skip
-    } else if (btreeParentNodeItem.isLeftChildPointer) {
-      rightSiblingNodeRightmostItem = await this._getBTreeItem(
-        btreeParentNodeItem.btreeRightChildNodeRightmostItemIndex
-      )
-    }
-    else if (btreeParentNodeItem.isRightChildPointer) {
-      if (btreeParentNodeItem.rightItem) {
-        rightSiblingNodeRightmostItem = await this._getBTreeItem(
-          btreeParentNodeItem.rightItem.btreeRightChildNodeRightmostItemIndex
-        )
-      }
-    } else {
-      throw new Error('parent node item isLeftChildPointer or isRightChildPointer unset')
-    }
-
-    const leftSiblingNodeItems = leftSiblingNodeRightmostItem == null
-      ? undefined
-      : await this._getBTreeNodeItems(leftSiblingNodeRightmostItem)
-
-    const rightSiblingNodeItems = rightSiblingNodeRightmostItem == null
-      ? undefined
-      : await this._getBTreeNodeItems(rightSiblingNodeRightmostItem)
+    const rightParentNodeItem = getRightParentItem(btreeParentNodeItem)
+    const rightSiblingNodeItems = rightParentNodeItem == null
+      ? []
+      : await this._getBTreeNodeItems(await this._getBTreeItem(rightParentNodeItem.btreeRightChildNodeRightmostItemIndex))
 
 
     if (i === 0) { // move to left child
@@ -3889,9 +3774,6 @@ class DiskSortedHashTable {
         btreeNodeItems[j].leftItem = btreeNodeItems[j - 1]
       }
 
-      if (btreeChildNodeItemsParentNodeItem.leftItem) {
-        btreeChildNodeItemsParentNodeItem.leftItem.isRightChildPointer = true
-      }
       if (btreeChildNodeItemsParentNodeItem.rightItem) {
         btreeChildNodeItemsParentNodeItem.rightItem.isLeftChildPointer = true
       }

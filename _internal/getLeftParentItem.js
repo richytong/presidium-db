@@ -4,6 +4,10 @@
 //   leftItem: object,
 // })
 function getLeftParentItem(parentItem) {
+  if (parentItem == null) {
+    return undefined
+  }
+
   if (parentItem.isRightChildPointer) {
     return parentItem
   }
