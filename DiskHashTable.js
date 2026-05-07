@@ -298,9 +298,6 @@ class DiskHashTable {
       hash = (hash << 3) - hash + key.charCodeAt(i)
     }
     const prime = 3
-    if (hash < 0) {
-      hash = -hash
-    }
     return prime - (hash % prime)
   }
 

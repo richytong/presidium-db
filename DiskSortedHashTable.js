@@ -309,7 +309,7 @@ class DiskSortedHashTable {
       hash = (hash << 3) - hash + key.charCodeAt(i)
     }
     const prime = 3
-    return prime - (Math.abs(hash) % prime)
+    return prime - (hash % prime)
   }
 
   // header file
@@ -4367,58 +4367,6 @@ class DiskSortedHashTable {
     return item
   }
 
-  // _parseBTreeItem(readBuffer Buffer, index number) -> {
-  //   statusMarker: 0|1|2,
-  //   index: number,
-  //   sortValue: string|number,
-  //   btreeLeftChildNodeRightmostItemIndex: number,
-  //   btreeRightChildNodeRightmostItemIndex: number,
-  //   btreeLeftItemIndex: number,
-  // }
-  _parseBTreeItem(readBuffer, index) {
-    const item = {}
-    item.index = index
-
-    const statusMarker = readBuffer.readUInt8(0)
-    item.statusMarker = statusMarker
-
-    const forwardIndex = Number(readBuffer.readBigInt64BE(13))
-    const reverseIndex = Number(readBuffer.readBigInt64BE(21))
-    item.forwardIndex = forwardIndex
-    item.reverseIndex = reverseIndex
-
-    const btreeLeftChildNodeRightmostItemIndex = Number(readBuffer.readBigInt64BE(29))
-    const btreeRightChildNodeRightmostItemIndex = Number(readBuffer.readBigInt64BE(37))
-    const btreeLeftItemIndex = Number(readBuffer.readBigInt64BE(45))
-
-    item.btreeLeftChildNodeRightmostItemIndex = btreeLeftChildNodeRightmostItemIndex
-    item.btreeRightChildNodeRightmostItemIndex = btreeRightChildNodeRightmostItemIndex
-    item.btreeLeftItemIndex = btreeLeftItemIndex
-
-    const keyByteLength = readBuffer.readUInt32BE(1)
-    const keyBuffer = readBuffer.subarray(53, keyByteLength + 53)
-    const key = keyBuffer.toString(ENCODING)
-    item.key = key
-
-    const sortValueByteLength = readBuffer.readUInt32BE(5)
-    const sortValueBuffer = readBuffer.subarray(
-      53 + keyByteLength,
-      53 + keyByteLength + sortValueByteLength
-    )
-    const sortValue = convert(sortValueBuffer.toString(ENCODING), this.sortValueType)
-    item.sortValue = sortValue
-
-    const valueByteLength = readBuffer.readUInt32BE(9)
-    const valueBuffer = readBuffer.subarray(
-      53 + keyByteLength + sortValueByteLength,
-      53 + keyByteLength + sortValueByteLength + valueByteLength
-    )
-    const value = valueBuffer.toString(ENCODING)
-    item.value = value
-
-    return item
-  }
-
   // _parseItem(readBuffer Buffer, index number, valueType 'string'|'binary') -> {
   //   index: number,
   //   readBuffer: Buffer,
@@ -4611,9 +4559,8 @@ class DiskSortedHashTable {
       leftItem = insertResult.predecessor
       rightItem = insertResult.successor
       btreeLeftItemIndex = insertResult.btreeLeftItemIndex
-      if (btreeLeftItemIndex === btreeRootNodeItem.index) {
-        await this._writeBTreeRootRightmostItemIndex(index)
-      }
+
+      // new b-tree item is always inserted at leaf
 
     } else {
       const insertResult = await this._insertBTreeNodeItem(
@@ -4747,9 +4694,8 @@ class DiskSortedHashTable {
           leftItem = insertResult.predecessor
           rightItem = insertResult.successor
           btreeLeftItemIndex = insertResult.btreeLeftItemIndex
-          if (btreeLeftItemIndex === btreeRootNodeItem.index) {
-            await this._writeBTreeRootRightmostItemIndex(index)
-          }
+
+          // new b-tree item is always inserted at leaf
 
         } else {
           const insertResult = await this._insertBTreeNodeItem(
