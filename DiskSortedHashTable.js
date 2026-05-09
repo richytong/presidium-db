@@ -1923,8 +1923,6 @@ class DiskSortedHashTable {
             )
           }
 
-        } else {
-          throw new Error('grandparent node item isLeftChildPointer or isRightChildPointer unset')
         }
 
       }
@@ -2019,8 +2017,6 @@ class DiskSortedHashTable {
             }
           }
         }
-      } else {
-        throw new Error('grandparent node item isLeftChildPointer or isRightChildPointer unset')
       }
 
     } else if (leftSiblingNodeItems.length === (this.degree - 1) && rightSiblingNodeItems.length === (this.degree - 1)) { // left and right sibling nodes at minimum
@@ -2907,8 +2903,6 @@ class DiskSortedHashTable {
               )
             }
 
-          } else {
-            throw new Error('grandparent parent node item isLeftChildPointer or isRightChildPointer unset')
           }
 
         }
@@ -4056,8 +4050,6 @@ class DiskSortedHashTable {
       rightItem = insertResult.successor
       btreeLeftItemIndex = insertResult.btreeLeftItemIndex
 
-      // new b-tree item is always inserted at leaf
-
     } else {
       const insertResult = await this._insertBTreeNodeItem(
         index,
@@ -4191,8 +4183,6 @@ class DiskSortedHashTable {
           rightItem = insertResult.successor
           btreeLeftItemIndex = insertResult.btreeLeftItemIndex
 
-          // new b-tree item is always inserted at leaf
-
         } else {
           const insertResult = await this._insertBTreeNodeItem(
             index,
@@ -4242,25 +4232,25 @@ class DiskSortedHashTable {
         const btreeRootNodeItems = await this._getBTreeNodeItems(btreeRootNodeRightmostItem)
         const btreeItem = await this._getBTreeItem(index)
         await this._deleteBTreeNodeItem(btreeItem, btreeRootNodeItems, btreeRootNodeItems)
-      }
 
-      if (item.reverseIndex == -1) { // item to update is first in the list
-        if (item.forwardIndex > -1) { // there is an item behind item to update
-          await this._updateReverseIndex(item.forwardIndex, -1)
-          await this._writeFirstIndex(item.forwardIndex)
-        } else { // item to update is first and last in the list
-          await this._writeFirstIndex(-1)
-          await this._writeLastIndex(-1)
+        if (item.reverseIndex == -1) { // item to update is first in the list
+          if (item.forwardIndex > -1) { // there is an item behind item to update
+            await this._updateReverseIndex(item.forwardIndex, -1)
+            await this._writeFirstIndex(item.forwardIndex)
+          } else { // item to update is first and last in the list
+            await this._writeFirstIndex(-1)
+            await this._writeLastIndex(-1)
+          }
+        } else if (item.forwardIndex == -1) { // item to update is last in the list
+          if (item.reverseIndex > -1) { // there is an item ahead of item to update
+            await this._updateForwardIndex(item.reverseIndex, -1)
+            await this._writeLastIndex(item.forwardIndex)
+          } else { // item to update is first and last in the list
+          }
+        } else { // item to update is in the middle of the list
+          await this._updateReverseIndex(item.forwardIndex, item.reverseIndex)
+          await this._updateForwardIndex(item.reverseIndex, item.forwardIndex)
         }
-      } else if (item.forwardIndex == -1) { // item to update is last in the list
-        if (item.reverseIndex > -1) { // there is an item ahead of item to update
-          await this._updateForwardIndex(item.reverseIndex, -1)
-          await this._writeLastIndex(item.forwardIndex)
-        } else { // item to update is first and last in the list
-        }
-      } else { // item to update is in the middle of the list
-        await this._updateReverseIndex(item.forwardIndex, item.reverseIndex)
-        await this._updateForwardIndex(item.reverseIndex, item.forwardIndex)
       }
 
 
@@ -4277,8 +4267,7 @@ class DiskSortedHashTable {
         if (btreeRootNodeRightmostItem == null) { // first item in btree
           await this._writeBTreeRootRightmostItemIndex(index)
           btreeLeftItemIndex = -1
-        }
-        else if (btreeRootNodeItems.length == ((2 * this.degree) - 1)) { // current b-tree node at maximum number of items
+        } else if (btreeRootNodeItems.length == ((2 * this.degree) - 1)) { // current b-tree node at maximum number of items
           const btreeRootNodeItem = await this._splitBTreeRootNode(btreeRootNodeItems)
           const insertResult = await this._insertBTreeNodeItem(
             index,
@@ -4290,9 +4279,6 @@ class DiskSortedHashTable {
           leftItem = insertResult.predecessor
           rightItem = insertResult.successor
           btreeLeftItemIndex = insertResult.btreeLeftItemIndex
-          if (btreeLeftItemIndex === btreeRootNodeItem.index) {
-            await this._writeBTreeRootRightmostItemIndex(index)
-          }
 
         } else {
           const insertResult = await this._insertBTreeNodeItem(

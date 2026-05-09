@@ -4917,6 +4917,62 @@ const test14_6 = new Test('DiskSortedHashTable', async function integration14_6(
   ht.close()
 }).case()
 
+const test14_7 = new Test('DiskSortedHashTable', async function integration14_7() {
+  const ht = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/100`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/100_header`,
+    initialLength: 100,
+    sortValueType: 'number',
+    resizeRatio: 0,
+  })
+  await ht.destroy()
+  await ht.init()
+
+  await ht.set('key1', 'value1', 1)
+  await ht.set('key2', 'value2', 2)
+  await ht.set('key3', 'value3', 3)
+
+  await ht.delete('key3')
+
+  await ht.set('key4', 'value4', 4)
+
+  await ht.set('key3', 'value3', 5)
+
+  {
+    const values = []
+    for await (const value of ht.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value1',
+      'value2',
+      'value4',
+      'value3',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value3',
+      'value4',
+      'value2',
+      'value1',
+    ])
+  }
+
+  {
+    const btreeRootNode = await constructBTree(ht, { unique: false })
+    const items = traverseInOrder(btreeRootNode)
+    assert.deepEqual(items.map(item => Number(item.sortValue)), [1, 2, 4, 5])
+  }
+
+  ht.close()
+}).case()
+
 const test15 = new Test('DiskSortedHashTable', async function integration15() {
   const ht10 = new DiskSortedHashTable({
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/10`,
@@ -7761,6 +7817,7 @@ const test = Test.all([
   test14_4,
   test14_5,
   test14_6,
+  test14_7,
   test15,
   test16,
   test17_2,
