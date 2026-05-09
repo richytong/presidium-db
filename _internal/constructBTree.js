@@ -61,10 +61,6 @@ async function constructBTree(ht, options, btreeNode = {}, memo = {}) {
       btreeNode[item.key].leftChild.keys = btreeLeftChildNodeItems.map(item => item.key)
       memo.keys.push(...btreeLeftChildNodeItems.map(item => item.key))
 
-      if (btreeNode[item.key].leftChild.items.length === 0) {
-        throw new Error('leftChild has no items')
-      }
-
       await constructBTree(ht, options, btreeNode[item.key].leftChild, {
         ...memo,
         height: height + 1,
@@ -82,10 +78,6 @@ async function constructBTree(ht, options, btreeNode = {}, memo = {}) {
       btreeNode[item.key].rightChild = { items: btreeRightChildNodeItems }
       btreeNode[item.key].rightChild.keys = btreeRightChildNodeItems.map(item => item.key)
       memo.keys.push(...btreeRightChildNodeItems.map(item => item.key))
-
-      if (btreeNode[item.key].rightChild.items.length === 0) {
-        throw new Error('rightChild has no items')
-      }
 
       await constructBTree(ht, options, btreeNode[item.key].rightChild, {
         ...memo,

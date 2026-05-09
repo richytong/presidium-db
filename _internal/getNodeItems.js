@@ -1,8 +1,5 @@
 // getNodeItems(ht DiskSortedHashTable, rightmostItem { index: number, btreeLeftItemIndex: number }) -> Promise<number>
 async function getNodeItems(ht, rightmostItem) {
-  if (rightmostItem == null) {
-    return []
-  }
   const btreeNodeItems = [rightmostItem]
   let currentItem = rightmostItem
 

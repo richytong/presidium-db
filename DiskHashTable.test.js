@@ -2,7 +2,6 @@ const Test = require('thunk-test')
 const fs = require('fs')
 const assert = require('assert')
 const DiskHashTable = require('./DiskHashTable')
-const randomUniqueNumbersGenerator = require('./_internal/randomUniqueNumbersGenerator')
 
 const test1 = new Test('DiskHashTable', async function integration1() {
   const ht1024 = new DiskHashTable({

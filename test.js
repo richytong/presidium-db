@@ -4,6 +4,9 @@ require('.')
 require('./index')
 
 const test = Test.all([
+  require('./_internal/convert.test'),
+  require('./_internal/calculateMaxBTreeHeight.test'),
+  require('./_internal/calculateMinBTreeHeight.test'),
   require('./_internal/getLeftParentItem.test'),
   require('./_internal/getRightParentItem.test'),
   require('./_internal/getLeftmostNodeItemExcluding.test'),

@@ -13,7 +13,6 @@ const calculateMaxBTreeHeight = require('./_internal/calculateMaxBTreeHeight')
 const calculateMinBTreeHeight = require('./_internal/calculateMinBTreeHeight')
 const constructBTree = require('./_internal/constructBTree')
 const constructBTree2 = require('./_internal/constructBTree2')
-const randomUniqueNumbersGenerator = require('./_internal/randomUniqueNumbersGenerator')
 
 const test1 = new Test('DiskSortedHashTable', async function integration1() {
   const ht1024 = new DiskSortedHashTable({
