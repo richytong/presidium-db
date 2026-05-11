@@ -18,7 +18,10 @@ async function constructBTree2(ht, options, btreeNode = {}, memo = {}) {
       btreeRootNodeItems.every(item => item.btreeLeftChildNodeRightmostItemIndex == -1)
       && btreeRootNodeItems.every(item => item.btreeRightChildNodeRightmostItemIndex == -1)
     )
-    btreeRootNodeItems.forEach(item => item.key ??= `key${item.sortValue}`)
+    for (const item of btreeRootNodeItems) {
+      const key = await ht._readKey(item.index, item.keyByteLength)
+      item.key ??= `${item.sortValue} (${key})`
+    }
 
     btreeNode.items = btreeRootNodeItems
     btreeNode.root = true
@@ -49,7 +52,10 @@ async function constructBTree2(ht, options, btreeNode = {}, memo = {}) {
     if (leftConditional) {
       const btreeLeftChildNodeRightmostItem = await ht._getBTreeItem(item.btreeLeftChildNodeRightmostItemIndex)
       const btreeLeftChildNodeItems = await ht._getBTreeNodeItems(btreeLeftChildNodeRightmostItem)
-      btreeLeftChildNodeItems.forEach(item => item.key ??= `key${item.sortValue}`)
+      for (const item of btreeLeftChildNodeItems) {
+        const key = await ht._readKey(item.index, item.keyByteLength)
+        item.key ??= `${item.sortValue} (${key})`
+      }
 
       btreeNode[item.key].leftChild = { items: btreeLeftChildNodeItems }
       btreeNode[item.key].leftChild.keys = btreeLeftChildNodeItems.map(item => item.key)
@@ -68,7 +74,10 @@ async function constructBTree2(ht, options, btreeNode = {}, memo = {}) {
     if (rightConditional) {
       const btreeRightChildNodeRightmostItem = await ht._getBTreeItem(item.btreeRightChildNodeRightmostItemIndex)
       const btreeRightChildNodeItems = await ht._getBTreeNodeItems(btreeRightChildNodeRightmostItem)
-      btreeRightChildNodeItems.forEach(item => item.key ??= `key${item.sortValue}`)
+      for (const item of btreeRightChildNodeItems) {
+        const key = await ht._readKey(item.index, item.keyByteLength)
+        item.key ??= `${item.sortValue} (${key})`
+      }
 
       btreeNode[item.key].rightChild = { items: btreeRightChildNodeItems }
       btreeNode[item.key].rightChild.keys = btreeRightChildNodeItems.map(item => item.key)

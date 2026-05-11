@@ -5027,6 +5027,24 @@ const test14_8 = new Test('DiskSortedHashTable', async function integration14_8(
     assert.deepEqual(items.map(item => Number(item.sortValue)), [1, 2, 3, 5])
   }
 
+  await ht.set('key4', 'value4', 1)
+  await ht.set('key5', 'value5', 1)
+  await ht.set('key6', 'value6', 1)
+  await ht.set('key7', 'value7', 1)
+
+  {
+    const btreeRootNode = await constructBTree(ht, { unique: false })
+    const items = traverseInOrder(btreeRootNode)
+    assert.deepEqual(items.map(item => Number(item.sortValue)), [1, 1, 1, 1, 1, 2, 3, 5])
+  }
+
+  await ht.delete('key7')
+
+  {
+    const btreeRootNode = await constructBTree(ht, { unique: false })
+    await assertInternalNodesIntegrity(btreeRootNode)
+  }
+
   ht.close()
 }).case()
 

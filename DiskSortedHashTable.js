@@ -3791,10 +3791,8 @@ class DiskSortedHashTable {
     i = btreeNodeItems.length - 1
     while (i >= 0 && btreeNodeItems[i].sortValue >= btreeItem.sortValue) {
       if (btreeNodeItems[i].sortValue == btreeItem.sortValue) {
-        const sameSortValueParentItem = { ...btreeNodeItems[i] }
+        const sameSortValueParentItem = btreeNodeItems[i]
         sameSortValueParentItem.isFirstItem = i === 0
-        sameSortValueParentItem.btreeParentNodeItem = btreeParentNodeItem
-        sameSortValueParentItem.btreeParentNodeItems = btreeParentNodeItems
         sameSortValueParentItem.nodeItems = btreeNodeItems
         sameSortValueParentItems.push(sameSortValueParentItem)
       }
