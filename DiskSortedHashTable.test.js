@@ -4972,6 +4972,106 @@ const test14_7 = new Test('DiskSortedHashTable', async function integration14_7(
   ht.close()
 }).case()
 
+const test14_8 = new Test('DiskSortedHashTable', async function integration14_8() {
+  const ht = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/100`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/100_header`,
+    initialLength: 100,
+    sortValueType: 'number',
+    resizeRatio: 0,
+  })
+  await ht.destroy()
+  await ht.init()
+
+  await ht.set('key0', 'value0', 1)
+  await ht.set('key1', 'value1', 1)
+  await ht.set('key1', 'value1', 2)
+  await ht.set('key2', 'value2', 1)
+  await ht.set('key2', 'value2', 2)
+  await ht.set('key2', 'value2', 3)
+  await ht.set('key2', 'value2', 4)
+  await ht.set('key2', 'value2', 5)
+  await ht.set('key3', 'value3', 1)
+  await ht.set('key3', 'value3', 2)
+  await ht.set('key3', 'value3', 3)
+
+  {
+    const values = []
+    for await (const value of ht.forwardIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value0',
+      'value1',
+      'value3',
+      'value2',
+    ])
+  }
+
+  {
+    const values = []
+    for await (const value of ht.reverseIterator()) {
+      values.push(value)
+    }
+    assert.deepEqual(values, [
+      'value2',
+      'value3',
+      'value1',
+      'value0',
+    ])
+  }
+
+  {
+    const btreeRootNode = await constructBTree(ht, { unique: false })
+    const items = traverseInOrder(btreeRootNode)
+    assert.deepEqual(items.map(item => Number(item.sortValue)), [1, 2, 3, 5])
+  }
+
+  ht.close()
+}).case()
+
+const test14_9 = new Test('DiskSortedHashTable', async function integration14_9() {
+  const ht = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/200`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/200_header`,
+    initialLength: 200,
+    sortValueType: 'number',
+    resizeRatio: 0,
+    degree: 2,
+  })
+  await ht.destroy()
+  await ht.init()
+
+  for (let i = 1; i < 128; i++) {
+    await ht.set(`key${i}`, `value${i}`, 1)
+  }
+
+  await ht.delete('key127')
+
+  ht.close()
+}).case()
+
+const test14_10 = new Test('DiskSortedHashTable', async function integration14_10() {
+  const ht = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/511`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/511_header`,
+    initialLength: 511,
+    sortValueType: 'number',
+    resizeRatio: 0,
+    degree: 3,
+  })
+  await ht.destroy()
+  await ht.init()
+
+  for (let i = 1; i < 256; i++) {
+    await ht.set(`key${i}`, `value${i}`, 1)
+  }
+
+  await ht.delete('key127')
+
+  ht.close()
+}).case()
+
 const test15 = new Test('DiskSortedHashTable', async function integration15() {
   const ht10 = new DiskSortedHashTable({
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/10`,
@@ -6582,6 +6682,180 @@ const test19 = new Test('DiskSortedHashTable', async function integration19() {
     initialLength: 127 * 8,
     sortValueType: 'number',
     resizeRatio: 0,
+    degree: 2,
+  })
+  await ht.destroy()
+  await ht.init()
+
+  const sortedNumbers = []
+  const values = []
+
+  for (let i = 0; i < 13; i++) {
+    await ht.set(`key1${i}`, 'value1', 1)
+    sortedNumbers.push(1)
+    values.push('value1')
+  }
+  for (let i = 0; i < 13; i++) {
+    await ht.set(`key2${i}`, 'value2', 2)
+    sortedNumbers.push(2)
+    values.push('value2')
+  }
+  for (let i = 0; i < 13; i++) {
+    await ht.set(`key3${i}`, 'value3', 3)
+    sortedNumbers.push(3)
+    values.push('value3')
+  }
+
+  for (let i = 0; i < 13; i++) {
+    await ht.set(`key1${i}`, 'value1', 1)
+  }
+  for (let i = 0; i < 13; i++) {
+    await ht.set(`key2${i}`, 'value2', 2)
+  }
+  for (let i = 0; i < 13; i++) {
+    await ht.set(`key3${i}`, 'value3', 3)
+  }
+
+  assert.equal(sortedNumbers.length, 39)
+
+  const btreeRootNode = await constructBTree(ht, { unique: false })
+  assertBalanced(btreeRootNode)
+  assertMinHeight(btreeRootNode, calculateMinBTreeHeight(39, 2))
+  assertMaxHeight(btreeRootNode, calculateMaxBTreeHeight(39, 2))
+  assertMinKeysPerNode(btreeRootNode, 1)
+  assertMaxKeysPerNode(btreeRootNode, 3)
+  assertInternalNodesIntegrity(btreeRootNode)
+  assert.equal(ht.count(), 39)
+
+  assert.deepEqual(values, sortedNumbers.map(n => `value${n}`))
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator()) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values)
+  }
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator({ startingSortValue: 1, endingSortValue: 3 })) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values)
+  }
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator({ startingSortValue: 1, endingSortValue: 1 })) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values.slice(0, 13))
+  }
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator({ startingSortValue: 1, endingSortValue: 2 })) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values.slice(0, 26))
+  }
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator({ startingSortValue: 2, endingSortValue: 2 })) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values.slice(13, 26))
+  }
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator({ startingSortValue: 2, endingSortValue: 3 })) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values.slice(13, 39))
+  }
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator({ startingSortValue: 3, endingSortValue: 3 })) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values.slice(26, 39))
+  }
+
+  const valuesReverse = [...values].reverse()
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator()) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, valuesReverse)
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator({ startingSortValue: 3, endingSortValue: 1 })) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, valuesReverse)
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator({ startingSortValue: 1, endingSortValue: 1 })) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, valuesReverse.slice(26, 39))
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator({ startingSortValue: 2, endingSortValue: 1 })) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, valuesReverse.slice(13, 39))
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator({ startingSortValue: 2, endingSortValue: 2 })) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, valuesReverse.slice(13, 26))
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator({ startingSortValue: 3, endingSortValue: 2 })) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, valuesReverse.slice(0, 26))
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator({ startingSortValue: 3, endingSortValue: 3 })) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, valuesReverse.slice(0, 13))
+  }
+
+  await ht.delete('key110')
+  await ht.delete('key212')
+
+  ht.close()
+}).case()
+
+const test20 = new Test('DiskSortedHashTable', async function integration20() {
+  const ht = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/127`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/127_header`,
+    initialLength: 127 * 8,
+    sortValueType: 'number',
+    resizeRatio: 0,
     degree: 3,
   })
   await ht.destroy()
@@ -6742,6 +7016,180 @@ const test19 = new Test('DiskSortedHashTable', async function integration19() {
     }
     assert.deepEqual(reverseValues, valuesReverse.slice(0, 13))
   }
+
+  await ht.delete('key111')
+  await ht.delete('key210')
+
+  ht.close()
+}).case()
+
+const test21 = new Test('DiskSortedHashTable', async function integration21() {
+  const ht = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/127`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/127_header`,
+    initialLength: 127 * 8,
+    sortValueType: 'number',
+    resizeRatio: 0,
+    degree: 2,
+  })
+  await ht.destroy()
+  await ht.init()
+
+  const sortedNumbers = []
+  const values = []
+
+  for (let i = 0; i < 127; i++) {
+    const start = performance.now()
+    await ht.set(`key1${i}`, 'value1', 1)
+    console.log('set', `key${i}`, `value${i}`, i, 'in', `${performance.now() - start}ms`)
+    sortedNumbers.push(1)
+    values.push('value1')
+  }
+  for (let i = 0; i < 127; i++) {
+    const start = performance.now()
+    await ht.set(`key2${i}`, 'value2', 2)
+    console.log('set', `key${i}`, `value${i}`, i, 'in', `${performance.now() - start}ms`)
+    sortedNumbers.push(2)
+    values.push('value2')
+  }
+  for (let i = 0; i < 127; i++) {
+    const start = performance.now()
+    await ht.set(`key3${i}`, 'value3', 3)
+    console.log('set', `key${i}`, `value${i}`, i, 'in', `${performance.now() - start}ms`)
+    sortedNumbers.push(3)
+    values.push('value3')
+  }
+
+  assert.equal(sortedNumbers.length, 381)
+
+  const btreeRootNode = await constructBTree(ht, { unique: false })
+  assertBalanced(btreeRootNode)
+  assertMinHeight(btreeRootNode, calculateMinBTreeHeight(381, 2))
+  assertMaxHeight(btreeRootNode, calculateMaxBTreeHeight(381, 2))
+  assertMinKeysPerNode(btreeRootNode, 1)
+  assertMaxKeysPerNode(btreeRootNode, 3)
+  assertInternalNodesIntegrity(btreeRootNode)
+  assert.equal(ht.count(), 381)
+
+  assert.deepEqual(values, sortedNumbers.map(n => `value${n}`))
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator()) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values)
+  }
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator({ startingSortValue: 1, endingSortValue: 3 })) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values)
+  }
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator({ startingSortValue: 1, endingSortValue: 1 })) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values.slice(0, 127))
+  }
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator({ startingSortValue: 1, endingSortValue: 2 })) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values.slice(0, 254))
+  }
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator({ startingSortValue: 2, endingSortValue: 2 })) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values.slice(127, 254))
+  }
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator({ startingSortValue: 2, endingSortValue: 3 })) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values.slice(127, 381))
+  }
+
+  {
+    const forwardValues = []
+    for await (const value of ht.forwardIterator({ startingSortValue: 3, endingSortValue: 3 })) {
+      forwardValues.push(value)
+    }
+    assert.deepEqual(forwardValues, values.slice(254, 381))
+  }
+
+  const valuesReverse = [...values].reverse()
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator()) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, valuesReverse)
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator({ startingSortValue: 3, endingSortValue: 1 })) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, valuesReverse)
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator({ startingSortValue: 1, endingSortValue: 1 })) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, valuesReverse.slice(254, 381))
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator({ startingSortValue: 2, endingSortValue: 1 })) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, valuesReverse.slice(127, 381))
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator({ startingSortValue: 2, endingSortValue: 2 })) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, valuesReverse.slice(127, 254))
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator({ startingSortValue: 3, endingSortValue: 2 })) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, valuesReverse.slice(0, 254))
+  }
+
+  {
+    const reverseValues = []
+    for await (const value of ht.reverseIterator({ startingSortValue: 3, endingSortValue: 3 })) {
+      reverseValues.push(value)
+    }
+    assert.deepEqual(reverseValues, valuesReverse.slice(0, 127))
+  }
+
+  await ht.delete('key1126')
+  await ht.delete('key26')
+  await ht.delete('key2125')
 
   ht.close()
 }).case()
@@ -7817,6 +8265,9 @@ const test = Test.all([
   test14_5,
   test14_6,
   test14_7,
+  test14_8,
+  test14_9,
+  test14_10,
   test15,
   test16,
   test17_2,

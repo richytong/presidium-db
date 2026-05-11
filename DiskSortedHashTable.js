@@ -44,8 +44,8 @@ const REMOVED = 2
  *   * `options`
  *     * `storagePath` - `string` - the path to the file used to store the disk sorted hash table data.
  *     * `headerPath` - `string` - the path to the file used to store header information about the disk sorted hash table.
- *     * `initialLength` - `number` - the initial length of the disk sorted hash table. Minimum value 1024, maximum value `Math.floor(9007199254740991 / itemSize)`. Defaults to 1024.
- *     * `itemSize` - `number` - the size in bytes of each item (including internal item info, key, value, and sortValue) stored on disk. Minimum value 1024. Defaults to 524288.
+ *     * `initialLength` - `number` - the initial length of the disk sorted hash table. Minimum value 1, maximum value `Math.floor(9007199254740991 / itemSize)`. Defaults to 1024.
+ *     * `itemSize` - `number` - the size in bytes of each item (including internal item info, key, value, and sortValue) stored on disk. Minimum value 54. Defaults to 524288.
  *     * `sortValueType` - `'string'|'number'` - the type of the disk sorted hash table sort-values.
  *     * `resizeRatio` - `number` - the ratio of number of items to table length at which to resize the disk sorted hash table. Minimum value 0 (no resize), maximum value 1. Defaults to 0.
  *     * `resizeFactor` - `number` - the factor that is multiplied with the disk sorted hash table's current length to determine the new table length on a resize.
@@ -82,6 +82,9 @@ const REMOVED = 2
  *
  * ## Allocation of disk space
  * The disk sorted hash table initially preallocates a block of memory on disk of `(itemSize * initialLength)` bytes as the storage file and a 48-byte block of memory as the header file for database operations. When the disk sorted hash table is resized, the block of memory on disk is reallocated to a new size of `(itemSize * initialLength * numberOfResizes * resizeFactor)` bytes.
+ *
+ * ## Byte allocations for an item
+ * Each item stored on disk is allocated `itemSize` bytes of disk space. The first 53 bytes are reserved for table operations. The remainder is reserved for the key, sort-value, and value of the item.
  *
  * ## Resizing the disk sorted hash table
  * When an item is inserted into the disk sorted hash table via [set](/docs/DiskSortedHashTable#set), the current capacity ratio of the table is calculated as the sum of the table's count and deleted count divided by the table's length. If the current capacity ratio exceeds the `resizeRatio` (and the `resizeRatio` is not 0), a resize of the table occurs.
@@ -1764,20 +1767,6 @@ class DiskSortedHashTable {
   //     btreeRightChildNodeRightmostItemIndex: number,
   //     btreeLeftItemIndex: number,
   //   }>,
-  //   btreeParentLeftSiblingNodeItems Array<{
-  //     index: number,
-  //     sortValue: string|number,
-  //     btreeLeftChildNodeRightmostItemIndex: number,
-  //     btreeRightChildNodeRightmostItemIndex: number,
-  //     btreeLeftItemIndex: number,
-  //   }>,
-  //   btreeParentRightSiblingNodeItems Array<{
-  //     index: number,
-  //     sortValue: string|number,
-  //     btreeLeftChildNodeRightmostItemIndex: number,
-  //     btreeRightChildNodeRightmostItemIndex: number,
-  //     btreeLeftItemIndex: number,
-  //   }>
   // ) -> Promise<>
   async _balanceBTreeAfterDelete(
     btreeItem,
@@ -1786,8 +1775,6 @@ class DiskSortedHashTable {
     i,
     btreeParentNodeItem,
     btreeParentNodeItems,
-    btreeParentLeftSiblingNodeItems,
-    btreeParentRightSiblingNodeItems,
   ) {
 
     const leftParentNodeItem = getLeftParentItem(btreeParentNodeItem)
@@ -2084,6 +2071,16 @@ class DiskSortedHashTable {
       }
 
       if (btreeParentNodeItems.length <= (this.degree - 1)) { // parent node at minimum / root node at or under minimum
+
+        const leftGrandparentNodeItem = getLeftParentItem(btreeParentNodeItem.btreeParentNodeItem)
+        const btreeParentLeftSiblingNodeItems = leftGrandparentNodeItem == null
+          ? []
+          : await this._getBTreeNodeItems(await this._getBTreeItem(leftGrandparentNodeItem.btreeLeftChildNodeRightmostItemIndex))
+
+        const rightGrandParentNodeItem = getRightParentItem(btreeParentNodeItem.btreeParentNodeItem)
+        const btreeParentRightSiblingNodeItems = rightGrandParentNodeItem == null
+          ? []
+          : await this._getBTreeNodeItems(await this._getBTreeItem(rightGrandParentNodeItem.btreeRightChildNodeRightmostItemIndex))
 
         if (btreeParentNodeItem.btreeParentNodeItem == null) { // no grandparent
 
@@ -2464,6 +2461,16 @@ class DiskSortedHashTable {
       )
 
       if (btreeParentNodeItems.length <= (this.degree - 1)) { // parent node at minimum / root node at or under minimum
+
+        const leftGrandparentNodeItem = getLeftParentItem(btreeParentNodeItem.btreeParentNodeItem)
+        const btreeParentLeftSiblingNodeItems = leftGrandparentNodeItem == null
+          ? []
+          : await this._getBTreeNodeItems(await this._getBTreeItem(leftGrandparentNodeItem.btreeLeftChildNodeRightmostItemIndex))
+
+        const rightGrandParentNodeItem = getRightParentItem(btreeParentNodeItem.btreeParentNodeItem)
+        const btreeParentRightSiblingNodeItems = rightGrandParentNodeItem == null
+          ? []
+          : await this._getBTreeNodeItems(await this._getBTreeItem(rightGrandParentNodeItem.btreeRightChildNodeRightmostItemIndex))
 
         if (btreeParentNodeItem.btreeParentNodeItem == null) { // no grandparent
 
@@ -2911,6 +2918,16 @@ class DiskSortedHashTable {
 
       if (btreeParentNodeItems.length <= (this.degree - 1)) { // parent node at minimum / root node at or under minimum
 
+        const leftGrandparentNodeItem = getLeftParentItem(btreeParentNodeItem.btreeParentNodeItem)
+        const btreeParentLeftSiblingNodeItems = leftGrandparentNodeItem == null
+          ? []
+          : await this._getBTreeNodeItems(await this._getBTreeItem(leftGrandparentNodeItem.btreeLeftChildNodeRightmostItemIndex))
+
+        const rightGrandParentNodeItem = getRightParentItem(btreeParentNodeItem.btreeParentNodeItem)
+        const btreeParentRightSiblingNodeItems = rightGrandParentNodeItem == null
+          ? []
+          : await this._getBTreeNodeItems(await this._getBTreeItem(rightGrandParentNodeItem.btreeRightChildNodeRightmostItemIndex))
+
         if (btreeParentNodeItem.btreeParentNodeItem == null) { // no grandparent
 
           if (leftParentNodeItem.leftItem) {
@@ -3299,6 +3316,80 @@ class DiskSortedHashTable {
 
   }
 
+  // _deleteBTreeSameSortValueNodeItem(
+  //   btreeItem {
+  //     index: number,
+  //     sortValue: string|number,
+  //     btreeLeftChildNodeRightmostItemIndex: number,
+  //     btreeRightChildNodeRightmostItemIndex: number,
+  //     btreeLeftItemIndex: number,
+  //   },
+  //   btreeRootNodeItems Array<{
+  //     index: number,
+  //     sortValue: string|number,
+  //     btreeLeftChildNodeRightmostItemIndex: number,
+  //     btreeRightChildNodeRightmostItemIndex: number,
+  //     btreeLeftItemIndex: number,
+  //   }>,
+  //   sameSortValueParentItems Array<{
+  //     index: number,
+  //     sortValue: string|number,
+  //     btreeLeftChildNodeRightmostItemIndex: number,
+  //     btreeRightChildNodeRightmostItemIndex: number,
+  //     btreeLeftItemIndex: number,
+  //   }>
+  // )
+  async _deleteBTreeSameSortValueNodeItem(
+    btreeItem,
+    btreeRootNodeItems,
+    sameSortValueParentItems
+  ) {
+
+    let nextBTreeParentNodeItem = sameSortValueParentItems[sameSortValueParentItems.length - 1]
+
+    while (
+      nextBTreeParentNodeItem.isFirstItem
+        ? nextBTreeParentNodeItem.visitedLeftChild && nextBTreeParentNodeItem.visitedRightChild
+        : nextBTreeParentNodeItem.visitedRightChild
+    ) {
+      sameSortValueParentItems.pop()
+      nextBTreeParentNodeItem = sameSortValueParentItems[sameSortValueParentItems.length - 1]
+    }
+
+    if (nextBTreeParentNodeItem.isFirstItem) {
+      delete nextBTreeParentNodeItem.isLeftChildPointer
+      nextBTreeParentNodeItem.isRightChildPointer = true
+      nextBTreeParentNodeItem.visitedRightChild = true
+    } else {
+      delete nextBTreeParentNodeItem.isLeftChildPointer
+      nextBTreeParentNodeItem.isRightChildPointer = true
+      nextBTreeParentNodeItem.visitedRightChild = true
+    }
+
+
+    const btreeNodeRightmostItem = await this._getBTreeItem(
+      nextBTreeParentNodeItem.isLeftChildPointer
+        ? nextBTreeParentNodeItem.btreeLeftChildNodeRightmostItemIndex
+        : nextBTreeParentNodeItem.btreeRightChildNodeRightmostItemIndex
+    )
+
+    const nextBTreeNodeItems = await this._getBTreeNodeItems(btreeNodeRightmostItem)
+
+    for (const item of nextBTreeNodeItems) {
+      item.btreeParentNodeItem = nextBTreeParentNodeItem
+      item.btreeParentNodeItems = nextBTreeParentNodeItem.nodeItems
+    }
+
+    return this._deleteBTreeNodeItem(
+      btreeItem,
+      nextBTreeNodeItems,
+      btreeRootNodeItems,
+      nextBTreeParentNodeItem,
+      nextBTreeParentNodeItem.nodeItems,
+      sameSortValueParentItems
+    )
+  }
+
   // _deleteBTreeNodeItem(
   //   btreeItem {
   //     index: number,
@@ -3335,14 +3426,7 @@ class DiskSortedHashTable {
   //     btreeRightChildNodeRightmostItemIndex: number,
   //     btreeLeftItemIndex: number,
   //   }>,
-  //   btreeParentLeftSiblingNodeItems Array<{
-  //     index: number,
-  //     sortValue: string|number,
-  //     btreeLeftChildNodeRightmostItemIndex: number,
-  //     btreeRightChildNodeRightmostItemIndex: number,
-  //     btreeLeftItemIndex: number,
-  //   }>,
-  //   btreeParentRightSiblingNodeItems Array<{
+  //   sameSortValueParentItems Array<{
   //     index: number,
   //     sortValue: string|number,
   //     btreeLeftChildNodeRightmostItemIndex: number,
@@ -3356,8 +3440,7 @@ class DiskSortedHashTable {
     btreeRootNodeItems,
     btreeParentNodeItem,
     btreeParentNodeItems,
-    btreeParentLeftSiblingNodeItems,
-    btreeParentRightSiblingNodeItems,
+    sameSortValueParentItems = []
   ) {
 
     let foundBTreeItem = false
@@ -3448,8 +3531,6 @@ class DiskSortedHashTable {
             i,
             btreeParentNodeItem,
             btreeParentNodeItems,
-            btreeParentLeftSiblingNodeItems,
-            btreeParentRightSiblingNodeItems,
           )
         }
 
@@ -3687,9 +3768,7 @@ class DiskSortedHashTable {
             btreeRootNodeItems,
             k,
             predecessorParentNodeItem,
-            predecessorParentNodeItems,
-            predecessorParentLeftSiblingNodeItems,
-            predecessorParentRightSiblingNodeItems
+            predecessorParentNodeItems
           )
         }
 
@@ -3699,30 +3778,44 @@ class DiskSortedHashTable {
     }
 
     if (isLeaf) {
+      if (sameSortValueParentItems.length > 0) {
+        return this._deleteBTreeSameSortValueNodeItem(
+          btreeItem,
+          btreeRootNodeItems,
+          sameSortValueParentItems
+        )
+      }
       throw new Error('Did not find btreeItem')
     }
 
     i = btreeNodeItems.length - 1
     while (i >= 0 && btreeNodeItems[i].sortValue >= btreeItem.sortValue) {
+      if (btreeNodeItems[i].sortValue == btreeItem.sortValue) {
+        const sameSortValueParentItem = { ...btreeNodeItems[i] }
+        sameSortValueParentItem.isFirstItem = i === 0
+        sameSortValueParentItem.btreeParentNodeItem = btreeParentNodeItem
+        sameSortValueParentItem.btreeParentNodeItems = btreeParentNodeItems
+        sameSortValueParentItem.nodeItems = btreeNodeItems
+        sameSortValueParentItems.push(sameSortValueParentItem)
+      }
+
       i -= 1
     }
+    i += 1
 
-    i += 1 // if i === 0, sortValue is less than all items' sortValues in btreeNodeItems, move to btreeNodeItems[0].leftChild
-           // else if i === btreeNodeItems.length, sortValue is greater than all items' sortValues in btreeNodeItems, move to btreeNodeItems[btreeNodeItems.length - 1].rightChild
-           // else (i > 0 and i < btreeNodeItems.length), sortValue is less than btreeNodeItems[i].sortValue, move to btreeNodeItems[i].rightChild
-
-    const leftParentNodeItem = getLeftParentItem(btreeParentNodeItem)
-    const leftSiblingNodeItems = leftParentNodeItem == null
-      ? []
-      : await this._getBTreeNodeItems(await this._getBTreeItem(leftParentNodeItem.btreeLeftChildNodeRightmostItemIndex))
-
-    const rightParentNodeItem = getRightParentItem(btreeParentNodeItem)
-    const rightSiblingNodeItems = rightParentNodeItem == null
-      ? []
-      : await this._getBTreeNodeItems(await this._getBTreeItem(rightParentNodeItem.btreeRightChildNodeRightmostItemIndex))
+    // if i === 0, sortValue is less than all items' sortValues in btreeNodeItems, move to btreeNodeItems[0].leftChild
+    // else if i === btreeNodeItems.length, sortValue is greater than all items' sortValues in btreeNodeItems, move to btreeNodeItems[btreeNodeItems.length - 1].rightChild
+    // else (i > 0 and i < btreeNodeItems.length), sortValue is less than btreeNodeItems[i].sortValue, move to btreeNodeItems[i].rightChild
 
 
     if (i === 0) { // move to left child
+
+      if (
+        sameSortValueParentItems.length > 0
+        && sameSortValueParentItems[sameSortValueParentItems.length - 1].index === btreeNodeItems[0].index
+      ) {
+        sameSortValueParentItems[sameSortValueParentItems.length - 1].visitedLeftChild = true
+      }
 
       const btreeChildNodeItemsParentNodeItem = btreeNodeItems[0]
       btreeChildNodeItemsParentNodeItem.isLeftChildPointer = true
@@ -3736,8 +3829,8 @@ class DiskSortedHashTable {
       btreeChildNodeItemsParentNodeItem.btreeParentNodeItem = btreeParentNodeItem
 
       for (const item of btreeChildNodeItems) {
-        item.btreeParentNodeItems = btreeNodeItems
         item.btreeParentNodeItem = btreeChildNodeItemsParentNodeItem
+        item.btreeParentNodeItems = btreeNodeItems
       }
       for (let j = 0; j < (btreeNodeItems.length - 1); j++) {
         btreeNodeItems[j].rightItem = btreeNodeItems[j + 1]
@@ -3756,13 +3849,18 @@ class DiskSortedHashTable {
         btreeRootNodeItems,
         btreeChildNodeItemsParentNodeItem,
         btreeNodeItems,
-        leftSiblingNodeItems,
-        rightSiblingNodeItems
+        sameSortValueParentItems
       )
     }
 
-
     // move to right child
+
+    if (
+      sameSortValueParentItems.length > 0
+      && sameSortValueParentItems[sameSortValueParentItems.length - 1].index === btreeNodeItems[i - 1].index
+    ) {
+      sameSortValueParentItems[sameSortValueParentItems.length - 1].visitedRightChild = true
+    }
 
     const btreeChildNodeItemsParentNodeItem = btreeNodeItems[i - 1]
     btreeChildNodeItemsParentNodeItem.isRightChildPointer = true
@@ -3776,8 +3874,8 @@ class DiskSortedHashTable {
     btreeChildNodeItemsParentNodeItem.btreeParentNodeItem = btreeParentNodeItem
 
     for (const item of btreeChildNodeItems) {
-      item.btreeParentNodeItems = btreeNodeItems
       item.btreeParentNodeItem = btreeChildNodeItemsParentNodeItem
+      item.btreeParentNodeItems = btreeNodeItems
     }
     for (let j = 0; j < (btreeNodeItems.length - 1); j++) {
       btreeNodeItems[j].rightItem = btreeNodeItems[j + 1]
@@ -3799,8 +3897,7 @@ class DiskSortedHashTable {
       btreeRootNodeItems,
       btreeChildNodeItemsParentNodeItem,
       btreeNodeItems,
-      leftSiblingNodeItems,
-      rightSiblingNodeItems
+      sameSortValueParentItems
     )
   }
 

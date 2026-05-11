@@ -38,8 +38,8 @@ const REMOVED = 2
  *   * `options`
  *     * `storagePath` - `string` - the path to the file used to store the disk hash table data.
  *     * `headerPath` - `string` - the path to the file used to store header information about the disk hash table.
- *     * `initialLength` - `number` - the initial length of the disk hash table. Minimum value 1024, maximum value `Math.floor(9007199254740991 / itemSize)`. Defaults to 1024.
- *     * `itemSize` - `number` - the size in bytes of each item (including internal item info, key, and value) stored on disk. Minimum value 1024. Defaults to 524288.
+ *     * `initialLength` - `number` - the initial length of the disk hash table. Minimum value 1, maximum value `Math.floor(9007199254740991 / itemSize)`. Defaults to 1024.
+ *     * `itemSize` - `number` - the size in bytes of each item (including internal item info, key, and value) stored on disk. Minimum value 17. Defaults to 524288.
  *     * `resizeRatio` - `number` - the ratio of number of items to table length at which to resize the disk hash table. Minimum value 0 (no resize), maximum value 1. Defaults to 0.
  *     * `resizeFactor` - `number` - the factor that is multiplied with the disk hash table's current length to determine the new table length on a resize.
  *
@@ -68,6 +68,9 @@ const REMOVED = 2
  *
  * ## Allocation of disk space
  * The disk hash table initially preallocates a block of memory on disk of `(itemSize * initialLength)` bytes as the storage file and a 32-byte block of memory as the header file for database operations. When the disk hash table is resized, the block of memory on disk is reallocated to a new size of `(itemSize * initialLength * numberOfResizes * resizeFactor)` bytes.
+ *
+ * ## Byte allocations for an item
+ * Each item stored on disk is allocated `itemSize` bytes of disk space. The first 17 bytes are reserved for table operations. The remainder is reserved for the key, sort-value, and value of the item.
  *
  * ## Resizing the disk hash table
  * When an item is inserted into the disk hash table via [set](/docs/DiskHashTable#set), the current capacity ratio of the table is calculated as the sum of the table's count and deleted count divided by the table's length. If the current capacity ratio exceeds the `resizeRatio` (and the `resizeRatio` is not 0), a resize of the table occurs.
