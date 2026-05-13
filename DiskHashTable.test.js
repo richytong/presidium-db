@@ -190,6 +190,17 @@ const test1_4 = new Test('DiskHashTable', async function integration1_4() {
   }
 
   {
+    const entries = []
+    for await (const entry of ht1024.entriesIterator()) {
+      entries.push(entry)
+    }
+    assert.equal(entries.length, 3)
+    assert.deepEqual(entries[0], ['black', '#000000'])
+    assert.deepEqual(entries[1], ['yellow', '#FFFF00'])
+    assert.deepEqual(entries[2], ['maroon', '#800000'])
+  }
+
+  {
     const values = []
     for await (const value of ht1024.iterator({ valueType: 'binary' })) {
       values.push(value)
@@ -198,6 +209,20 @@ const test1_4 = new Test('DiskHashTable', async function integration1_4() {
     assert(Buffer.from('#000000').equals(values[0]))
     assert(Buffer.from('#FFFF00').equals(values[1]))
     assert(Buffer.from('#800000').equals(values[2]))
+  }
+
+  {
+    const entries = []
+    for await (const entry of ht1024.entriesIterator({ valueType: 'binary' })) {
+      entries.push(entry)
+    }
+    assert.equal(entries.length, 3)
+    assert.equal(entries[0][0], 'black')
+    assert.equal(entries[1][0], 'yellow')
+    assert.equal(entries[2][0], 'maroon')
+    assert(Buffer.from('#000000').equals(entries[0][1]))
+    assert(Buffer.from('#FFFF00').equals(entries[1][1]))
+    assert(Buffer.from('#800000').equals(entries[2][1]))
   }
 
   {
