@@ -867,7 +867,7 @@ class DiskHashTable {
    *
    * @docs
    * ```coffeescript [specscript]
-   * entriesIterator() -> entries AsyncGenerator<[key string, value string|Buffer]>
+   * entriesIterator() -> entries AsyncGenerator<[key string, value string]>
    *
    * entriesIterator(options {
    *   valueType: 'string'|'binary',

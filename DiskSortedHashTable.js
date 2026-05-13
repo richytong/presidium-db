@@ -5010,7 +5010,7 @@ class DiskSortedHashTable {
    *
    * @docs
    * ```coffeescript [specscript]
-   * reverseIterator() -> values AsyncGenerator<string|Buffer>
+   * reverseIterator() -> values AsyncGenerator<string>
    *
    * reverseIterator(options {
    *   exclusiveStartKey: string,
@@ -5118,7 +5118,7 @@ class DiskSortedHashTable {
    *
    * @docs
    * ```coffeescript [specscript]
-   * forwardEntriesIterator() -> entries AsyncGenerator<[key string, value string|Buffer, sortValue string|number]>
+   * forwardEntriesIterator() -> entries AsyncGenerator<[key string, value string, sortValue string|number]>
    *
    * forwardEntriesIterator(options {
    *   exclusiveStartKey: string,
@@ -5226,7 +5226,7 @@ class DiskSortedHashTable {
    *
    * @docs
    * ```coffeescript [specscript]
-   * reverseEntriesIterator() -> entries AsyncGenerator<[key string, value string|Buffer, sortValue string|number]>
+   * reverseEntriesIterator() -> entries AsyncGenerator<[key string, value string, sortValue string|number]>
    *
    * reverseEntriesIterator(options {
    *   exclusiveStartKey: string,
