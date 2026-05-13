@@ -863,48 +863,48 @@ class DiskHashTable {
   }
 
   /**
-   * @name itemsIterator
+   * @name entriesIterator
    *
    * @docs
    * ```coffeescript [specscript]
-   * itemsIterator() -> values AsyncGenerator<string>
+   * entriesIterator() -> entries AsyncGenerator<[key string, value string|Buffer]>
    *
-   * itemsIterator(options {
+   * entriesIterator(options {
    *   valueType: 'string'|'binary',
-   * }) -> items AsyncGenerator<{ key: string, value: string|Buffer }>
+   * }) -> entries AsyncGenerator<[key string, value string|Buffer]>
    * ```
    *
-   * Returns an iterator of all items in the disk hash table. Items are yielded in reverse insertion order.
+   * Returns an iterator of the entries (keys and values) of all items in the disk hash table. Item entries are yielded in reverse insertion order.
    *
    * Arguments:
-   *   * (none) - retrieves all items in the disk hash table.
+   *   * (none) - retrieves the entries of all items in the disk hash table.
    *   * `options`
    *     * `valueType` - `'string'|'binary'` - the type of value that the iterator yields. Defaults to `'string'`.
-   *       * `'string'` - iterator yields `string` item values.
-   *       * `'binary'` - iterator yields `Buffer` item values.
+   *       * `'string'` - iterator yields entries with `string` values.
+   *       * `'binary'` - iterator yields entries with `Buffer` values.
    *
    * Return:
-   *   * `items` - `{ key: string, value: AsyncGenerator<string|Buffer> }` - an async iterator of the keys and values of all items in the disk hash table sorted by reverse insertion order.
+   *   * `entries` - `AsyncGenerator<[key string, value string|Buffer]>` - an async iterator of the entries of all items in the disk hash table sorted by reverse insertion order.
    *
    * ```javascript
    * await ht.set('key1', 'value1')
    * await ht.set('key2', 'value2')
    * await ht.set('key3', 'value3')
    *
-   * for await (const item of ht.itemsIterator()) {
-   *   console.log(item) // { key: 'key1', value: 'value3' }
-   *                     // { key: 'key2': value: 'value2' }
-   *                     // { key: 'key3': value: 'value1' }
+   * for await (const [key, value] of ht.entriesIterator()) {
+   *   console.log(key, value) // key3 value3
+   *                           // key2 value2
+   *                           // key1 value1
    * }
    * ```
    */
-  async * itemsIterator(options = {}) {
+  async * entriesIterator(options = {}) {
     const { valueType = 'string' } = options
 
     const headIndex = await this._getHeadIndex()
     let item = await this._getItem(headIndex, valueType)
     while (item) {
-      yield item.value
+      yield [item.key, item.value]
       item = await this._getItem(item.nextIndex, valueType)
     }
   }
