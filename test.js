@@ -11,6 +11,7 @@ const test = Test.all([
   require('./_internal/getRightParentItem.test'),
   require('./_internal/getLeftmostNodeItemExcluding.test'),
   require('./_internal/getRightmostNodeItemExcluding.test'),
+  require('./_internal/preallocate.test'),
   require('./DiskHashTable.test'),
   require('./DiskSortedHashTable.test'),
 ])

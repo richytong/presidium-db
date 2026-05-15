@@ -6,3 +6,4 @@ DiskHashTable_test_data
 DiskSortedHashTable_test_data
 after
 before
+preallocate_test
