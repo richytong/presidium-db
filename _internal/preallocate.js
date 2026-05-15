@@ -11,7 +11,7 @@ function preallocate(filePath, sizeInBytes) {
   if (platform == 'linux') {
     execSync(`fallocate -l ${sizeInBytes} ${filePath}`)
   } else if (platform == 'darwin') {
-    execSync(`mkfile ${sizeInBytes} ${filePath}`)
+    execSync(`truncate -s ${sizeInBytes} ${filePath}`)
   } else {
     throw new Error(`unsupported platform ${platform}`)
   }
