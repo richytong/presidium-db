@@ -72,8 +72,8 @@ const REMOVED = 2
  * ```
  *
  * Supported platforms:
- *   * `linux`
- *   * `macos`
+ *   * macOS (64-bit)
+ *   * Linux (64-bit)
  *
  * ## Maximum length of the disk sorted hash table
  * The maximum length of the disk sorted hash table is represented by the following equation:
