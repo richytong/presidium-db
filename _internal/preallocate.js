@@ -1,20 +1,8 @@
 const { execSync } = require('child_process')
-const fs = require('fs')
-const os = require('os')
 
-/**
- * Pre-allocates a file using the 'fallocate' system utility.
- * This is extremely fast and ensures contiguous disk blocks.
- */
-function preallocate(filePath, sizeInBytes) {
-  const platform = os.platform()
-  if (platform == 'linux') {
-    execSync(`fallocate -l ${sizeInBytes} ${filePath}`)
-  } else if (platform == 'darwin') {
-    execSync(`truncate -s ${sizeInBytes} ${filePath}`)
-  } else {
-    throw new Error(`unsupported platform ${platform}`)
-  }
+// preallocate(filepath string, sizeBytes number) -> undefined
+function preallocate(filepath, sizeBytes) {
+  execSync(`truncate -s ${sizeBytes} ${filepath}`)
 }
 
 module.exports = preallocate
