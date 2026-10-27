@@ -2,15 +2,16 @@
  * Presidium DB may be freely distributed under the CFOSS license.
  */
 
-const fs = require('fs')
-const preallocate = require('./_internal/preallocate')
-const convert = require('./_internal/convert')
-const getLeftParentItem = require('./_internal/getLeftParentItem')
-const getRightParentItem = require('./_internal/getRightParentItem')
-const getLeftmostNodeItemExcluding = require('./_internal/getLeftmostNodeItemExcluding')
-const getRightmostNodeItemExcluding = require('./_internal/getRightmostNodeItemExcluding')
+const fs = require("fs")
+const preallocate = require("./_internal/preallocate")
+const convert = require("./_internal/convert")
+const compare = require("./_internal/compare")
+const getLeftParentItem = require("./_internal/getLeftParentItem")
+const getRightParentItem = require("./_internal/getRightParentItem")
+const getLeftmostNodeItemExcluding = require("./_internal/getLeftmostNodeItemExcluding")
+const getRightmostNodeItemExcluding = require("./_internal/getRightmostNodeItemExcluding")
 
-const ENCODING = 'utf8'
+const ENCODING = "utf8"
 
 const EMPTY = 0
 
@@ -28,76 +29,12 @@ const REMOVED = 2
  *   headerPath: string,
  *   initialLength: number,
  *   itemSize: number,
- *   sortValueType: 'string'|'number',
+ *   sortValueType: "string"|"number"|Array<"string"|"number">,
  *   resizeRatio: number,
  *   resizeFactor: number,
  *   degree: number,
  * }) -> sortedHt DiskSortedHashTable
  * ```
- *
- * Presidium DiskSortedHashTable class. Creates a sorted hash table that stores all data on disk.
- *
- * Arguments:
- *   * `options`
- *     * `storagePath` - `string` - the path to the file used to store the disk sorted hash table data.
- *     * `headerPath` - `string` - the path to the file used to store header information about the disk sorted hash table.
- *     * `initialLength` - `number` - the initial length of the disk sorted hash table. Minimum value 1, maximum value `Math.floor(9007199254740991 / itemSize)`. Defaults to 1024.
- *     * `itemSize` - `number` - the size in bytes of each item (including internal item info, key, value, and sortValue) stored on disk. Minimum value 54. Defaults to 524288.
- *     * `sortValueType` - `'string'|'number'` - the type of the disk sorted hash table sort-values.
- *     * `resizeRatio` - `number` - the ratio of number of items to table length at which to resize the disk sorted hash table. Minimum value 0 (no resize), maximum value 1. Defaults to 0.
- *     * `resizeFactor` - `number` - the factor that is multiplied with the disk sorted hash table's current length to determine the new table length on a resize.
- *     * `degree` - `number` - minimum value 2, defaults to 2 - defines the following parameters for the internal b-tree that organizes all of the items in the disk sorted hash table:
- *       * Minimum number of items per b-tree node: `degree - 1`
- *       * Maximum number of items per b-tree node: `(2 * degree) - 1`
- *       * Minimum number of children per b-tree node: `degree`
- *       * Maximum number of children per b-tree node: `2 * degree`
- *
- * Return:
- *   * `sortedHt` - [`DiskSortedHashTable`](/docs/DiskSortedHashTable) - a `DiskSortedHashTable` instance.
- *
- * ```javascript
- * const sortedHt = new DiskSortedHashTable({
- *   storagePath: '/path/to/storage-file',
- *   headerPath: '/path/to/header-file',
- *   initialLength: 1024,
- *   itemSize: 512 * 1024,
- *   sortValueType: 'number',
- *   resizeRatio: 0.5,
- *   resizeFactor: 1000,
- *   degree: 2,
- * })
- * ```
- *
- * Supported platforms:
- *   * macOS (64-bit)
- *   * Linux (64-bit)
- *
- * ## Maximum length of the disk sorted hash table
- * The maximum length of the disk sorted hash table is represented by the following equation:
- * ```
- * Math.floor(9_007_199_254_740_991 / itemSize)
- * ```
- *
- * ## Allocation of disk space
- * The disk sorted hash table initially preallocates a block of memory on disk of `(itemSize * initialLength)` bytes as the storage file and a 48-byte block of memory as the header file for database operations. When the disk sorted hash table is resized, the block of memory on disk is reallocated to a new size of `(itemSize * initialLength * numberOfResizes * resizeFactor)` bytes.
- *
- * ## Byte allocations for an item
- * Each item stored on disk is allocated `itemSize` bytes of disk space. The first 53 bytes are reserved for table operations. The remainder is reserved for the key, sort-value, and value of the item.
- *
- * ## Resizing the disk sorted hash table
- * When an item is inserted into the disk sorted hash table via [set](/docs/DiskSortedHashTable#set), the current capacity ratio of the table is calculated as the sum of the table's count and deleted count divided by the table's length. If the current capacity ratio exceeds the `resizeRatio` (and the `resizeRatio` is not 0), a resize of the table occurs.
- *
- * During a table resize, each item of the table is added into a temporary storage file using the new table length calculated from the equation below:
- *
- * ```
- * newTableLength = oldTableLength * resizeFactor
- * ```
- *
- * Once all of the items have been added into the temporary storage file, the temporary storage file is moved to the location of the old storage file to be used as the new storage file.
- *
- * ## Optimizing the disk sorted hash table b-tree
- * The value of `degree` determines the structure of the internal b-tree used by the disk sorted hash table. A higher value for `degree` results in a shorter b-tree and more items per b-tree node, while a lower value results in a taller b-tree and fewer items per b-tree node. The default value of 2 is a safe choice for most use cases.
- *
  */
 class DiskSortedHashTable {
   constructor(options) {
@@ -142,34 +79,22 @@ class DiskSortedHashTable {
    * ```coffeescript [specscript]
    * sortedHt.init() -> Promise<>
    * ```
-   *
-   * Initializes the disk sorted hash table.
-   *
-   * Arguments:
-   *   * (none)
-   *
-   * Return:
-   *   * Empty promise.
-   *
-   * ```javascript
-   * await sortedHt.init()
-   * ```
    */
   async init() {
     for (const filepath of [this.storagePath, this.headerPath]) {
-      const dir = filepath.split('/').slice(0, -1).join('/')
+      const dir = filepath.split("/").slice(0, -1).join("/")
       await fs.promises.mkdir(dir, { recursive: true })
 
       const now = new Date()
       try {
         fs.utimesSync(filepath, now, now)
       } catch (error) {
-        fs.closeSync(fs.openSync(filepath, 'a'))
+        fs.closeSync(fs.openSync(filepath, "a"))
       }
     }
 
-    this.storageFd = await fs.promises.open(this.storagePath, 'r+')
-    this.headerFd = await fs.promises.open(this.headerPath, 'r+')
+    this.storageFd = await fs.promises.open(this.storagePath, "r+")
+    this.headerFd = await fs.promises.open(this.headerPath, "r+")
 
     let headerReadBuffer = await this._readHeader()
     if (headerReadBuffer.every(byte => byte === 0)) {
@@ -196,18 +121,6 @@ class DiskSortedHashTable {
    * ```coffeescript [specscript]
    * clear() -> Promise<>
    * ```
-   *
-   * Clears all data from the disk sorted hash table. Reallocates the header and storage files.
-   *
-   * Arguments:
-   *   * (none)
-   *
-   * Return:
-   *   * Empty promise.
-   *
-   * ```javascript
-   * await sortedHt.clear()
-   * ```
    */
   async clear() {
     this.close()
@@ -216,19 +129,19 @@ class DiskSortedHashTable {
     await fs.promises.rm(this.headerPath).catch(() => {})
 
     for (const filepath of [this.storagePath, this.headerPath]) {
-      const dir = filepath.split('/').slice(0, -1).join('/')
+      const dir = filepath.split("/").slice(0, -1).join("/")
       await fs.promises.mkdir(dir, { recursive: true })
 
       const now = new Date()
       try {
         fs.utimesSync(filepath, now, now)
       } catch (error) {
-        fs.closeSync(fs.openSync(filepath, 'a'))
+        fs.closeSync(fs.openSync(filepath, "a"))
       }
     }
 
-    this.storageFd = await fs.promises.open(this.storagePath, 'r+')
-    this.headerFd = await fs.promises.open(this.headerPath, 'r+')
+    this.storageFd = await fs.promises.open(this.storagePath, "r+")
+    this.headerFd = await fs.promises.open(this.headerPath, "r+")
 
     const headerReadBuffer = await this._initializeHeader()
 
@@ -252,18 +165,6 @@ class DiskSortedHashTable {
    * ```coffeescript [specscript]
    * destroy() -> Promise<>
    * ```
-   *
-   * Removes all system resources used by the disk sorted hash table.
-   *
-   * Arguments:
-   *   * (none)
-   *
-   * Return:
-   *   * Empty promise.
-   *
-   * ```javascript
-   * await sortedHt.destroy()
-   * ```
    */
   async destroy() {
     await fs.promises.rm(this.storagePath).catch(() => {})
@@ -276,18 +177,6 @@ class DiskSortedHashTable {
    * @docs
    * ```coffeescript [specscript]
    * close() -> undefined
-   * ```
-   *
-   * Closes the underlying file handles used by the disk sorted hash table.
-   *
-   * Arguments:
-   *   * (none)
-   *
-   * Return:
-   *   * `undefined`
-   *
-   * ```javascript
-   * sortedHt.close()
    * ```
    */
   close() {
@@ -783,24 +672,24 @@ class DiskSortedHashTable {
 
   // _insertBTreeNodeItem(
   //   index number,
-  //   sortValue string|number,
+  //   sortValue string|number|Array<string|number>,
   //   btreeNodeItems Array<{
   //     index: number,
-  //     sortValue: string|number,
+  //     sortValue: string|number|Array<string|number>,
   //     btreeLeftChildNodeRightmostItemIndex: number,
   //     btreeRightChildNodeRightmostItemIndex: number,
   //     btreeLeftItemIndex: number,
   //   }>,
   //   btreeRootNodeRightmostItem: {
   //     index: number,
-  //     sortValue: string|number,
+  //     sortValue: string|number|Array<string|number>,
   //     btreeLeftChildNodeRightmostItemIndex: number,
   //     btreeRightChildNodeRightmostItemIndex: number,
   //     btreeLeftItemIndex: number,
   //   },
   //   btreeParentNodeItem {
   //     index: number,
-  //     sortValue: string|number,
+  //     sortValue: string|number|Array<string|number>,
   //     btreeLeftChildNodeRightmostItemIndex: number,
   //     btreeRightChildNodeRightmostItemIndex: number,
   //     btreeLeftItemIndex: number,
@@ -815,8 +704,7 @@ class DiskSortedHashTable {
   ) {
 
     let i = btreeNodeItems.length - 1
-
-    while (i >= 0 && btreeNodeItems[i].sortValue > sortValue) {
+    while (i >= 0 && compare("gt", btreeNodeItems[i].sortValue, sortValue)) {
       i -= 1
     }
     i += 1 // if i === 0, sortValue is less than all items' sortValues in btreeNodeItems, insert item at very left
@@ -961,7 +849,7 @@ class DiskSortedHashTable {
         btreeChildNodeItemsParentNodeItem = btreeNewParentNodeItem
         btreeChildNodeItemsParentNodeItem.btreeParentNodeItem = btreeParentNodeItem
 
-        if (sortValue > btreeNewParentNodeItem.sortValue) { // move to right child
+        if (compare("gt", sortValue, btreeNewParentNodeItem.sortValue)) { // move to right child
           btreeChildNodeItems = btreeRightNodeItems
           btreeChildNodeItemsParentNodeItem.isRightChildPointer = true
           btreeChildNodeItemsLeftParentNodeItem = btreeChildNodeItemsParentNodeItem
@@ -1006,7 +894,6 @@ class DiskSortedHashTable {
     else { // (i > 0) sortValue is less than btreeNodeItems[i].sortValue, insert item in middle
       btreeChildNodeItemsLeftParentNodeItem = btreeNodeItems[i - 1]
       btreeChildNodeItemsRightParentNodeItem = btreeNodeItems[i]
-      // i === (btreeNodeItems.length - 1) ? undefined : btreeNodeItems[i + 1]
     }
     btreeChildNodeItemsParentNodeItem = btreeChildNodeItemsLeftParentNodeItem
     btreeChildNodeItemsParentNodeItem.isRightChildPointer = true
@@ -1086,7 +973,7 @@ class DiskSortedHashTable {
       // (old right) (new left)  (old left)                                    (new left)  (old left)
       // (old right) (new right) (old left)                                    (new right) (old left)
 
-      if (sortValue > btreeNewParentNodeItem.sortValue) { // move to right child
+      if (compare("gt", sortValue, btreeNewParentNodeItem.sortValue)) { // move to right child
         btreeChildNodeItems = btreeRightNodeItems
         btreeChildNodeItemsParentNodeItem.isRightChildPointer = true
         btreeChildNodeItemsLeftParentNodeItem = btreeChildNodeItemsParentNodeItem
@@ -3783,12 +3670,12 @@ class DiskSortedHashTable {
           sameSortValueParentItems
         )
       }
-      throw new Error('Did not find btreeItem')
+      throw new Error("Did not find btreeItem")
     }
 
     i = btreeNodeItems.length - 1
-    while (i >= 0 && btreeNodeItems[i].sortValue >= btreeItem.sortValue) {
-      if (btreeNodeItems[i].sortValue == btreeItem.sortValue) {
+    while (i >= 0 && compare("gte", btreeNodeItems[i].sortValue, btreeItem.sortValue)) {
+      if (compare("eq", btreeNodeItems[i].sortValue, btreeItem.sortValue)) {
         const sameSortValueParentItem = btreeNodeItems[i]
         sameSortValueParentItem.isFirstItem = i === 0
         sameSortValueParentItem.nodeItems = btreeNodeItems
@@ -3950,14 +3837,14 @@ class DiskSortedHashTable {
     return item
   }
 
-  // _parseItem(readBuffer Buffer, index number, valueType 'string'|'binary') -> {
+  // _parseItem(readBuffer Buffer, index number, valueType "string"|"binary") -> {
   //   index: number,
   //   readBuffer: Buffer,
   //   sortValue: string|number,
   //   key: string,
   //   value: string,
   // }
-  _parseItem(readBuffer, index, valueType = 'binary') {
+  _parseItem(readBuffer, index, valueType = "binary") {
     const item = {}
     item.index = index
     item.readBuffer = readBuffer
@@ -3996,14 +3883,14 @@ class DiskSortedHashTable {
       53 + keyByteLength + sortValueByteLength,
       53 + keyByteLength + sortValueByteLength + valueByteLength
     )
-    const value = valueType == 'binary' ? valueBuffer : valueBuffer.toString(ENCODING)
+    const value = valueType == "binary" ? valueBuffer : valueBuffer.toString(ENCODING)
     item.value = value
 
     return item
   }
 
-  // _getForwardStartItem(valueType 'string'|'binary') -> item { index: number, readBuffer: Buffer, sortValue: string|number, value: string }
-  async _getForwardStartItem(valueType = 'binary') {
+  // _getForwardStartItem(valueType "string"|"binary") -> item { index: number, readBuffer: Buffer, sortValue: string|number, value: string }
+  async _getForwardStartItem(valueType = "binary") {
     const headerReadBuffer = await this._readHeader()
     const index = Number(headerReadBuffer.readBigInt64BE(24))
     if (index == -1) {
@@ -4013,8 +3900,8 @@ class DiskSortedHashTable {
     return this._parseItem(readBuffer, index, valueType)
   }
 
-  // _getReverseStartItem(valueType 'string'|'number') -> item { index: number, readBuffer: Buffer, sortValue: string|number, value: string }
-  async _getReverseStartItem(valueType = 'binary') {
+  // _getReverseStartItem(valueType "string"|"number") -> item { index: number, readBuffer: Buffer, sortValue: string|number, value: string }
+  async _getReverseStartItem(valueType = "binary") {
     const headerReadBuffer = await this._readHeader()
     const index = Number(headerReadBuffer.readBigInt64BE(32))
     if (index == -1) {
@@ -4024,8 +3911,8 @@ class DiskSortedHashTable {
     return this._parseItem(readBuffer, index, valueType)
   }
 
-  // _getItem(index number, valueType 'string'|'binary') -> item { index: number, readBuffer: Buffer, sortValue: string|number, value: string }
-  async _getItem(index, valueType = 'binary') {
+  // _getItem(index number, valueType "string"|"binary") -> item { index: number, readBuffer: Buffer, sortValue: string|number, value: string }
+  async _getItem(index, valueType = "binary") {
     if (index == -1) {
       return undefined
     }
@@ -4115,7 +4002,7 @@ class DiskSortedHashTable {
     await this._updateDeletedCount()
   }
 
-  // _insert(key string, value string|Buffer|Uint8Array, sortValue number|string, index number) -> Promise<>
+  // _insert(key string, value string|Buffer|Uint8Array, sortValue number|string|Array<number|string>, index number) -> Promise<>
   async _insert(key, value, sortValue, index) {
 
     const btreeLeftChildNodeRightmostItemIndex = -1
@@ -4184,8 +4071,10 @@ class DiskSortedHashTable {
 
     const position = index * this.itemSize
     const buffer = Buffer.alloc(this.itemSize)
-    const sortValueString = typeof sortValue == 'string' ? sortValue : sortValue.toString()
-
+    const sortValueString =
+      Array.isArray(sortValue) ? sortValue.join("")
+      : typeof sortValue == "string" ? sortValue
+      : sortValue.toString()
 
     // storage file slice
     // 1 byte for status marker: 0 empty / 1 occupied / 2 deleted
@@ -4248,7 +4137,7 @@ class DiskSortedHashTable {
     let forwardIndex = item.forwardIndex
     let reverseIndex = item.reverseIndex
 
-    if (sortValue == item.sortValue) {
+    if (compare("eq", sortValue, item.sortValue)) {
 
       if (item.statusMarker == REMOVED) {
 
@@ -4418,7 +4307,10 @@ class DiskSortedHashTable {
 
     const position = index * this.itemSize
     const buffer = Buffer.alloc(this.itemSize)
-    const sortValueString = typeof sortValue == 'string' ? sortValue : sortValue.toString()
+    const sortValueString =
+      Array.isArray(sortValue) ? sortValue.join("")
+      : typeof sortValue == "string" ? sortValue
+      : sortValue.toString()
 
     const statusMarker = 1
     const keyByteLength = Buffer.byteLength(key, ENCODING)
@@ -4468,7 +4360,11 @@ class DiskSortedHashTable {
     await temporaryHt.init()
 
     for await (const item of this._forwardItemsIterator()) {
-      await temporaryHt.set(item.key, item.value, item.sortValue)
+      if (Array.isArray(item.sortValue)) {
+        await temporaryHt.set(item.key, item.value, ...item.sortValue)
+      } else {
+        await temporaryHt.set(item.key, item.value, item.sortValue)
+      }
     }
 
     temporaryHt.close()
@@ -4480,7 +4376,7 @@ class DiskSortedHashTable {
     await this.init()
   }
 
-  // _set(key string, value string, sortValue number|string) -> Promise<>
+  // _set(key string, value string, sortValue number|string|Array<number|string>) -> Promise<>
   async _set(key, value, sortValue) {
     sortValue = convert(sortValue, this.sortValueType)
 
@@ -4497,9 +4393,9 @@ class DiskSortedHashTable {
       index = (index + stepSize) % this._length
       if (index == startIndex) {
         if (this._count < this._length) {
-          throw new Error('Unreachable index')
+          throw new Error("Unreachable index")
         }
-        throw new Error('Hash table is full')
+        throw new Error("Hash table is full")
       }
       currentItem = await this._getKeyItem(index)
     }
@@ -4526,36 +4422,17 @@ class DiskSortedHashTable {
    *
    * @docs
    * ```coffeescript [specscript]
-   * set(key string, value string|Buffer|Uint8Array, sortValue string|number) -> Promise<>
-   * ```
-   *
-   * Sets and stores a value by key and sort-value in the disk sorted hash table.
-   *
-   * Arguments:
-   *   * `key` - `string` - the key to set.
-   *   * `value` - `string|Buffer|Uint8Array` - the value to set corresponding to the key.
-   *   * `sortValue` - `string|number` - the value by which the item is sorted in the disk sorted hash table.
-   *
-   * Return:
-   *   * Empty promise.
-   *
-   * ```javascript
-   * await sortedHt.set('key1', 'value1', 1)
-   * await sortedHt.set('key2', 'value2', 2)
-   * await sortedHt.set('key3', 'value3', 3)
-   *
-   * await sortedHt.set('my-buffer', Buffer.from('binary'), 4)
+   * set(key string, value string|Buffer|Uint8Array, ...sortValues Arguments<string|number>) -> Promise<>
    * ```
    */
-  async set(key, value, sortValue) {
+  async set(key, value, ...sortValues) {
     if (this.resizeRatio > 0 && ((this._count + this._deletedCount) / this._length) >= this.resizeRatio) {
       await this._resize()
     }
-
-    await this._set(key, value, sortValue)
+    await this._set(key, value, sortValues)
   }
 
-  // _get(key string, valueType 'string'|'binary')
+  // _get(key string, valueType "string"|"binary")
   async _get(key, valueType) {
     let index = this._hash1(key)
     const startIndex = index
@@ -4586,7 +4463,7 @@ class DiskSortedHashTable {
         currentItem.sortValueByteLength,
         currentItem.valueByteLength
       )
-      return valueType == 'binary' ? valueBuffer : valueBuffer.toString(ENCODING)
+      return valueType == "binary" ? valueBuffer : valueBuffer.toString(ENCODING)
     }
 
     return undefined
@@ -4599,21 +4476,9 @@ class DiskSortedHashTable {
    * ```coffeescript [specscript]
    * get(key string) -> value Promise<string>
    * ```
-   *
-   * Gets a value by key from the disk sorted hash table.
-   *
-   * Arguments:
-   *   * `key` - `string` - the key corresponding to the value.
-   *
-   * Return:
-   *   * `value` - `string` - the value corresponding to the key.
-   *
-   * ```javascript
-   * const value = await sortedHt.get('my-key')
-   * ```
    */
   async get(key) {
-    return this._get(key, 'string')
+    return this._get(key, "string")
   }
 
   /**
@@ -4623,21 +4488,9 @@ class DiskSortedHashTable {
    * ```coffeescript [specscript]
    * getBinary(key string) -> binaryValue Promise<Buffer>
    * ```
-   *
-   * Gets a binary value by key from the disk sorted hash table.
-   *
-   * Arguments:
-   *   * `key` - `string` - the key corresponding to the binary value.
-   *
-   * Return:
-   *   * `binaryValue` - `Buffer` - the binary value corresponding to the key.
-   *
-   * ```javascript
-   * const buffer = await ht.getBinary('my-buffer')
-   * ```
    */
   async getBinary(key) {
-    return this._get(key, 'binary')
+    return this._get(key, "binary")
   }
 
   // _findBTreeNodeItemGTE(
@@ -4686,7 +4539,7 @@ class DiskSortedHashTable {
 
     while (i < btreeNodeItems.length) {
       const item = btreeNodeItems[i]
-      if (item.sortValue >= sortValue) {
+      if (compare("gte", item.sortValue, sortValue)) {
         foundItem = item
         break
       }
@@ -4809,7 +4662,7 @@ class DiskSortedHashTable {
 
     while (i >= 0) {
       const item = btreeNodeItems[i]
-      if (item.sortValue <= sortValue) {
+      if (compare("lte", item.sortValue, sortValue)) {
         foundItem = item
         break
       }
@@ -4904,55 +4757,11 @@ class DiskSortedHashTable {
    *
    * forwardIterator(options {
    *   exclusiveStartKey: string,
-   *   startingSortValue: string|number,
-   *   endingSortValue: string|number,
-   *   valueType: 'string'|'binary',
+   *   startingSortValue: string|number|Array<string|number>,
+   *   endingSortValue: string|number|Array<string|number>,
+   *   valueType: "string"|"binary",
+   *   limit: number,
    * }) -> values AsyncGenerator<string|Buffer>
-   * ```
-   *
-   * Returns an iterator of the values of all items in the disk sorted hash table sorted by sort-value. Item values are yielded in ascending order.
-   *
-   * If a starting sort-value and ending sort-value are provided, the iterator returns only values of items with sort-values between the starting and ending sort-values, including values of items with sort-values equal to the starting and ending sort-values. If only a starting sort-value is provided, the iterator returns values of items with sort-values greater than or equal to the starting sort-value. If only an ending sort-value is provided, the iterator returns values of items with sort-values less than or equal to the ending sort-value.
-   *
-   * If an exclusive start key is provided, the iterator returns values of items with sort-values greater than or equal to the sort-value of the item at the exclusive start key, not including the value of the item at the exclusive start key. The exclusive start key takes precedence over the starting sort-value.
-   *
-   * Arguments:
-   *   * (none) - retrieves the values of all items in the disk sorted hash table.
-   *   * `options`
-   *     * `exclusiveStartKey` - `string` - the key after which to start iterating.
-   *     * `startingSortValue` - `string|number` - the sort-value from which to start iterating.
-   *     * `endingSortValue` - `string|number` - the sort-value at which to stop iterating.
-   *     * `valueType` - `'string'|'binary'` - the type of value that the iterator yields. Defaults to `'string'`.
-   *       * `'string'` - iterator yields `string` values.
-   *       * `'binary'` - iterator yields `Buffer` values.
-   *
-   * Return:
-   *   * `values` - `AsyncGenerator<string|Buffer>` - an async iterator of the values of all items in the disk sorted hash table sorted by sort-value in ascending order.
-   *
-   * ```javascript
-   * await ht.set('key1', 'value1', 1)
-   * await ht.set('key2', 'value2', 2)
-   * await ht.set('key3', 'value3', 3)
-   *
-   * for await (const value of ht.forwardIterator()) {
-   *   console.log(value) // value1
-   *                      // value2
-   *                      // value3
-   * }
-   *
-   * for await (const value of ht.forwardIterator({ startingSortValue: 2, endingSortValue: 3 })) {
-   *   console.log(value) // value2
-   *                      // value3
-   * }
-   *
-   * for await (const value of ht.forwardIterator({ exclusiveStartKey: 'key1' })) {
-   *   console.log(value) // value2
-   *                      // value3
-   * }
-   *
-   * for await (const value of ht.forwardIterator({ exclusiveStartKey: 'key1', endingSortValue: 2 })) {
-   *   console.log(value) // value2
-   * }
    * ```
    */
   async * forwardIterator(options = {}) {
@@ -4960,7 +4769,8 @@ class DiskSortedHashTable {
       exclusiveStartKey,
       startingSortValue,
       endingSortValue,
-      valueType = 'string',
+      valueType = "string",
+      limit = Infinity,
     } = options
 
     let currentForwardItem
@@ -4980,7 +4790,9 @@ class DiskSortedHashTable {
       const foundBTreeItem = await this._findBTreeNodeItemGTE(
         startingSortValue, btreeRootNodeItems, btreeRootNodeRightmostItem
       )
-      currentForwardItem = await this._getItem(foundBTreeItem.index, valueType)
+      if (foundBTreeItem) {
+        currentForwardItem = await this._getItem(foundBTreeItem.index, valueType)
+      }
     } else {
       currentForwardItem = await this._getForwardStartItem(valueType)
     }
@@ -4988,16 +4800,20 @@ class DiskSortedHashTable {
     if (endingSortValue != null) {
       endingSortValue = convert(endingSortValue, this.sortValueType)
 
-      while (currentForwardItem) {
+      let n = 0
+      while (currentForwardItem && n < limit) {
         if (currentForwardItem.sortValue > endingSortValue) {
           break
         }
         yield currentForwardItem.value
+        n += 1
         currentForwardItem = await this._getItem(currentForwardItem.forwardIndex, valueType)
       }
     } else {
-      while (currentForwardItem) {
+      let n = 0
+      while (currentForwardItem && n < limit) {
         yield currentForwardItem.value
+        n += 1
         currentForwardItem = await this._getItem(currentForwardItem.forwardIndex, valueType)
       }
     }
@@ -5014,53 +4830,9 @@ class DiskSortedHashTable {
    *   exclusiveStartKey: string,
    *   startingSortValue: string|number,
    *   endingSortValue: string|number,
-   *   valueType: 'string'|'binary',
+   *   valueType: "string"|"binary",
+   *   limit: number,
    * }) -> values AsyncGenerator<string|Buffer>
-   * ```
-   *
-   * Returns an iterator of the values of all items in the disk sorted hash table sorted by sort-value. Item values are yielded in descending order.
-   *
-   * If a starting sort-value and ending sort-value are provided, the iterator returns only values of items with sort-values between the starting and ending sort-values, including values of items with sort-values equal to the starting and ending sort-values. If only a starting sort-value is provided, the iterator returns values of items with sort-values less than or equal to the starting sort-value.
-   *
-   * If an exclusive start key is provided, the iterator returns values of items with sort-values less than or equal to the sort-value of the item at the exclusive start key, not including the value of the item at the exclusive start key. The exclusive start key takes precedence over the starting sort-value.
-   *
-   * Arguments:
-   *   * (none) - retrieves the values of all items in the disk sorted hash table.
-   *   * `options`
-   *     * `exclusiveStartKey` - `string` - the key after which to start iterating.
-   *     * `startingSortValue` - `string|number` - the sort-value from which to start iterating.
-   *     * `endingSortValue` - `string|number` - the sort-value at which to stop iterating.
-   *     * `valueType` - `'string'|'binary'` - the type of value that the iterator yields. Defaults to `'string'`.
-   *       * `string` - iterator yields `string` values.
-   *       * `binary` - iterator yields `Buffer` values.
-   *
-   * Return:
-   *   * `values` - `AsyncGenerator<string|Buffer>` - an async iterator of the values of all items in the disk sorted hash table sorted by sort-value in descending order.
-   *
-   * ```javascript
-   * await ht.set('key1', 'value1', 1)
-   * await ht.set('key2', 'value2', 2)
-   * await ht.set('key3', 'value3', 3)
-   *
-   * for await (const value of ht.reverseIterator()) {
-   *   console.log(value) // value3
-   *                      // value2
-   *                      // value1
-   * }
-   *
-   * for await (const value of ht.reverseIterator({ startingSortValue: 2, endingSortValue: 1 })) {
-   *   console.log(value) // value2
-   *                      // value1
-   * }
-   *
-   * for await (const value of ht.reverseIterator({ exclusiveStartKey: 'key3' })) {
-   *   console.log(value) // value2
-   *                      // value1
-   * }
-   *
-   * for await (const value of ht.reverseIterator({ exclusiveStartKey: 'key3', endingSortValue: 2 })) {
-   *   console.log(value) // value2
-   * }
    * ```
    */
   async * reverseIterator(options = {}) {
@@ -5068,7 +4840,8 @@ class DiskSortedHashTable {
       exclusiveStartKey,
       startingSortValue,
       endingSortValue,
-      valueType = 'string',
+      valueType = "string",
+      limit = Infinity,
     } = options
 
     let currentForwardItem
@@ -5088,7 +4861,9 @@ class DiskSortedHashTable {
       const foundBTreeItem = await this._findBTreeNodeItemLTE(
         startingSortValue, btreeRootNodeItems, btreeRootNodeRightmostItem
       )
-      currentForwardItem = await this._getItem(foundBTreeItem.index, valueType)
+      if (foundBTreeItem) {
+        currentForwardItem = await this._getItem(foundBTreeItem.index, valueType)
+      }
     } else {
       currentForwardItem = await this._getReverseStartItem(valueType)
     }
@@ -5096,16 +4871,20 @@ class DiskSortedHashTable {
     if (endingSortValue != null) {
       endingSortValue = convert(endingSortValue, this.sortValueType)
 
-      while (currentForwardItem) {
+      let n = 0
+      while (currentForwardItem && n < limit) {
         if (currentForwardItem.sortValue < endingSortValue) {
           break
         }
         yield currentForwardItem.value
+        n += 1
         currentForwardItem = await this._getItem(currentForwardItem.reverseIndex, valueType)
       }
     } else {
-      while (currentForwardItem) {
+      let n = 0
+      while (currentForwardItem && n < limit) {
         yield currentForwardItem.value
+        n += 1
         currentForwardItem = await this._getItem(currentForwardItem.reverseIndex, valueType)
       }
     }
@@ -5122,53 +4901,9 @@ class DiskSortedHashTable {
    *   exclusiveStartKey: string,
    *   startingSortValue: string|number,
    *   endingSortValue: string|number,
-   *   valueType: 'string'|'binary',
+   *   valueType: "string"|"binary",
+   *   limit: number,
    * }) -> entries AsyncGenerator<[key string, value string|Buffer, sortValue string|number]>
-   * ```
-   *
-   * Returns an iterator of the entries (key, value, and sort-value) of all items in the disk sorted hash table sorted by sort-value. Item entries are yielded in ascending order.
-   *
-   * If a starting sort-value and ending sort-value are provided, the iterator returns only entries of items with sort-values between the starting and ending sort-values, including entries of items with sort-values equal to the starting and ending sort-values. If only a starting sort-value is provided, the iterator returns entries of items with sort-values greater than or equal to the starting sort-value. If only an ending sort-value is provided, the iterator returns entries of items with sort-values less than or equal to the ending sort-value.
-   *
-   * If an exclusive start key is provided, the iterator returns entries of items with sort-values greater than or equal to the sort-value of the item at the exclusive start key, not including the entry of the item at the exclusive start key. The exclusive start key takes precedence over the starting sort-value.
-   *
-   * Arguments:
-   *   * (none) - retrieves the entries of all items in the disk sorted hash table.
-   *   * `options`
-   *     * `exclusiveStartKey` - `string` - the key after which to start iterating.
-   *     * `startingSortValue` - `string|number` - the sort-value from which to start iterating.
-   *     * `endingSortValue` - `string|number` - the sort-value at which to stop iterating.
-   *     * `valueType` - `'string'|'binary'` - the type of value that the iterator yields. Defaults to `'string'`.
-   *       * `'string'` - iterator yields entries with `string` values.
-   *       * `'binary'` - iterator yields entries with `Buffer` values.
-   *
-   * Return:
-   *   * `entries` - `AsyncGenerator<[key string, value string|Buffer, sortValue string|number]>` - an async iterator of the entries of all items in the disk sorted hash table sorted by sort-value in ascending order.
-   *
-   * ```javascript
-   * await ht.set('key1', 'value1', 1)
-   * await ht.set('key2', 'value2', 2)
-   * await ht.set('key3', 'value3', 3)
-   *
-   * for await (const [key, value, sortValue] of ht.forwardEntriesIterator()) {
-   *   console.log(key, value, sortValue) // key1 value1 1
-   *                                      // key2 value2 2
-   *                                      // key3 value3 3
-   * }
-   *
-   * for await (const [key, value, sortValue] of ht.forwardEntriesIterator({ startingSortValue: 2, endingSortValue: 3 })) {
-   *   console.log(key, value, sortValue) // key2 value2 2
-   *                                      // key3 value3 3
-   * }
-   *
-   * for await (const [key, value, sortValue] of ht.forwardEntriesIterator({ exclusiveStartKey: 'key1' })) {
-   *   console.log(key, value, sortValue) // key2 value2 2
-   *                                      // key3 value3 3
-   * }
-   *
-   * for await (const [key, value, sortValue] of ht.forwardEntriesIterator({ exclusiveStartKey: 'key1', endingSortValue: 2 })) {
-   *   console.log(key, value, sortValue) // key2 value2 2
-   * }
    * ```
    */
   async * forwardEntriesIterator(options = {}) {
@@ -5176,7 +4911,8 @@ class DiskSortedHashTable {
       exclusiveStartKey,
       startingSortValue,
       endingSortValue,
-      valueType = 'string',
+      valueType = "string",
+      limit = Infinity,
     } = options
 
     let currentForwardItem
@@ -5196,7 +4932,9 @@ class DiskSortedHashTable {
       const foundBTreeItem = await this._findBTreeNodeItemGTE(
         startingSortValue, btreeRootNodeItems, btreeRootNodeRightmostItem
       )
-      currentForwardItem = await this._getItem(foundBTreeItem.index, valueType)
+      if (foundBTreeItem) {
+        currentForwardItem = await this._getItem(foundBTreeItem.index, valueType)
+      }
     } else {
       currentForwardItem = await this._getForwardStartItem(valueType)
     }
@@ -5204,16 +4942,28 @@ class DiskSortedHashTable {
     if (endingSortValue != null) {
       endingSortValue = convert(endingSortValue, this.sortValueType)
 
-      while (currentForwardItem) {
+      let n = 0
+      while (currentForwardItem && n < limit) {
         if (currentForwardItem.sortValue > endingSortValue) {
           break
         }
-        yield [currentForwardItem.key, currentForwardItem.value, currentForwardItem.sortValue]
+        if (Array.isArray(currentForwardItem.sortValue)) {
+          yield [currentForwardItem.key, currentForwardItem.value, ...currentForwardItem.sortValue]
+        } else {
+          yield [currentForwardItem.key, currentForwardItem.value, currentForwardItem.sortValue]
+        }
+        n += 1
         currentForwardItem = await this._getItem(currentForwardItem.forwardIndex, valueType)
       }
     } else {
-      while (currentForwardItem) {
-        yield [currentForwardItem.key, currentForwardItem.value, currentForwardItem.sortValue]
+      let n = 0
+      while (currentForwardItem && n < limit) {
+        if (Array.isArray(currentForwardItem.sortValue)) {
+          yield [currentForwardItem.key, currentForwardItem.value, ...currentForwardItem.sortValue]
+        } else {
+          yield [currentForwardItem.key, currentForwardItem.value, currentForwardItem.sortValue]
+        }
+        n += 1
         currentForwardItem = await this._getItem(currentForwardItem.forwardIndex, valueType)
       }
     }
@@ -5230,53 +4980,9 @@ class DiskSortedHashTable {
    *   exclusiveStartKey: string,
    *   startingSortValue: string|number,
    *   endingSortValue: string|number,
-   *   valueType: 'string'|'binary',
+   *   valueType: "string"|"binary",
+   *   limit: number,
    * }) -> entries AsyncGenerator<[key string, value string|Buffer, sortValue string|number]>
-   * ```
-   *
-   * Returns an iterator of the entries (key, value, and sort-value) of all items in the disk sorted hash table sorted by sort-value. Item entries are yielded in descending order.
-   *
-   * If a starting sort-value and ending sort-value are provided, the iterator returns only entries of items with sort-values between the starting and ending sort-values, including entries of items with sort-values equal to the starting and ending sort-values. If only a starting sort-value is provided, the iterator returns entries of items with sort-values less than or equal to the starting sort-value.
-   *
-   * If an exclusive start key is provided, the iterator returns entries of items with sort-values less than or equal to the sort-value of the item at the exclusive start key, not including the entry of the item at the exclusive start key. The exclusive start key takes precedence over the starting sort-value.
-   *
-   * Arguments:
-   *   * (none) - retrieves the entries of all items in the disk sorted hash table.
-   *   * `options`
-   *     * `exclusiveStartKey` - `string` - the key after which to start iterating.
-   *     * `startingSortValue` - `string|number` - the sort-value from which to start iterating.
-   *     * `endingSortValue` - `string|number` - the sort-value at which to stop iterating.
-   *     * `valueType` - `'string'|'binary'` - the type of value that the iterator yields. Defaults to `'string'`.
-   *       * `string` - iterator yields entries with `string` values.
-   *       * `binary` - iterator yields entries with `Buffer` values.
-   *
-   * Return:
-   *   * `entries` - `AsyncGenerator<[key string, value string|Buffer, sortValue string|number]>` - an async iterator of the entries of all items in the disk sorted hash table sorted by sort-value in descending order.
-   *
-   * ```javascript
-   * await ht.set('key1', 'value1', 1)
-   * await ht.set('key2', 'value2', 2)
-   * await ht.set('key3', 'value3', 3)
-   *
-   * for await (const [key, value, sortValue] of ht.reverseEntriesIterator()) {
-   *   console.log(key, value, sortValue) // key3 value3 3
-   *                                      // key2 value2 2
-   *                                      // key1 value1 1
-   * }
-   *
-   * for await (const [key, value, sortValue] of ht.reverseEntriesIterator({ startingSortValue: 2, endingSortValue: 1 })) {
-   *   console.log(key, value, sortValue) // key2 value2 2
-   *                                      // key1 value1 1
-   * }
-   *
-   * for await (const [key, value, sortValue] of ht.reverseEntriesIterator({ exclusiveStartKey: 'key3' })) {
-   *   console.log(key, value, sortValue) // key2 value2 2
-   *                                      // key1 value1 1
-   * }
-   *
-   * for await (const [key, value, sortValue] of ht.reverseEntriesIterator({ exclusiveStartKey: 'key3', endingSortValue: 2 })) {
-   *   console.log(key, value, sortValue) // key2 value2 2
-   * }
    * ```
    */
   async * reverseEntriesIterator(options = {}) {
@@ -5284,7 +4990,8 @@ class DiskSortedHashTable {
       exclusiveStartKey,
       startingSortValue,
       endingSortValue,
-      valueType = 'string',
+      valueType = "string",
+      limit = Infinity,
     } = options
 
     let currentForwardItem
@@ -5304,7 +5011,9 @@ class DiskSortedHashTable {
       const foundBTreeItem = await this._findBTreeNodeItemLTE(
         startingSortValue, btreeRootNodeItems, btreeRootNodeRightmostItem
       )
-      currentForwardItem = await this._getItem(foundBTreeItem.index, valueType)
+      if (foundBTreeItem) {
+        currentForwardItem = await this._getItem(foundBTreeItem.index, valueType)
+      }
     } else {
       currentForwardItem = await this._getReverseStartItem(valueType)
     }
@@ -5312,16 +5021,28 @@ class DiskSortedHashTable {
     if (endingSortValue != null) {
       endingSortValue = convert(endingSortValue, this.sortValueType)
 
-      while (currentForwardItem) {
+      let n = 0
+      while (currentForwardItem && n < limit) {
         if (currentForwardItem.sortValue < endingSortValue) {
           break
         }
-        yield [currentForwardItem.key, currentForwardItem.value, currentForwardItem.sortValue]
+        if (Array.isArray(currentForwardItem.sortValue)) {
+          yield [currentForwardItem.key, currentForwardItem.value, ...currentForwardItem.sortValue]
+        } else {
+          yield [currentForwardItem.key, currentForwardItem.value, currentForwardItem.sortValue]
+        }
+        n += 1
         currentForwardItem = await this._getItem(currentForwardItem.reverseIndex, valueType)
       }
     } else {
-      while (currentForwardItem) {
-        yield [currentForwardItem.key, currentForwardItem.value, currentForwardItem.sortValue]
+      let n = 0
+      while (currentForwardItem && n < limit) {
+        if (Array.isArray(currentForwardItem.sortValue)) {
+          yield [currentForwardItem.key, currentForwardItem.value, ...currentForwardItem.sortValue]
+        } else {
+          yield [currentForwardItem.key, currentForwardItem.value, currentForwardItem.sortValue]
+        }
+        n += 1
         currentForwardItem = await this._getItem(currentForwardItem.reverseIndex, valueType)
       }
     }
@@ -5333,18 +5054,6 @@ class DiskSortedHashTable {
    * @docs
    * ```coffeescript [specscript]
    * delete(key string) -> didDelete Promise<boolean>
-   * ```
-   *
-   * Deletes an item by key from the disk sorted hash table.
-   *
-   * Arguments:
-   *   * `key` - `string` - the key to delete.
-   *
-   * Return:
-   *   * `didDelete` - `boolean` - a promise of whether the key and corresponding value was deleted.
-   *
-   * ```javascript
-   * const didDelete = await sortedHt.delete('my-key')
    * ```
    */
   async delete(key) {
@@ -5412,18 +5121,6 @@ class DiskSortedHashTable {
    * @docs
    * ```coffeescript [specscript]
    * count() -> number
-   * ```
-   *
-   * Returns the number of items in the disk sorted hash table.
-   *
-   * Arguments:
-   *   * (none)
-   *
-   * Return:
-   *   * `number` - the number of items in the disk sorted hash table.
-   *
-   * ```javascript
-   * const count = sortedHt.count()
    * ```
    */
   count() {
