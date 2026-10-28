@@ -10,19 +10,6 @@ const gte = (a, b) => a >= b
 // lte(a any, b any) -> boolean
 const lte = (a, b) => a <= b
 
-// deepEquals(a Array, b Array) -> boolean
-function deepEquals(a, b) {
-  if (a.length == b.length) {
-    for (let i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) {
-        return false
-      }
-    }
-    return true
-  }
-  return false
-}
-
 /**
  * @name compare
  *
