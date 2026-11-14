@@ -4786,6 +4786,9 @@ class DiskSortedHashTable {
       startingSortValue = convert(startingSortValue, this.sortValueType)
 
       const btreeRootNodeRightmostItem = await this._getBTreeRootNodeRightmostItem()
+      if (btreeRootNodeRightmostItem == null) {
+        return
+      }
       const btreeRootNodeItems = await this._getBTreeNodeItems(btreeRootNodeRightmostItem)
       const foundBTreeItem = await this._findBTreeNodeItemGTE(
         startingSortValue, btreeRootNodeItems, btreeRootNodeRightmostItem
@@ -4857,6 +4860,9 @@ class DiskSortedHashTable {
       startingSortValue = convert(startingSortValue, this.sortValueType)
 
       const btreeRootNodeRightmostItem = await this._getBTreeRootNodeRightmostItem()
+      if (btreeRootNodeRightmostItem == null) {
+        return
+      }
       const btreeRootNodeItems = await this._getBTreeNodeItems(btreeRootNodeRightmostItem)
       const foundBTreeItem = await this._findBTreeNodeItemLTE(
         startingSortValue, btreeRootNodeItems, btreeRootNodeRightmostItem
@@ -4928,6 +4934,9 @@ class DiskSortedHashTable {
       startingSortValue = convert(startingSortValue, this.sortValueType)
 
       const btreeRootNodeRightmostItem = await this._getBTreeRootNodeRightmostItem()
+      if (btreeRootNodeRightmostItem == null) {
+        return
+      }
       const btreeRootNodeItems = await this._getBTreeNodeItems(btreeRootNodeRightmostItem)
       const foundBTreeItem = await this._findBTreeNodeItemGTE(
         startingSortValue, btreeRootNodeItems, btreeRootNodeRightmostItem
@@ -5007,6 +5016,9 @@ class DiskSortedHashTable {
       startingSortValue = convert(startingSortValue, this.sortValueType)
 
       const btreeRootNodeRightmostItem = await this._getBTreeRootNodeRightmostItem()
+      if (btreeRootNodeRightmostItem == null) {
+        return
+      }
       const btreeRootNodeItems = await this._getBTreeNodeItems(btreeRootNodeRightmostItem)
       const foundBTreeItem = await this._findBTreeNodeItemLTE(
         startingSortValue, btreeRootNodeItems, btreeRootNodeRightmostItem

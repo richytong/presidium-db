@@ -557,6 +557,120 @@ const test1_5 = new Test("DiskSortedHashTable", async function integration1_5() 
   ht1024.close()
 }).case()
 
+const test1_6 = new Test("DiskSortedHashTable", async function integration1_6() {
+  const ht1024 = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
+    initialLength: 1024,
+    itemSize: 2048,
+    sortValueType: ["string", "number"],
+  })
+  await ht1024.destroy()
+  await ht1024.init()
+
+  assert.strictEqual(ht1024.count(), 0)
+
+  const iter0 = ht1024.forwardIterator({
+    startingSortValue: ["a", 0],
+    endingSortValue: ["a", Date.now()],
+    limit: 10,
+  })
+
+  const posts0 = []
+  for await (const post of iter0) {
+    posts0.push(post)
+  }
+  assert.equal(posts0.length, 0)
+
+
+  const iter1 = ht1024.reverseIterator({
+    startingSortValue: ["a", Date.now()],
+    endingSortValue: ["a", 0],
+    limit: 10,
+  })
+
+  const posts1 = []
+  for await (const post of iter1) {
+    posts1.push(post)
+  }
+  assert.equal(posts1.length, 0)
+
+  const iter2 = ht1024.forwardEntriesIterator({
+    startingSortValue: ["a", 0],
+    endingSortValue: ["a", Date.now()],
+    limit: 10,
+  })
+
+  const posts2 = []
+  for await (const post of iter2) {
+    posts2.push(post)
+  }
+  assert.equal(posts2.length, 0)
+
+
+  const iter3 = ht1024.reverseEntriesIterator({
+    startingSortValue: ["a", Date.now()],
+    endingSortValue: ["a", 0],
+    limit: 10,
+  })
+
+  const posts3 = []
+  for await (const post of iter3) {
+    posts3.push(post)
+  }
+  assert.equal(posts3.length, 0)
+
+  ht1024.close()
+}).case()
+
+const test1_7 = new Test("DiskSortedHashTable", async function integration1_5() {
+  const ht1024 = new DiskSortedHashTable({
+    storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
+    headerPath: `${__dirname}/DiskSortedHashTable_test_data/1024_header`,
+    initialLength: 1024,
+    itemSize: 2048,
+    sortValueType: ["string", "number"],
+  })
+  await ht1024.destroy()
+  await ht1024.init()
+
+  assert.strictEqual(ht1024.count(), 0)
+
+  const iter0 = ht1024.forwardIterator({ exclusiveStartKey: "a" })
+
+  const posts0 = []
+  for await (const post of iter0) {
+    posts0.push(post)
+  }
+  assert.equal(posts0.length, 0)
+
+  const iter1 = ht1024.reverseIterator({ exclusiveStartKey: "a" })
+
+  const posts1 = []
+  for await (const post of iter1) {
+    posts1.push(post)
+  }
+  assert.equal(posts1.length, 0)
+
+  const iter2 = ht1024.forwardEntriesIterator({ exclusiveStartKey: "a" })
+
+  const posts2 = []
+  for await (const post of iter2) {
+    posts2.push(post)
+  }
+  assert.equal(posts2.length, 0)
+
+  const iter3 = ht1024.reverseEntriesIterator({ exclusiveStartKey: "a" })
+
+  const posts3 = []
+  for await (const post of iter3) {
+    posts3.push(post)
+  }
+  assert.equal(posts3.length, 0)
+
+  ht1024.close()
+}).case()
+
 const test2 = new Test("DiskSortedHashTable", async function integration2() {
   const ht1024 = new DiskSortedHashTable({
     storagePath: `${__dirname}/DiskSortedHashTable_test_data/1024`,
@@ -10107,6 +10221,8 @@ const test = Test.all([
   test1_3,
   test1_4,
   test1_5,
+  test1_6,
+  test1_7,
   test2,
   test2_0,
   test2_1,
